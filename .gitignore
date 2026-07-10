@@ -1,0 +1,40 @@
+# deps
+node_modules/
+
+# local tooling / editor state
+.claude/settings.local.json
+.vscode/
+.idea/
+
+# expo / native build artifacts (generados por `expo prebuild`)
+.expo/
+android/
+ios/
+dist/
+web-build/
+coverage/
+*.orig.*
+
+# env / secrets
+.env
+.env.*
+!.env.example
+
+# Android signing and machine-local configuration
+*.jks
+*.keystore
+local.properties
+
+# logs
+npm-debug.*
+yarn-error.*
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# el APK legacy y capturas quedan como referencia local, no en el repo
+data/omni remote/*.apk
+*.apk
+*.aab

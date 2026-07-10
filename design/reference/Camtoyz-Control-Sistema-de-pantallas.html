@@ -1,0 +1,1056 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#FBF3F7;font-family:Archivo,Helvetica,sans-serif;color:#3D2A57}
+a{color:#3D2A57}a:hover{color:#A53B65}
+@keyframes czspin{to{transform:rotate(360deg)}}
+@keyframes czpulse{0%{transform:scale(.6);opacity:.7}100%{transform:scale(1.15);opacity:0}}
+@keyframes czblink{0%,100%{opacity:1}50%{opacity:.25}}
+</style>
+</helmet>
+
+<section style="padding:44px 48px 20px">
+  <img src="assets/logo-black.svg" style="height:26px;display:block" alt="Camtoyz">
+  <div style="margin-top:14px;max-width:760px;font-size:13px;line-height:1.55;color:#5F4B77">
+    <strong>Camtoyz Control — sistema de pantallas.</strong> Frames 390×844, modo claro como identidad. Paleta Pantone, primario 203: #E9B3CB primario (CTAs, fills, chips), 7433 #A53B65 acento fuerte (badge Anfitrión, estados activos, strokes), 531 #DFC6E5 secundario (badge Miembro), 669 #3D2A57 solo texto y detalles menores. Sin rojo. Fondos: #FAF0F5 base / #FFFFFF cards / bordes #F0D9E4 · #EBD0DD; textos secundarios #9D5E7C / #BE87A2. Modo oscuro opcional: predomina el 669 (#241833 base, #3D2A57 superficies) con el mismo primario 203. Tipografía Archivo (bold para títulos). Todos los frames comparten los mismos tokens; contraste AA sobre fondos claros; sin rojo.
+  </div>
+</section>
+
+<!-- ============ 00 · TOKENS ============ -->
+<section style="padding:24px 48px 40px;border-bottom:1px solid rgba(165,59,101,.18)">
+  <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:18px"><span style="font:600 10px ui-monospace,Menlo,monospace;background:#E9B3CB;color:#3D2A57;padding:3px 8px;border-radius:4px">00</span><span style="font-size:13px;font-weight:700">Tokens &amp; componentes reutilizables</span></div>
+  <div id="f00" data-screen-label="00 Tokens" style="width:880px;background:#FFFFFF;border:1px solid rgba(165,59,101,.18);border-radius:14px;padding:28px 30px;display:flex;flex-direction:column;gap:24px;box-shadow:0 1px 4px rgba(165,59,101,.12)">
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <div style="width:96px"><div style="height:56px;border-radius:10px;background:#E9B3CB"></div><div style="font:10px ui-monospace,Menlo,monospace;margin-top:5px;color:#A53B65">#E9B3CB primario · P203</div></div>
+      <div style="width:96px"><div style="height:56px;border-radius:10px;background:#A53B65"></div><div style="font:10px ui-monospace,Menlo,monospace;margin-top:5px;color:#A53B65">#A53B65 acento · P7433</div></div>
+      <div style="width:96px"><div style="height:56px;border-radius:10px;background:#DFC6E5"></div><div style="font:10px ui-monospace,Menlo,monospace;margin-top:5px;color:#6E5987">#DFC6E5 secundario · P531</div></div>
+      <div style="width:96px"><div style="height:56px;border-radius:10px;background:#3D2A57"></div><div style="font:10px ui-monospace,Menlo,monospace;margin-top:5px;color:#6E5987">#3D2A57 texto · P669</div></div>
+      <div style="width:96px"><div style="height:56px;border-radius:10px;background:#FAF0F5;border:1px solid #F0D9E4"></div><div style="font:10px ui-monospace,Menlo,monospace;margin-top:5px;color:#6E5987">#FAF0F5 base</div></div>
+      <div style="width:96px"><div style="height:56px;border-radius:10px;background:#FFFFFF;border:1px solid #F0D9E4"></div><div style="font:10px ui-monospace,Menlo,monospace;margin-top:5px;color:#6E5987">#FFFFFF card</div></div>
+      <div style="width:96px"><div style="height:56px;border-radius:10px;background:#EBD0DD"></div><div style="font:10px ui-monospace,Menlo,monospace;margin-top:5px;color:#6E5987">#EBD0DD borde</div></div>
+      <div style="width:96px"><div style="height:56px;border-radius:10px;background:#9D5E7C"></div><div style="font:10px ui-monospace,Menlo,monospace;margin-top:5px;color:#6E5987">#9D5E7C texto sec</div></div>
+      <div style="width:96px"><div style="height:56px;border-radius:10px;background:#BE87A2"></div><div style="font:10px ui-monospace,Menlo,monospace;margin-top:5px;color:#6E5987">#BE87A2 mute</div></div>
+    </div>
+    <div style="display:flex;gap:28px;flex-wrap:wrap;align-items:flex-start">
+      <div style="display:flex;flex-direction:column;gap:10px;min-width:250px">
+        <div style="font:600 10px ui-monospace,Menlo,monospace;color:#A794BA;letter-spacing:.06em">TIPOGRAFÍA · ARCHIVO</div>
+        <div style="font-size:26px;font-weight:800;letter-spacing:-.01em">Título H1 · 26/800</div>
+        <div style="font-size:17px;font-weight:700">Título de sección · 17/700</div>
+        <div style="font-size:14px;font-weight:600">Etiqueta · 14/600</div>
+        <div style="font-size:13px;color:#BE87A2">Cuerpo secundario · 13/400 #BE87A2</div>
+        <div style="font:600 12px ui-monospace,Menlo,monospace;letter-spacing:.14em">CÓDIGO · MONO 12</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="font:600 10px ui-monospace,Menlo,monospace;color:#A794BA;letter-spacing:.06em">BOTONES</div>
+        <div style="height:50px;min-width:220px;background:#E9B3CB;color:#3D2A57;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700">CTA primario</div>
+        <div style="height:50px;min-width:220px;background:#FAF0F5;color:#3D2A57;border:1px solid #EBD0DD;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600">Secundario (claro)</div>
+        <div style="height:50px;min-width:220px;background:transparent;color:#A53B65;border:1.5px solid #A53B65;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700">Destructivo outline</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="font:600 10px ui-monospace,Menlo,monospace;color:#A794BA;letter-spacing:.06em">BADGES DE ROL</div>
+        <div style="display:flex;gap:8px">
+          <span style="background:#A53B65;color:#fff;font-size:10px;font-weight:800;letter-spacing:.1em;padding:5px 10px;border-radius:999px">ANFITRIÓN</span>
+          <span style="background:#DFC6E5;color:#3D2A57;font-size:10px;font-weight:800;letter-spacing:.1em;padding:5px 10px;border-radius:999px">MIEMBRO</span>
+        </div>
+        <div style="font:600 10px ui-monospace,Menlo,monospace;color:#A794BA;letter-spacing:.06em;margin-top:8px">PILL DE CONEXIÓN</div>
+        <div style="display:flex;gap:8px">
+          <div style="display:flex;align-items:center;gap:7px;border:1px solid #EBD0DD;border-radius:999px;padding:7px 14px 7px 11px;background:#FFFFFF"><div style="width:7px;height:7px;border-radius:50%;background:#A53B65"></div><span style="font-size:13px;font-weight:600;color:#3D2A57">HyperBullet</span></div>
+          <div style="display:flex;align-items:center;gap:7px;border:1px solid #EBD0DD;border-radius:999px;padding:7px 14px 7px 11px;background:#FFFFFF"><div style="width:7px;height:7px;border-radius:50%;background:#BE87A2"></div><span style="font-size:13px;font-weight:600;color:#BE87A2">Sin dispositivo</span></div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;max-width:250px">
+        <div style="font:600 10px ui-monospace,Menlo,monospace;color:#A794BA;letter-spacing:.06em">GRID DE PATRONES · ESCALABLE</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(58px,1fr));gap:10px;width:250px">
+          <div style="aspect-ratio:1;border:1.5px solid #A53B65;border-radius:14px;background:#FFFFFF;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px"><div style="display:flex;align-items:flex-end;gap:2.5px;height:18px"><div style="width:3px;height:8px;background:#A53B65;border-radius:2px"></div><div style="width:3px;height:8px;background:#A53B65;border-radius:2px"></div><div style="width:3px;height:8px;background:#A53B65;border-radius:2px"></div><div style="width:3px;height:8px;background:#A53B65;border-radius:2px"></div></div><span style="font-size:9px;font-weight:700;color:#A53B65">P1</span></div>
+          <div style="aspect-ratio:1;border:1px solid #EBD0DD;border-radius:14px;background:#FFFFFF;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px"><div style="display:flex;align-items:flex-end;gap:2.5px;height:18px"><div style="width:3px;height:6px;background:#9D5E7C;border-radius:2px"></div><div style="width:3px;height:14px;background:#9D5E7C;border-radius:2px"></div><div style="width:3px;height:6px;background:#9D5E7C;border-radius:2px"></div><div style="width:3px;height:14px;background:#9D5E7C;border-radius:2px"></div></div><span style="font-size:9px;font-weight:700;color:#BE87A2">P2</span></div>
+          <div style="aspect-ratio:1;border:1px dashed #BE87A2;border-radius:14px;display:flex;align-items:center;justify-content:center;color:#BE87A2;font-size:18px;font-weight:400">+</div>
+        </div>
+        <div style="font:10px/1.5 ui-monospace,Menlo,monospace;color:#8B77A3">grid-template-columns: repeat(auto-fill, minmax(58px,1fr)); gap:10px — añadir ítems nunca rompe el layout.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FLUJO PRINCIPAL ============ -->
+<section style="padding:32px 48px 44px;border-bottom:1px solid rgba(165,59,101,.18)">
+  <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:18px"><span style="font:600 10px ui-monospace,Menlo,monospace;background:#E9B3CB;color:#3D2A57;padding:3px 8px;border-radius:4px">01–03</span><span style="font-size:13px;font-weight:700">Flujo principal · splash, escaneo BLE, dashboard</span></div>
+  <div style="display:flex;flex-wrap:wrap;gap:32px;align-items:flex-start">
+
+    <!-- 01 Splash -->
+    <div id="f01" data-screen-label="01 Splash" style="display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px">
+      <div style="font:600 11px ui-monospace,Menlo,monospace;color:#6E5987">01 Splash</div>
+      <div style="width:390px;height:844px;background:#FAF0F5;border-radius:28px;overflow:hidden;display:flex;flex-direction:column;position:relative;color:#3D2A57;box-shadow:0 2px 14px rgba(165,59,101,.16)">
+        <div style="height:44px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 26px"><span style="font-size:14px;font-weight:600">9:41</span><div style="display:flex;align-items:center;gap:6px"><div style="display:flex;align-items:flex-end;gap:1.5px"><div style="width:2.5px;height:4px;background:#3D2A57;border-radius:1px"></div><div style="width:2.5px;height:6px;background:#3D2A57;border-radius:1px"></div><div style="width:2.5px;height:8px;background:#3D2A57;border-radius:1px"></div><div style="width:2.5px;height:10px;background:#3D2A57;border-radius:1px"></div></div><div style="width:22px;height:11px;border:1.5px solid rgba(61,42,87,.5);border-radius:3px;padding:1.5px"><div style="width:60%;height:100%;background:#3D2A57;border-radius:1px"></div></div></div></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:56px;padding:0 40px">
+          <img src="assets/logo-rose.svg" style="width:230px" alt="Camtoyz">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:22px">
+            <div style="width:44px;height:44px;border-radius:50%;border:3px solid #EBD0DD;border-top-color:#A53B65;animation:czspin 1s linear infinite"></div>
+            <div style="text-align:center">
+              <div style="font-size:15px;font-weight:700">Verificando carga</div>
+              <div style="font-size:13px;color:#9D5E7C;margin-top:6px;line-height:1.5">Mantén pulsado el botón<br>del dispositivo para encenderlo</div>
+            </div>
+          </div>
+        </div>
+        <div style="flex:none;padding:0 24px 44px;display:flex;flex-direction:column;gap:12px">
+          <div style="height:54px;background:#E9B3CB;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700">Comenzar juego</div>
+          <div style="height:54px;border:1px solid #EBD0DD;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600;color:#3D2A57">Modo control remoto</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 02a Scan Empty -->
+    <div id="f02a" data-screen-label="02a Scan-Empty" style="display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px">
+      <div style="font:600 11px ui-monospace,Menlo,monospace;color:#6E5987">02a Scan-Empty · bottom sheet</div>
+      <div style="width:390px;height:844px;background:#FAF0F5;border-radius:28px;overflow:hidden;display:flex;flex-direction:column;position:relative;color:#3D2A57;box-shadow:0 2px 14px rgba(165,59,101,.16)">
+        <div style="position:absolute;inset:0;background:#F3E1EB"></div>
+        <div style="position:absolute;inset:0;background:rgba(61,42,87,.34)"></div>
+        <div style="position:absolute;left:0;right:0;bottom:0;height:620px;background:#FFFFFF;border-radius:26px 26px 0 0;border-top:1px solid #EBD0DD;display:flex;flex-direction:column;padding:0 24px">
+          <div style="width:40px;height:4px;border-radius:2px;background:#EBD0DD;margin:12px auto 0"></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 0 8px">
+            <div style="font-size:18px;font-weight:700">Buscar dispositivos</div>
+            <div style="font-size:14px;font-weight:600;color:#9D5E7C">Cancelar</div>
+          </div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:26px">
+            <div style="position:relative;width:180px;height:180px;display:flex;align-items:center;justify-content:center">
+              <div style="position:absolute;inset:0;border-radius:50%;border:1px solid #A53B65;animation:czpulse 2s ease-out infinite"></div>
+              <div style="position:absolute;inset:22px;border-radius:50%;border:1px solid #A53B65;animation:czpulse 2s ease-out .5s infinite"></div>
+              <div style="width:70px;height:70px;border-radius:50%;background:#FAF0F5;border:1px solid #EBD0DD;display:flex;align-items:center;justify-content:center"><div style="width:10px;height:10px;border-radius:50%;background:#A53B65;animation:czblink 1.4s infinite"></div></div>
+            </div>
+            <div style="text-align:center">
+              <div style="font-size:15px;font-weight:700">Buscando dispositivos…</div>
+              <div style="font-size:13px;color:#9D5E7C;margin-top:6px;line-height:1.5">Ningún dispositivo aún.<br>Asegúrate de que esté encendido y cerca.</div>
+            </div>
+          </div>
+          <div style="padding:0 0 36px;flex:none">
+            <div style="display:flex;align-items:center;gap:10px;background:#FAF0F5;border:1px solid #F0D9E4;border-radius:12px;padding:12px 14px"><div style="width:8px;height:8px;border-radius:50%;background:#BE87A2;flex:none"></div><span style="font-size:12px;color:#9D5E7C;line-height:1.45">Bluetooth activo · el escaneo se detiene automáticamente a los 30 s</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 02b Scan Found -->
+    <div id="f02b" data-screen-label="02b Scan-Found" style="display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px">
+      <div style="font:600 11px ui-monospace,Menlo,monospace;color:#6E5987">02b Scan-Found</div>
+      <div style="width:390px;height:844px;background:#FAF0F5;border-radius:28px;overflow:hidden;display:flex;flex-direction:column;position:relative;color:#3D2A57;box-shadow:0 2px 14px rgba(165,59,101,.16)">
+        <div style="position:absolute;inset:0;background:#F3E1EB"></div>
+        <div style="position:absolute;inset:0;background:rgba(61,42,87,.34)"></div>
+        <div style="position:absolute;left:0;right:0;bottom:0;height:620px;background:#FFFFFF;border-radius:26px 26px 0 0;border-top:1px solid #EBD0DD;display:flex;flex-direction:column;padding:0 24px">
+          <div style="width:40px;height:4px;border-radius:2px;background:#EBD0DD;margin:12px auto 0"></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 0 14px">
+            <div style="font-size:18px;font-weight:700">Buscar dispositivos</div>
+            <div style="font-size:14px;font-weight:600;color:#9D5E7C">Cancelar</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;padding:2px 0 16px"><div style="width:22px;height:22px;border-radius:50%;border:2px solid #EBD0DD;border-top-color:#A53B65;animation:czspin 1s linear infinite"></div><span style="font-size:13px;color:#9D5E7C">Buscando… <strong style="color:#3D2A57">2 dispositivos detectados</strong></span></div>
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <div style="display:flex;align-items:center;gap:14px;background:#FAF0F5;border:1px solid #EBD0DD;border-radius:16px;padding:16px">
+              <div style="width:44px;height:44px;border-radius:12px;background:#FFFFFF;border:1px solid #F0D9E4;display:flex;align-items:center;justify-content:center;flex:none"><img src="assets/logo-rose.svg" style="width:32px" alt=""></div>
+              <div style="flex:1;min-width:0"><div style="font-size:15px;font-weight:700">HyperBullet</div><div style="font-size:12px;color:#A53B65;font-weight:600;margin-top:2px">Conectado · señal fuerte</div></div>
+              <div style="border:1.5px solid #EBD0DD;color:#3D2A57;font-size:13px;font-weight:600;padding:9px 14px;border-radius:999px">Desconectar</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:14px;background:#FAF0F5;border:1px solid #F0D9E4;border-radius:16px;padding:16px">
+              <div style="width:44px;height:44px;border-radius:12px;background:#FFFFFF;border:1px solid #F0D9E4;display:flex;align-items:center;justify-content:center;flex:none"><img src="assets/logo-rose.svg" style="width:32px" alt=""></div>
+              <div style="flex:1;min-width:0"><div style="font-size:15px;font-weight:700">Duo Egg</div><div style="font-size:12px;color:#9D5E7C;margin-top:2px">Toca para conectar</div></div>
+              <div style="background:#A53B65;color:#fff;font-size:13px;font-weight:700;padding:9px 18px;border-radius:999px">Conectar</div>
+            </div>
+          </div>
+          <div style="flex:1"></div>
+          <div style="padding:0 0 36px;flex:none;text-align:center;font-size:12px;color:#BE87A2">¿No aparece tu dispositivo? <span style="color:#3D2A57;font-weight:600;text-decoration:underline">Ver guía</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 02c Scan Error -->
+    <div id="f02c" data-screen-label="02c Scan-Error" style="display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px">
+      <div style="font:600 11px ui-monospace,Menlo,monospace;color:#6E5987">02c Scan-Error</div>
+      <div style="width:390px;height:844px;background:#FAF0F5;border-radius:28px;overflow:hidden;display:flex;flex-direction:column;position:relative;color:#3D2A57;box-shadow:0 2px 14px rgba(165,59,101,.16)">
+        <div style="position:absolute;inset:0;background:#F3E1EB"></div>
+        <div style="position:absolute;inset:0;background:rgba(61,42,87,.34)"></div>
+        <div style="position:absolute;left:0;right:0;bottom:0;height:620px;background:#FFFFFF;border-radius:26px 26px 0 0;border-top:1px solid #EBD0DD;display:flex;flex-direction:column;padding:0 24px">
+          <div style="width:40px;height:4px;border-radius:2px;background:#EBD0DD;margin:12px auto 0"></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 0 8px">
+            <div style="font-size:18px;font-weight:700">Buscar dispositivos</div>
+            <div style="font-size:14px;font-weight:600;color:#9D5E7C">Cancelar</div>
+          </div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;text-align:center;padding:0 12px">
+            <div style="width:64px;height:64px;border-radius:50%;border:1.5px solid #A53B65;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:800;color:#A53B65">!</div>
+            <div>
+              <div style="font-size:17px;font-weight:700">No se encontró el dispositivo</div>
+              <div style="font-size:13px;color:#9D5E7C;margin-top:8px;line-height:1.6">Comprueba que esté encendido y con carga.<br>Mantén pulsado su botón 3 segundos<br>hasta que parpadee.</div>
+            </div>
+          </div>
+          <div style="padding:0 0 36px;flex:none;display:flex;flex-direction:column;gap:12px">
+            <div style="height:54px;background:#E9B3CB;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700">Reintentar búsqueda</div>
+            <div style="height:54px;border:1px solid #EBD0DD;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600;color:#3D2A57">Centro de ayuda</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 03 Dashboard -->
+    <div id="f03" data-screen-label="03 Dashboard-Connected" style="display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px">
+      <div style="font:600 11px ui-monospace,Menlo,monospace;color:#6E5987">03 Dashboard-Connected</div>
+      <div style="width:390px;height:844px;background:#FAF0F5;border-radius:28px;overflow:hidden;display:flex;flex-direction:column;position:relative;color:#3D2A57;box-shadow:0 2px 14px rgba(165,59,101,.16)">
+        <div style="height:44px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 26px"><span style="font-size:14px;font-weight:600">9:41</span><div style="display:flex;align-items:center;gap:6px"><div style="display:flex;align-items:flex-end;gap:1.5px"><div style="width:2.5px;height:4px;background:#3D2A57;border-radius:1px"></div><div style="width:2.5px;height:6px;background:#3D2A57;border-radius:1px"></div><div style="width:2.5px;height:8px;background:#3D2A57;border-radius:1px"></div><div style="width:2.5px;height:10px;background:#3D2A57;border-radius:1px"></div></div><div style="width:22px;height:11px;border:1.5px solid rgba(61,42,87,.5);border-radius:3px;padding:1.5px"><div style="width:60%;height:100%;background:#3D2A57;border-radius:1px"></div></div></div></div>
+        <div style="height:56px;flex:none;display:flex;align-items:center;gap:12px;padding:0 20px">
+          <div style="display:flex;flex-direction:column;gap:5px;width:20px;flex:none"><div style="height:2px;background:#3D2A57;border-radius:1px"></div><div style="height:2px;width:70%;background:#3D2A57;border-radius:1px"></div></div>
+          <div style="display:flex;align-items:center;gap:7px;border:1px solid #EBD0DD;border-radius:999px;padding:7px 14px 7px 11px"><div style="width:7px;height:7px;border-radius:50%;background:#A53B65"></div><span style="font-size:13px;font-weight:600">HyperBullet</span></div>
+          <div style="flex:1"></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px;flex:none"><div style="width:7px;height:7px;border:1.5px solid #3D2A57;border-radius:2px"></div><div style="width:7px;height:7px;border:1.5px solid #3D2A57;border-radius:2px"></div><div style="width:7px;height:7px;border:1.5px solid #3D2A57;border-radius:2px"></div><div style="width:7px;height:7px;border:1.5px solid #3D2A57;border-radius:2px"></div></div>
+          <div style="width:32px;height:32px;border-radius:50%;background:#F7E9F1;border:1px solid #EBD0DD;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#3D2A57;flex:none">ES</div>
+        </div>
+        <div style="flex:1;overflow:hidden;display:flex;flex-direction:column;padding:8px 20px 0;gap:20px">
+          <div style="background:#FFFFFF;border:1px solid #F0D9E4;border-radius:18px;padding:16px 18px;display:flex;align-items:center;gap:14px">
+            <div style="width:42px;height:42px;border-radius:12px;background:#F3DFE9;display:flex;align-items:center;justify-content:center;flex:none"><div style="width:12px;height:22px;border:2px solid #3D2A57;border-radius:6px"></div></div>
+            <div style="flex:1"><div style="font-size:15px;font-weight:700">HyperBullet</div><div style="font-size:12px;color:#A53B65;font-weight:600;margin-top:2px">Conectado · BLE</div></div>
+            <div style="display:flex;align-items:center;gap:8px"><div style="width:30px;height:14px;border:1.5px solid #BE87A2;border-radius:4px;padding:2px"><div style="width:35%;height:100%;background:#3D2A57;border-radius:1px"></div></div><span style="font-size:13px;font-weight:700">35%</span></div>
+          </div>
+          <div>
+            <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:12px"><span style="font-size:17px;font-weight:700">Vibración</span><span style="font-size:12px;color:#BE87A2;font-weight:600">Ver todos</span></div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(58px,1fr));gap:10px">
+              <div style="aspect-ratio:1;border:1.5px solid #A53B65;border-radius:14px;background:#FFFFFF;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px"><div style="display:flex;align-items:flex-end;gap:2.5px;height:18px"><div style="width:3px;height:8px;background:#A53B65;border-radius:2px"></div><div style="width:3px;height:8px;background:#A53B65;border-radius:2px"></div><div style="width:3px;height:8px;background:#A53B65;border-radius:2px"></div><div style="width:3px;height:8px;background:#A53B65;border-radius:2px"></div></div><span style="font-size:9px;font-weight:700;color:#A53B65">P1</span></div>
+              <div style="aspect-ratio:1;border:1px solid #EBD0DD;border-radius:14px;background:#FFFFFF;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px"><div style="display:flex;align-items:flex-end;gap:2.5px;height:18px"><div style="width:3px;height:6px;background:#9D5E7C;border-radius:2px"></div><div style="width:3px;height:12px;background:#9D5E7C;border-radius:2px"></div><div style="width:3px;height:6px;background:#9D5E7C;border-radius:2px"></div><div style="width:3px;height:12px;background:#9D5E7C;border-radius:2px"></div></div><span style="font-size:9px;font-weight:700;color:#BE87A2">P2</span></div>
+              <div style="aspect-ratio:1;border:1px solid #EBD0DD;border-radius:14px;background:#FFFFFF;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px"><div style="display:flex;align-items:flex-end;gap:2.5px;height:18px"><div style="width:3px;height:5px;background:#9D5E7C;border-radius:2px"></div><div style="width:3px;height:10px;background:#9D5E7C;border-radius:2px"></div><div style="width:3px;height:16px;background:#9D5E7C;border-radius:2px"></div><div style="width:3px;height:10px;background:#9D5E7C;border-radius:2px"></div></div><span style="font-size:9px;font-weight:700;color:#BE87A2">P3</span></div>
+              <div style="aspect-ratio:1;border:1px solid #EBD0DD;border-radius:14px;background:#FFFFFF;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px"><div style="display:flex;align-items:flex-end;gap:2.5px;height:18px"><div style="width:3px;height:14px;background:#9D5E7C;border-radius:2px"></div><div style="width:3px;height:5px;background:#9D5E7C;border-radius:2px"></div><div style="width:3px;height:14px;background:#9D5E7C;border-radius:2px"></div><div style="width:3px;height:5px;background:#9D5E7C;border-radius:2px"></div></div><span style="font-size:9px;font-weight:700;color:#BE87A2">P4</span></div>
+              <div style="aspect-ratio:1;border:1px solid #EBD0DD;border-radius:14px;background:#FFFFFF;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px"><div style="display:flex;align-items:flex-end;gap:2.5px;height:18px"><div style="width:3px;height:16px;background:#9D5E7C;border-radius:2px"></div><div style="width:3px;height:16px;background:#9D5E7C;border-radius:2px"></div><div style="width:3px;height:16px;background:#9D5E7C;border-radius:2px"></div><div style="width:3px;height:16px;background:#9D5E7C;border-radius:2px"></div></div><span style="font-size:9px;font-weight:700;color:#BE87A2">P5</span></div>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:17px;font-weight:700;margin-bottom:12px">Modos de control</div>
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <div style="display:flex;align-items:center;gap:14px;background:#FFFFFF;border:1px solid #F0D9E4;border-radius:16px;padding:15px 18px">
+                <div style="width:38px;height:38px;border-radius:50%;border:1px solid #EBD0DD;display:flex;align-items:center;justify-content:center;flex:none"><div style="width:9px;height:14px;border:1.5px solid #3D2A57;border-radius:5px;position:relative"><div style="position:absolute;left:50%;bottom:-6px;width:1.5px;height:5px;background:#3D2A57;transform:translateX(-50%)"></div></div></div>
+                <div style="flex:1"><div style="font-size:14px;font-weight:700">Control por sonido</div><div style="font-size:12px;color:#9D5E7C;margin-top:1px">Reacciona al sonido ambiente</div></div>
+                <span style="color:#BE87A2;font-size:18px">›</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:14px;background:#FFFFFF;border:1px solid #F0D9E4;border-radius:16px;padding:15px 18px">
+                <div style="width:38px;height:38px;border-radius:50%;border:1px solid #EBD0DD;display:flex;align-items:center;justify-content:center;flex:none"><div style="display:flex;align-items:flex-end;gap:2px;height:14px"><div style="width:2.5px;height:8px;background:#3D2A57;border-radius:1px"></div><div style="width:2.5px;height:14px;background:#3D2A57;border-radius:1px"></div><div style="width:2.5px;height:5px;background:#3D2A57;border-radius:1px"></div><div style="width:2.5px;height:11px;background:#3D2A57;border-radius:1px"></div></div></div>
+                <div style="flex:1"><div style="font-size:14px;font-weight:700">Control musical</div><div style="font-size:12px;color:#9D5E7C;margin-top:1px">Sincroniza con tu música</div></div>
+                <span style="color:#BE87A2;font-size:18px">›</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:14px;background:#FFFFFF;border:1px solid #F0D9E4;border-radius:16px;padding:15px 18px">
+                <div style="width:38px;height:38px;border-radius:50%;border:1px solid #EBD0DD;display:flex;align-items:center;justify-content:center;flex:none;position:relative"><div style="width:8px;height:8px;border-radius:50%;background:#A53B65"></div><div style="position:absolute;width:20px;height:20px;border-radius:50%;border:1.5px solid #BE87A2"></div></div>
+                <div style="flex:1"><div style="font-size:14px;font-weight:700">Interacción remota</div><div style="font-size:12px;color:#9D5E7C;margin-top:1px">Salas para compartir el control</div></div>
+                <span style="color:#BE87A2;font-size:18px">›</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:14px;background:#FFFFFF;border:1px solid #F0D9E4;border-radius:16px;padding:15px 18px">
+                <div style="width:38px;height:38px;border-radius:50%;border:1px solid #EBD0DD;display:flex;align-items:center;justify-content:center;flex:none"><div style="width:14px;height:14px;border:1.5px solid #3D2A57;border-radius:4px;transform:rotate(45deg)"></div></div>
+                <div style="flex:1"><div style="font-size:14px;font-weight:700">Control por gesto</div><div style="font-size:12px;color:#9D5E7C;margin-top:1px">Dibuja la intensidad en la pantalla</div></div>
+                <span style="color:#BE87A2;font-size:18px">›</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="height:24px;flex:none"></div>
+      </div>
+    </div>
+
+    <!-- 03b Patterns extended -->
+    <div id="f03b" data-screen-label="03b Patterns-Extended" style="display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px">
+      <div style="font:600 11px ui-monospace,Menlo,monospace;color:#6E5987">03b Patterns-Extended · grid escalable por categorías</div>
+      <div style="width:390px;height:844px;background:#FAF0F5;border-radius:28px;overflow:hidden;display:flex;flex-direction:column;position:relative;color:#3D2A57;box-shadow:0 2px 14px rgba(165,59,101,.16)">
+        <div style="height:44px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 26px"><span style="font-size:14px;font-weight:600">9:41</span><div style="width:22px;height:11px;border:1.5px solid rgba(61,42,87,.5);border-radius:3px;padding:1.5px"><div style="width:60%;height:100%;background:#3D2A57;border-radius:1px"></div></div></div>
+        <div style="height:56px;flex:none;display:flex;align-items:center;gap:14px;padding:0 20px">
+          <span style="font-size:20px;color:#3D2A57">‹</span>
+          <span style="font-size:17px;font-weight:700">Todos los patrones</span>
+          <div style="flex:1"></div>
+          <div style="display:flex;align-items:center;gap:7px;border:1px solid #EBD0DD;border-radius:999px;padding:6px 12px 6px 10px"><div style="width:6px;height:6px;border-radius:50%;background:#A53B65"></div><span style="font-size:12px;font-weight:600">P1</span></div>
+        </div>
+        <div style="flex:1;overflow:hidden;padding:8px 20px 0;display:flex;flex-direction:column;gap:22px">
+          <div>
+            <div style="font-size:12px;font-weight:700;letter-spacing:.1em;color:#9D5E7C;margin-bottom:10px">CONSTANTES</div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(58px,1fr));gap:10px">
+              <div style="aspect-ratio:1;border:1.5px solid #A53B65;border-radius:14px;background:#FFFFFF;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px"><div style="display:flex;align-items:flex-end;gap:2.5px;height:18px"><div style="width:3px;height:6px;background:#A53B65;border-radius:2px"></div><div style="width:3px;height:6px;background:#A53B65;border-radius:2px"></div><div style="width:3px;height:6px;background:#A53B65;border-radius:2px"></div><div style="width:3px;height:6px;background:#A53B65;border-radius:2px"></div></div><span style="font-size:9px;font-weight:700;color:#A53B65">P1</span></div>
+              <div style="aspect-ratio:1;border:1px solid #EBD0DD;border-radius:14px;background:#FFFFFF;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px"><div style="display:flex;align-items:flex-end;gap:2.5px;height:18px"><div style="width:3px;height:11px;background:#9D5E7C;border-radius:2px"></div><div style="width:3px;height:11px;background:#9D5E7C;border-radius:2px"></div><div style="width:3px;height:11px;background:#9D5E7C;border-radius:2px"></div><div style="width:3px;height:11px;background:#9D5E7C;border-radius:2px"></div></div><span style="font-size:9px;font-weight:700;color:#BE87A2">P2</span></div>
+              <div style="aspect-ratio:1;border:1px solid #EBD0DD;border-radius:14px;background:#FFFFFF;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px"><div style="display:flex;align-items:flex-end;gap:2.5px;height:18px"><div style="width:3px;height:16px;background:#9D5E7C;border-radius:2px"></div><div style="width:3px;height:16px;background:#9D5E7C;border-radius:2px"></div><div style="width:3px;height:16px;background:#9D5E7C;border-radius:2px"></div><div style="width:3px;height:16px;background:#9D5E7C;border-radius:2px"></div></div><span style="font-size:9px;font-weight:700;color:#BE87A2">P3</span></div>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:12px;font-weight:700;letter-spacing:.1em;color:#9D5E7C;margin-bottom:10px">ONDAS</div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(58px,1fr));gap:10px">
+              <div style="aspect-ratio:1;border:1px solid #EBD0DD;border-radius:14px;background:#FFFFFF;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px"><div style="display:flex;align-items:flex-end;gap:2.5px;height:18px"><div style="width:3px;height:5px;background:#9D5E7C;border-radius:2px"></div><div style="width:3px;height:10px;background:#9D5E7C;border-radius:2px"></div><div style="width:3px;height:16px;background:#9D5E7C;border-radius:2px"></div><div style="width:3px;height:10px;background:#9D5E7C;border-radius:2px"></div></div><span style="font-size:9px;font-weight:700;color:#BE87A2">P4</span></div>
+              <div style="aspect-ratio:1;border:1px solid #EBD0DD;border-radius:14px;background:#FFFFFF;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px"><div style="display:flex;align-items:flex-end;gap:2.5px;height:18px"><div style="width:3px;height:16px;background:#9D5E7C;border-radius:2px"></div><div style="width:3px;height:10px;background:#9D5E7C;border-radius:2px"></div><div style="width:3px;height:5px;background:#9D5E7C;border-radius:2px"></div><div style="width:3px;height:10px;background:#9D5E7C;border-radius:2px"></div></div><span style="font-size:9px;font-weight:700;color:#BE87A2">P5</span></div>
+              <div style="aspect-ratio:1;border:1px solid #EBD0DD;border-radius:14px;background:#FFFFFF;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px"><div style="display:flex;align-items:flex-end;gap:2.5px;height:18px"><div style="width:3px;height:6px;background:#9D5E7C;border-radius:2px"></div><div style="width:3px;height:14px;background:#9D5E7C;border-radius:2px"></div><div style="width:3px;height:6px;background:#9D5E7C;border-radius:2px"></div><div style="width:3px;height:14px;background:#9D5E7C;border-radius:2px"></div></div><span style="font-size:9px;font-weight:700;color:#BE87A2">P6</span></div>
+              <div style="aspect-ratio:1;border:1px solid #EBD0DD;border-radius:14px;background:#FFFFFF;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px"><div style="display:flex;align-items:flex-end;gap:2.5px;height:18px"><div style="width:3px;height:10px;background:#9D5E7C;border-radius:2px"></div><div style="width:3px;height:16px;background:#9D5E7C;border-radius:2px"></div><div style="width:3px;height:10px;background:#9D5E7C;border-radius:2px"></div><div style="width:3px;height:5px;background:#9D5E7C;border-radius:2px"></div></div><span style="font-size:9px;font-weight:700;color:#BE87A2">P7</span></div>
+              <div style="aspect-ratio:1;border:1px solid #EBD0DD;border-radius:14px;background:#FFFFFF;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px"><div style="display:flex;align-items:flex-end;gap:2.5px;height:18px"><div style="width:3px;height:14px;background:#9D5E7C;border-radius:2px"></div><div style="width:3px;height:8px;background:#9D5E7C;border-radius:2px"></div><div style="width:3px;height:14px;background:#9D5E7C;border-radius:2px"></div><div style="width:3px;height:8px;background:#9D5E7C;border-radius:2px"></div></div><span style="font-size:9px;font-weight:700;color:#BE87A2">P8</span></div>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:12px;font-weight:700;letter-spacing:.1em;color:#9D5E7C;margin-bottom:10px">RÁFAGAS</div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(58px,1fr));gap:10px">
+              <div style="aspect-ratio:1;border:1px solid #EBD0DD;border-radius:14px;background:#FFFFFF;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px"><div style="display:flex;align-items:flex-end;gap:2.5px;height:18px"><div style="width:3px;height:16px;background:#9D5E7C;border-radius:2px"></div><div style="width:3px;height:4px;background:#9D5E7C;border-radius:2px"></div><div style="width:3px;height:4px;background:#9D5E7C;border-radius:2px"></div><div style="width:3px;height:16px;background:#9D5E7C;border-radius:2px"></div></div><span style="font-size:9px;font-weight:700;color:#BE87A2">P9</span></div>
+              <div style="aspect-ratio:1;border:1px solid #EBD0DD;border-radius:14px;background:#FFFFFF;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px"><div style="display:flex;align-items:flex-end;gap:2.5px;height:18px"><div style="width:3px;height:4px;background:#9D5E7C;border-radius:2px"></div><div style="width:3px;height:16px;background:#9D5E7C;border-radius:2px"></div><div style="width:3px;height:16px;background:#9D5E7C;border-radius:2px"></div><div style="width:3px;height:4px;background:#9D5E7C;border-radius:2px"></div></div><span style="font-size:9px;font-weight:700;color:#BE87A2">P10</span></div>
+              <div style="aspect-ratio:1;border:1px dashed #BE87A2;border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:#BE87A2"><span style="font-size:20px;font-weight:400">+</span><span style="font-size:9px;font-weight:600">Nuevo</span></div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;background:#FFFFFF;border:1px solid #F0D9E4;border-radius:12px;padding:12px 14px"><div style="width:8px;height:8px;border-radius:50%;background:#BE87A2;flex:none"></div><span style="font-size:12px;color:#9D5E7C;line-height:1.45">El grid crece automáticamente: mismas celdas, mismo espaciado, sin límite de patrones.</span></div>
+        </div>
+        <div style="height:24px;flex:none"></div>
+      </div>
+    </div>
+
+    <!-- 03c Multi-device -->
+    <div id="f03c" data-screen-label="03c Multi-Device" style="display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px">
+      <div style="font:600 11px ui-monospace,Menlo,monospace;color:#6E5987">03c Multi-Device · varios dispositivos a la vez</div>
+      <div style="width:390px;height:844px;background:#FAF0F5;border-radius:28px;overflow:hidden;display:flex;flex-direction:column;position:relative;color:#3D2A57;box-shadow:0 2px 14px rgba(165,59,101,.16)">
+        <div style="height:44px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 26px"><span style="font-size:14px;font-weight:600">9:41</span><div style="width:22px;height:11px;border:1.5px solid rgba(61,42,87,.5);border-radius:3px;padding:1.5px"><div style="width:60%;height:100%;background:#3D2A57;border-radius:1px"></div></div></div>
+        <div style="height:56px;flex:none;display:flex;align-items:center;gap:14px;padding:0 20px"><span style="font-size:20px">‹</span><span style="font-size:17px;font-weight:700">Mis dispositivos</span><div style="flex:1"></div><span style="font-size:12px;font-weight:700;color:#A53B65">2 conectados</span></div>
+        <div style="flex:1;padding:10px 20px 0;display:flex;flex-direction:column;gap:14px;overflow:hidden">
+          <div style="background:#FFFFFF;border:1.5px solid #A53B65;border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:14px">
+            <div style="display:flex;align-items:center;gap:12px">
+              <div style="width:42px;height:42px;border-radius:12px;background:#F3DFE9;display:flex;align-items:center;justify-content:center;flex:none"><div style="width:12px;height:22px;border:2px solid #3D2A57;border-radius:6px"></div></div>
+              <div style="flex:1"><div style="display:flex;align-items:center;gap:7px"><div style="width:8px;height:8px;border-radius:50%;background:#A53B65"></div><span style="font-size:15px;font-weight:700">HyperBullet</span></div><div style="font-size:11px;color:#A53B65;font-weight:600;margin-top:2px">Activo · controlando ahora</div></div>
+              <div style="width:30px;height:14px;border:1.5px solid #BE87A2;border-radius:4px;padding:2px;flex:none"><div style="width:72%;height:100%;background:#A53B65;border-radius:1px"></div></div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="font:600 9px ui-monospace,Menlo,monospace;color:#9D5E7C;letter-spacing:.08em;flex:none">P2 · ONDAS</span>
+              <div style="flex:1;height:6px;border-radius:3px;background:#EBD0DD;position:relative"><div style="position:absolute;left:0;top:0;bottom:0;width:64%;border-radius:3px;background:#E9B3CB"></div><div style="position:absolute;left:64%;top:50%;transform:translate(-50%,-50%);width:16px;height:16px;border-radius:50%;background:#3D2A57"></div></div>
+              <span style="font-size:12px;font-weight:800;color:#A53B65;flex:none">64%</span>
+            </div>
+          </div>
+          <div style="background:#FFFFFF;border:1px solid #F0D9E4;border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:14px">
+            <div style="display:flex;align-items:center;gap:12px">
+              <div style="width:42px;height:42px;border-radius:12px;background:#F3DFE9;display:flex;align-items:center;justify-content:center;flex:none"><div style="width:8px;height:26px;border:2px solid #3D2A57;border-radius:4px 4px 2px 2px"></div></div>
+              <div style="flex:1"><div style="display:flex;align-items:center;gap:7px"><div style="width:8px;height:8px;border-radius:50%;background:#E9B3CB"></div><span style="font-size:15px;font-weight:700">Lápiz vibrador</span></div><div style="font-size:11px;color:#9D5E7C;margin-top:2px">Conectado · en espera</div></div>
+              <div style="width:30px;height:14px;border:1.5px solid #BE87A2;border-radius:4px;padding:2px;flex:none"><div style="width:45%;height:100%;background:#3D2A57;border-radius:1px"></div></div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="font:600 9px ui-monospace,Menlo,monospace;color:#9D5E7C;letter-spacing:.08em;flex:none">P4 · PULSO</span>
+              <div style="flex:1;height:6px;border-radius:3px;background:#EBD0DD;position:relative"><div style="position:absolute;left:0;top:0;bottom:0;width:30%;border-radius:3px;background:#E9B3CB"></div><div style="position:absolute;left:30%;top:50%;transform:translate(-50%,-50%);width:16px;height:16px;border-radius:50%;background:#3D2A57"></div></div>
+              <span style="font-size:12px;font-weight:800;color:#9D5E7C;flex:none">30%</span>
+            </div>
+          </div>
+          <div style="border:1px dashed #BE87A2;border-radius:18px;padding:14px 16px;display:flex;align-items:center;justify-content:center;gap:8px;color:#9D5E7C"><span style="font-size:16px">+</span><span style="font-size:13px;font-weight:600">Conectar otro dispositivo</span></div>
+          <div style="background:#FFFFFF;border:1px solid #F0D9E4;border-radius:16px;padding:14px 16px;display:flex;align-items:center;gap:12px">
+            <div style="flex:1"><div style="font-size:13px;font-weight:700">Sincronizar dispositivos</div><div style="font-size:11px;color:#9D5E7C;margin-top:1px">El mismo patrón e intensidad para todos</div></div>
+            <div style="width:44px;height:26px;border-radius:13px;background:#EBD0DD;padding:3px;display:flex;justify-content:flex-start;flex:none"><div style="width:20px;height:20px;border-radius:50%;background:#FFFFFF;box-shadow:0 1px 3px rgba(165,59,101,.35)"></div></div>
+          </div>
+          <div style="display:flex;gap:10px;align-items:flex-start;background:#FFFFFF;border:1px solid #F0D9E4;border-radius:14px;padding:14px 16px">
+            <div style="width:8px;height:8px;border-radius:50%;background:#A53B65;flex:none;margin-top:4px"></div>
+            <span style="font-size:12px;color:#9D5E7C;line-height:1.5">Toca una tarjeta para hacerla el dispositivo activo: los modos de control actúan sobre él. Con sincronización, actúan sobre todos.</span>
+          </div>
+        </div>
+        <div style="flex:none;padding:16px 20px 40px;display:flex;gap:12px">
+          <div style="flex:1;height:54px;border:1.5px solid #A53B65;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:#A53B65">Detener todos</div>
+          <div style="flex:1;height:54px;background:#E9B3CB;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700">Abrir control</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ============ MODOS DE CONTROL ============ -->
+<section style="padding:32px 48px 44px;border-bottom:1px solid rgba(165,59,101,.18)">
+  <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:18px"><span style="font:600 10px ui-monospace,Menlo,monospace;background:#E9B3CB;color:#3D2A57;padding:3px 8px;border-radius:4px">04–06</span><span style="font-size:13px;font-weight:700">Modos de control · gesto, sonido, música</span></div>
+  <div style="display:flex;flex-wrap:wrap;gap:32px;align-items:flex-start">
+
+    <!-- 04 Gesture -->
+    <div id="f04" data-screen-label="04 Gesture-Control" style="display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px">
+      <div style="font:600 11px ui-monospace,Menlo,monospace;color:#6E5987">04 Gesture-Control · lápiz vibrador</div>
+      <div style="width:390px;height:844px;background:#FAF0F5;border-radius:28px;overflow:hidden;display:flex;flex-direction:column;position:relative;color:#3D2A57;box-shadow:0 2px 14px rgba(165,59,101,.16)">
+        <div style="height:44px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 26px"><span style="font-size:14px;font-weight:600">9:41</span><div style="width:22px;height:11px;border:1.5px solid rgba(61,42,87,.5);border-radius:3px;padding:1.5px"><div style="width:60%;height:100%;background:#3D2A57;border-radius:1px"></div></div></div>
+        <div style="height:56px;flex:none;display:flex;align-items:center;gap:14px;padding:0 20px">
+          <span style="font-size:20px">‹</span>
+          <span style="font-size:17px;font-weight:700">Control por gesto</span>
+          <div style="flex:1"></div>
+          <div style="position:relative;width:52px;height:52px;flex:none;display:flex;align-items:center;justify-content:center">
+            <div style="position:absolute;inset:0;border-radius:50%;background:conic-gradient(#A53B65 0 72%, #EBD0DD 72% 100%)"></div>
+            <div style="position:absolute;inset:4px;border-radius:50%;background:#FAF0F5;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800">72</div>
+          </div>
+        </div>
+        <div style="flex:1;margin:8px 20px 0;border:1px solid #F0D9E4;border-radius:22px;background:#F3E1EB;background-image:radial-gradient(#F3DFE9 1.2px, transparent 1.2px);background-size:26px 26px;position:relative;overflow:hidden">
+          <svg viewBox="0 0 350 560" style="position:absolute;inset:0;width:100%;height:100%">
+            <polyline points="60,470 90,430 130,410 160,350 175,290 200,250 240,220 255,180 250,140 230,120" fill="none" stroke="#A53B65" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" opacity=".9"></polyline>
+            <polyline points="60,470 90,430 130,410 160,350" fill="none" stroke="#A53B65" stroke-width="4" stroke-linecap="round" opacity=".25"></polyline>
+            <circle cx="230" cy="120" r="14" fill="#A53B65"></circle>
+            <circle cx="230" cy="120" r="26" fill="none" stroke="#A53B65" stroke-width="1.5" opacity=".5"></circle>
+          </svg>
+          <div style="position:absolute;top:16px;left:16px;font-size:12px;color:#BE87A2;font-weight:600">Desliza para controlar la intensidad</div>
+          <div style="position:absolute;bottom:16px;left:16px;right:16px;display:flex;align-items:center;gap:10px">
+            <span style="font-size:11px;color:#BE87A2;font-weight:700">SUAVE</span>
+            <div style="flex:1;height:6px;border-radius:3px;background:#F3DFE9;overflow:hidden"><div style="width:72%;height:100%;background:#A53B65;border-radius:3px"></div></div>
+            <span style="font-size:11px;color:#BE87A2;font-weight:700">FUERTE</span>
+          </div>
+        </div>
+        <div style="flex:none;padding:16px 20px 40px;display:flex;gap:12px">
+          <div style="flex:1;height:54px;border:1px solid #EBD0DD;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600;color:#3D2A57">Congelar nivel</div>
+          <div style="flex:1;height:54px;background:#E9B3CB;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700">Detener</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 04b Gesture multi-device -->
+    <div id="f04b" data-screen-label="04b Gesture-MultiDevice" style="display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px">
+      <div style="font:600 11px ui-monospace,Menlo,monospace;color:#6E5987">04b Gesture-Multi · un trazo por dispositivo + zonas del lápiz</div>
+      <div style="width:390px;height:844px;background:#FAF0F5;border-radius:28px;overflow:hidden;display:flex;flex-direction:column;position:relative;color:#3D2A57;box-shadow:0 2px 14px rgba(165,59,101,.16)">
+        <div style="height:44px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 26px"><span style="font-size:14px;font-weight:600">9:41</span><div style="width:22px;height:11px;border:1.5px solid rgba(61,42,87,.5);border-radius:3px;padding:1.5px"><div style="width:60%;height:100%;background:#3D2A57;border-radius:1px"></div></div></div>
+        <div style="height:56px;flex:none;display:flex;align-items:center;gap:14px;padding:0 20px"><span style="font-size:20px">‹</span><span style="font-size:17px;font-weight:700">Control por gesto</span><div style="flex:1"></div><span style="font-size:12px;font-weight:700;color:#A53B65">2 dispositivos</span></div>
+        <div style="flex:none;display:flex;gap:8px;padding:6px 20px 2px">
+          <div style="display:flex;align-items:center;gap:7px;border:1px solid #EBD0DD;background:#FFFFFF;border-radius:999px;padding:8px 14px"><div style="width:7px;height:7px;border-radius:50%;background:#A53B65"></div><span style="font-size:12px;font-weight:600;color:#9D5E7C">HyperBullet</span></div>
+          <div style="display:flex;align-items:center;gap:7px;background:#E9B3CB;border:1px solid #E9B3CB;border-radius:999px;padding:8px 14px"><div style="width:7px;height:7px;border-radius:50%;background:#3D2A57"></div><span style="font-size:12px;font-weight:700">Lápiz</span></div>
+          <div style="border:1px solid #EBD0DD;background:#FFFFFF;border-radius:999px;padding:8px 14px"><span style="font-size:12px;font-weight:600;color:#9D5E7C">Ambos</span></div>
+        </div>
+        <div style="flex:1;margin:12px 20px 0;background:#FFFFFF;border:1px solid #F0D9E4;border-radius:20px;position:relative;overflow:hidden">
+          <svg viewBox="0 0 350 400" style="position:absolute;inset:0;width:100%;height:100%" preserveAspectRatio="none">
+            <polyline points="0,330 60,322 120,296 180,306 240,278 300,286 350,268" fill="none" stroke="#A53B65" stroke-width="2.5" stroke-linecap="round" opacity=".3"></polyline>
+            <polyline points="0,290 50,252 110,178 170,148 230,166 290,120 350,108" fill="none" stroke="#E9B3CB" stroke-width="4" stroke-linecap="round"></polyline>
+            <circle cx="230" cy="166" r="9" fill="#E9B3CB"></circle>
+            <circle cx="230" cy="166" r="16" fill="none" stroke="#E9B3CB" stroke-width="1.5" opacity=".5"></circle>
+          </svg>
+          <div style="position:absolute;top:16px;left:16px;font-size:12px;color:#BE87A2;font-weight:600">Dibujando para: Lápiz</div>
+          <div style="position:absolute;top:16px;right:16px;display:flex;flex-direction:column;gap:6px;align-items:flex-end">
+            <div style="display:flex;align-items:center;gap:6px"><span style="font-size:11px;font-weight:700;color:#9D5E7C">42%</span><div style="width:7px;height:7px;border-radius:50%;background:#A53B65"></div></div>
+            <div style="display:flex;align-items:center;gap:6px"><span style="font-size:11px;font-weight:700;color:#A53B65">68%</span><div style="width:7px;height:7px;border-radius:50%;background:#E9B3CB"></div></div>
+          </div>
+          <div style="position:absolute;bottom:16px;left:16px;right:16px;display:flex;align-items:center;gap:10px">
+            <span style="font-size:11px;color:#BE87A2;font-weight:700">SUAVE</span>
+            <div style="flex:1;height:1px;background:#F0D9E4"></div>
+            <span style="font-size:11px;color:#BE87A2;font-weight:700">FUERTE</span>
+          </div>
+        </div>
+        <div style="flex:none;margin:14px 20px 0;background:#FFFFFF;border:1px solid #F0D9E4;border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:12px">
+          <div style="display:flex;align-items:center;gap:12px">
+            <div style="width:18px;height:46px;flex:none;display:flex;flex-direction:column;gap:2px;align-items:center"><div style="width:10px;height:16px;background:#E9B3CB;border:1.5px solid #A53B65;border-radius:5px 5px 2px 2px"></div><div style="width:14px;height:24px;background:#F3DFE9;border:1.5px solid #EBD0DD;border-radius:3px 3px 7px 7px"></div></div>
+            <div style="flex:1"><div style="font-size:13px;font-weight:700">Zonas del lápiz</div><div style="font-size:11px;color:#9D5E7C;margin-top:2px;line-height:1.45">El trazo controla la zona elegida; cada zona recuerda su último nivel.</div></div>
+          </div>
+          <div style="display:flex;border:1px solid #EBD0DD;border-radius:999px;padding:3px;gap:2px">
+            <span style="flex:1;text-align:center;background:#E9B3CB;border-radius:999px;padding:7px 0;font-size:12px;font-weight:700">Punta</span>
+            <span style="flex:1;text-align:center;padding:7px 0;font-size:12px;font-weight:600;color:#9D5E7C">Cuerpo</span>
+            <span style="flex:1;text-align:center;padding:7px 0;font-size:12px;font-weight:600;color:#9D5E7C">Ambas</span>
+          </div>
+        </div>
+        <div style="flex:none;padding:16px 20px 40px;display:flex;gap:12px">
+          <div style="flex:1;height:54px;border:1px solid #EBD0DD;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600">Congelar niveles</div>
+          <div style="flex:1;height:54px;background:#E9B3CB;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700">Detener</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 05 Sound -->
+    <div id="f05" data-screen-label="05 Sound-Control" style="display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px">
+      <div style="font:600 11px ui-monospace,Menlo,monospace;color:#6E5987">05 Sound-Control</div>
+      <div style="width:390px;height:844px;background:#FAF0F5;border-radius:28px;overflow:hidden;display:flex;flex-direction:column;position:relative;color:#3D2A57;box-shadow:0 2px 14px rgba(165,59,101,.16)">
+        <div style="height:44px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 26px"><span style="font-size:14px;font-weight:600">9:41</span><div style="display:flex;align-items:center;gap:8px"><div style="display:flex;align-items:center;gap:5px;background:#A53B65;border-radius:999px;padding:3px 9px"><div style="width:5px;height:5px;border-radius:50%;background:#3D2A57;animation:czblink 1.2s infinite"></div><span style="font-size:10px;font-weight:800;letter-spacing:.06em">MIC</span></div><div style="width:22px;height:11px;border:1.5px solid rgba(61,42,87,.5);border-radius:3px;padding:1.5px"><div style="width:60%;height:100%;background:#3D2A57;border-radius:1px"></div></div></div></div>
+        <div style="height:56px;flex:none;display:flex;align-items:center;gap:14px;padding:0 20px"><span style="font-size:20px">‹</span><span style="font-size:17px;font-weight:700">Control por sonido</span></div>
+        <div style="flex:1;padding:12px 20px 0;display:flex;flex-direction:column;gap:20px;overflow:hidden">
+          <div style="background:#FFFFFF;border:1px solid #F0D9E4;border-radius:20px;padding:22px 18px 18px">
+            <div style="display:flex;align-items:flex-end;justify-content:center;gap:4px;height:110px">
+              <div style="width:5px;height:18%;background:#EBD0DD;border-radius:3px"></div><div style="width:5px;height:30%;background:#EBD0DD;border-radius:3px"></div><div style="width:5px;height:24%;background:#BE87A2;border-radius:3px"></div><div style="width:5px;height:46%;background:#BE87A2;border-radius:3px"></div><div style="width:5px;height:38%;background:#9D5E7C;border-radius:3px"></div><div style="width:5px;height:62%;background:#3D2A57;border-radius:3px"></div><div style="width:5px;height:80%;background:#A53B65;border-radius:3px"></div><div style="width:5px;height:95%;background:#A53B65;border-radius:3px"></div><div style="width:5px;height:72%;background:#A53B65;border-radius:3px"></div><div style="width:5px;height:88%;background:#A53B65;border-radius:3px"></div><div style="width:5px;height:58%;background:#3D2A57;border-radius:3px"></div><div style="width:5px;height:40%;background:#9D5E7C;border-radius:3px"></div><div style="width:5px;height:52%;background:#9D5E7C;border-radius:3px"></div><div style="width:5px;height:32%;background:#BE87A2;border-radius:3px"></div><div style="width:5px;height:44%;background:#BE87A2;border-radius:3px"></div><div style="width:5px;height:22%;background:#EBD0DD;border-radius:3px"></div><div style="width:5px;height:34%;background:#EBD0DD;border-radius:3px"></div><div style="width:5px;height:16%;background:#EBD0DD;border-radius:3px"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:14px">
+              <span style="font-size:12px;color:#9D5E7C">Sonido ambiente en vivo</span>
+              <span style="font-size:14px;font-weight:800">−38 <span style="font-size:11px;color:#BE87A2;font-weight:600">dB</span></span>
+            </div>
+          </div>
+          <div style="background:#FFFFFF;border:1px solid #F0D9E4;border-radius:20px;padding:18px">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px"><span style="font-size:14px;font-weight:700">Curva de respuesta</span><span style="font-size:11px;color:#BE87A2;font-weight:600">sonido → intensidad</span></div>
+            <svg viewBox="0 0 310 90" style="width:100%;height:90px;display:block">
+              <line x1="0" y1="86" x2="310" y2="86" stroke="#EBD0DD" stroke-width="1"></line>
+              <line x1="120" y1="4" x2="120" y2="86" stroke="#BE87A2" stroke-width="1" stroke-dasharray="3 4"></line>
+              <polyline points="0,84 60,82 120,74 170,46 220,18 270,8 310,6" fill="none" stroke="#A53B65" stroke-width="2.5" stroke-linecap="round"></polyline>
+              <circle cx="170" cy="46" r="5" fill="#A53B65"></circle>
+            </svg>
+            <div style="display:flex;justify-content:space-between;margin-top:8px"><span style="font-size:10px;color:#BE87A2;font-weight:600">SILENCIO</span><span style="font-size:10px;color:#9D5E7C;font-weight:600">umbral</span><span style="font-size:10px;color:#BE87A2;font-weight:600">RUIDO ALTO</span></div>
+          </div>
+          <div>
+            <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px"><span style="font-size:14px;font-weight:700">Sensibilidad</span><span style="font-size:12px;color:#A53B65;font-weight:700">Media-alta</span></div>
+            <div style="position:relative;height:28px;display:flex;align-items:center">
+              <div style="width:100%;height:6px;border-radius:3px;background:#EBD0DD"></div>
+              <div style="position:absolute;left:0;width:64%;height:6px;border-radius:3px;background:#E9B3CB"></div>
+              <div style="position:absolute;left:64%;transform:translateX(-50%);width:26px;height:26px;border-radius:50%;background:#3D2A57;box-shadow:0 2px 6px rgba(165,59,101,.35)"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-top:6px"><span style="font-size:12px;color:#BE87A2">Baja</span><span style="font-size:12px;color:#BE87A2">Alta</span></div>
+          </div>
+        </div>
+        <div style="flex:none;padding:16px 20px 40px"><div style="height:54px;background:#E9B3CB;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700">Detener</div></div>
+      </div>
+    </div>
+
+    <!-- 06 Music -->
+    <div id="f06" data-screen-label="06 Music-Control" style="display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px">
+      <div style="font:600 11px ui-monospace,Menlo,monospace;color:#6E5987">06 Music-Control</div>
+      <div style="width:390px;height:844px;background:#FAF0F5;border-radius:28px;overflow:hidden;display:flex;flex-direction:column;position:relative;color:#3D2A57;box-shadow:0 2px 14px rgba(165,59,101,.16)">
+        <div style="height:44px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 26px"><span style="font-size:14px;font-weight:600">9:41</span><div style="width:22px;height:11px;border:1.5px solid rgba(61,42,87,.5);border-radius:3px;padding:1.5px"><div style="width:60%;height:100%;background:#3D2A57;border-radius:1px"></div></div></div>
+        <div style="height:56px;flex:none;display:flex;align-items:center;gap:14px;padding:0 20px"><span style="font-size:20px">‹</span><span style="font-size:17px;font-weight:700">Control musical</span></div>
+        <div style="flex:1;padding:12px 20px 0;display:flex;flex-direction:column;gap:20px;overflow:hidden">
+          <div style="display:flex;align-items:center;gap:14px;background:#FFFFFF;border:1px solid #F0D9E4;border-radius:18px;padding:14px 16px">
+            <div style="width:52px;height:52px;border-radius:10px;flex:none;background:repeating-linear-gradient(45deg,#F3DFE9 0 6px,#FFFFFF 6px 12px);display:flex;align-items:center;justify-content:center"><span style="font:9px ui-monospace,Menlo,monospace;color:#BE87A2">art</span></div>
+            <div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:700">Audio del dispositivo</div><div style="font-size:12px;color:#9D5E7C;margin-top:2px">Reproduciendo · 124 BPM</div></div>
+            <div style="display:flex;align-items:flex-end;gap:2px;height:16px;flex:none"><div style="width:3px;height:8px;background:#A53B65;border-radius:1px;animation:czblink 1s infinite"></div><div style="width:3px;height:16px;background:#A53B65;border-radius:1px;animation:czblink 1s .2s infinite"></div><div style="width:3px;height:11px;background:#A53B65;border-radius:1px;animation:czblink 1s .4s infinite"></div></div>
+          </div>
+          <div style="background:#FFFFFF;border:1px solid #F0D9E4;border-radius:20px;padding:24px 18px;display:flex;flex-direction:column;align-items:center;gap:18px">
+            <div style="display:flex;align-items:center;gap:8px">
+              <div style="width:10px;height:10px;border-radius:50%;background:#A53B65"></div><div style="width:10px;height:10px;border-radius:50%;background:#EBD0DD"></div><div style="width:10px;height:10px;border-radius:50%;background:#A53B65"></div><div style="width:10px;height:10px;border-radius:50%;background:#EBD0DD"></div><div style="width:10px;height:10px;border-radius:50%;background:#A53B65"></div><div style="width:10px;height:10px;border-radius:50%;background:#EBD0DD"></div><div style="width:10px;height:10px;border-radius:50%;background:#EBD0DD"></div><div style="width:10px;height:10px;border-radius:50%;background:#A53B65"></div>
+            </div>
+            <div style="display:flex;align-items:flex-end;justify-content:center;gap:5px;height:130px;width:100%">
+              <div style="width:9px;height:30%;background:#EBD0DD;border-radius:4px"></div><div style="width:9px;height:55%;background:#BE87A2;border-radius:4px"></div><div style="width:9px;height:85%;background:#A53B65;border-radius:4px"></div><div style="width:9px;height:45%;background:#BE87A2;border-radius:4px"></div><div style="width:9px;height:70%;background:#3D2A57;border-radius:4px"></div><div style="width:9px;height:100%;background:#A53B65;border-radius:4px"></div><div style="width:9px;height:60%;background:#9D5E7C;border-radius:4px"></div><div style="width:9px;height:35%;background:#EBD0DD;border-radius:4px"></div><div style="width:9px;height:75%;background:#A53B65;border-radius:4px"></div><div style="width:9px;height:50%;background:#BE87A2;border-radius:4px"></div><div style="width:9px;height:25%;background:#EBD0DD;border-radius:4px"></div>
+            </div>
+            <div style="font-size:12px;color:#9D5E7C">La vibración sigue el ritmo y los graves</div>
+          </div>
+          <div>
+            <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px"><span style="font-size:14px;font-weight:700">Intensidad máxima</span><span style="font-size:12px;color:#A53B65;font-weight:700">80%</span></div>
+            <div style="position:relative;height:28px;display:flex;align-items:center">
+              <div style="width:100%;height:6px;border-radius:3px;background:#EBD0DD"></div>
+              <div style="position:absolute;left:0;width:80%;height:6px;border-radius:3px;background:#E9B3CB"></div>
+              <div style="position:absolute;left:80%;transform:translateX(-50%);width:26px;height:26px;border-radius:50%;background:#3D2A57;box-shadow:0 2px 6px rgba(165,59,101,.35)"></div>
+            </div>
+          </div>
+        </div>
+        <div style="flex:none;padding:16px 20px 40px"><div style="height:54px;background:#E9B3CB;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700">Detener</div></div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ============ SALAS ============ -->
+<section style="padding:32px 48px 44px;border-bottom:1px solid rgba(165,59,101,.18)">
+  <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:18px"><span style="font:600 10px ui-monospace,Menlo,monospace;background:#E9B3CB;color:#3D2A57;padding:3px 8px;border-radius:4px">07</span><span style="font-size:13px;font-weight:700">Interacción remota · salas con moderación</span></div>
+  <div style="display:flex;flex-wrap:wrap;gap:32px;align-items:flex-start">
+
+    <!-- 07a Create room -->
+    <div id="f07a" data-screen-label="07a Room-Create-Host" style="display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px">
+      <div style="font:600 11px ui-monospace,Menlo,monospace;color:#6E5987">07a Room-Create · anfitrión</div>
+      <div style="width:390px;height:844px;background:#FAF0F5;border-radius:28px;overflow:hidden;display:flex;flex-direction:column;position:relative;color:#3D2A57;box-shadow:0 2px 14px rgba(165,59,101,.16)">
+        <div style="height:44px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 26px"><span style="font-size:14px;font-weight:600">9:41</span><div style="width:22px;height:11px;border:1.5px solid rgba(61,42,87,.5);border-radius:3px;padding:1.5px"><div style="width:60%;height:100%;background:#3D2A57;border-radius:1px"></div></div></div>
+        <div style="height:56px;flex:none;display:flex;align-items:center;gap:14px;padding:0 20px">
+          <span style="font-size:20px">‹</span><span style="font-size:17px;font-weight:700">Crear sala</span>
+          <div style="flex:1"></div>
+          <span style="background:#A53B65;color:#fff;font-size:10px;font-weight:800;letter-spacing:.1em;padding:5px 10px;border-radius:999px">ANFITRIÓN</span>
+        </div>
+        <div style="flex:1;padding:16px 24px 0;display:flex;flex-direction:column;align-items:center;gap:22px;overflow:hidden">
+          <div style="width:230px;height:230px;background:#FFFFFF;border:1px solid #F0D9E4;border-radius:20px;padding:18px;position:relative">
+            <div style="position:absolute;inset:18px;background-image:repeating-linear-gradient(0deg,#3D2A57 0 7px,transparent 7px 14px),repeating-linear-gradient(90deg,#3D2A57 0 7px,transparent 7px 14px);opacity:.85"></div>
+            <div style="position:absolute;top:18px;left:18px;width:36px;height:36px;border:7px solid #3D2A57;background:#FFFFFF"></div>
+            <div style="position:absolute;top:18px;right:18px;width:36px;height:36px;border:7px solid #3D2A57;background:#FFFFFF"></div>
+            <div style="position:absolute;bottom:18px;left:18px;width:36px;height:36px;border:7px solid #3D2A57;background:#FFFFFF"></div>
+            <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center"><span style="font:600 9px ui-monospace,Menlo,monospace;background:#FFFFFF;color:#9D5E7C;padding:4px 8px;border-radius:4px">[ QR de invitación ]</span></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px">
+            <span style="font:800 30px ui-monospace,Menlo,monospace;letter-spacing:.18em">CMZ-4F7K</span>
+            <div style="width:36px;height:36px;border-radius:10px;border:1px solid #EBD0DD;display:flex;align-items:center;justify-content:center;position:relative"><div style="width:11px;height:13px;border:1.5px solid #3D2A57;border-radius:3px"></div><div style="position:absolute;width:11px;height:13px;border:1.5px solid #3D2A57;border-radius:3px;background:#FAF0F5;transform:translate(3px,-3px)"></div></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;background:#FFFFFF;border:1px solid #F0D9E4;border-radius:999px;padding:10px 18px">
+            <div style="display:flex"><div style="width:26px;height:26px;border-radius:50%;background:#EBD0DD;border:2px solid #FAF0F5;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700">ES</div><div style="width:26px;height:26px;border-radius:50%;background:#F3DFE9;border:2px solid #FAF0F5;margin-left:-8px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#9D5E7C">DA</div></div>
+            <span style="font-size:13px;font-weight:600">2 miembros conectados</span>
+          </div>
+          <div style="display:flex;gap:10px;align-items:flex-start;background:#FFFFFF;border:1px solid #F0D9E4;border-radius:14px;padding:14px 16px">
+            <div style="width:16px;height:18px;border:1.5px solid #9D5E7C;border-radius:4px 4px 7px 7px;flex:none;margin-top:1px;display:flex;align-items:center;justify-content:center"><div style="width:4px;height:4px;border-radius:50%;background:#9D5E7C"></div></div>
+            <span style="font-size:12px;color:#9D5E7C;line-height:1.5">Los comandos viajan directo entre dispositivos. El servidor solo gestiona quién puede unirse a la sala.</span>
+          </div>
+        </div>
+        <div style="flex:none;padding:16px 24px 40px"><div style="height:54px;background:#E9B3CB;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700">Iniciar sesión de sala</div></div>
+      </div>
+    </div>
+
+    <!-- 07b Join -->
+    <div id="f07b" data-screen-label="07b Room-Join" style="display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px">
+      <div style="font:600 11px ui-monospace,Menlo,monospace;color:#6E5987">07b Room-Join · invitado</div>
+      <div style="width:390px;height:844px;background:#FAF0F5;border-radius:28px;overflow:hidden;display:flex;flex-direction:column;position:relative;color:#3D2A57;box-shadow:0 2px 14px rgba(165,59,101,.16)">
+        <div style="height:44px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 26px"><span style="font-size:14px;font-weight:600">9:41</span><div style="width:22px;height:11px;border:1.5px solid rgba(61,42,87,.5);border-radius:3px;padding:1.5px"><div style="width:60%;height:100%;background:#3D2A57;border-radius:1px"></div></div></div>
+        <div style="height:56px;flex:none;display:flex;align-items:center;gap:14px;padding:0 20px"><span style="font-size:20px">‹</span><span style="font-size:17px;font-weight:700">Unirse a sala</span></div>
+        <div style="flex:1;padding:28px 24px 0;display:flex;flex-direction:column;gap:26px">
+          <div>
+            <div style="font-size:13px;color:#9D5E7C;margin-bottom:14px">Introduce el código que te compartió el anfitrión</div>
+            <div style="display:flex;gap:8px;justify-content:center">
+              <div style="width:46px;height:58px;border:1.5px solid #A53B65;border-radius:12px;background:#FFFFFF;display:flex;align-items:center;justify-content:center;font:800 22px ui-monospace,Menlo,monospace">C</div>
+              <div style="width:46px;height:58px;border:1px solid #EBD0DD;border-radius:12px;background:#FFFFFF;display:flex;align-items:center;justify-content:center;font:800 22px ui-monospace,Menlo,monospace">M</div>
+              <div style="width:46px;height:58px;border:1px solid #EBD0DD;border-radius:12px;background:#FFFFFF;display:flex;align-items:center;justify-content:center;font:800 22px ui-monospace,Menlo,monospace">Z</div>
+              <div style="width:46px;height:58px;border:1px solid #EBD0DD;border-radius:12px;background:#FFFFFF;display:flex;align-items:center;justify-content:center;font:800 22px ui-monospace,Menlo,monospace">4</div>
+              <div style="width:46px;height:58px;border:1px solid #EBD0DD;border-radius:12px;background:#FFFFFF;display:flex;align-items:center;justify-content:center;font:800 22px ui-monospace,Menlo,monospace;color:#BE87A2"></div>
+              <div style="width:46px;height:58px;border:1px solid #EBD0DD;border-radius:12px;background:#FFFFFF"></div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:14px"><div style="flex:1;height:1px;background:#EBD0DD"></div><span style="font-size:12px;color:#BE87A2;font-weight:600">o</span><div style="flex:1;height:1px;background:#EBD0DD"></div></div>
+          <div style="height:54px;border:1px solid #EBD0DD;border-radius:14px;display:flex;align-items:center;justify-content:center;gap:10px;font-size:15px;font-weight:600;color:#3D2A57">
+            <div style="width:18px;height:18px;border:2px solid #3D2A57;border-radius:4px;position:relative"><div style="position:absolute;inset:4px;background:#3D2A57;border-radius:1px"></div></div>
+            Escanear código QR
+          </div>
+          <div style="display:flex;gap:10px;align-items:flex-start;background:#FFFFFF;border:1px solid #F0D9E4;border-radius:14px;padding:14px 16px">
+            <div style="width:16px;height:18px;border:1.5px solid #9D5E7C;border-radius:4px 4px 7px 7px;flex:none;margin-top:1px;display:flex;align-items:center;justify-content:center"><div style="width:4px;height:4px;border-radius:50%;background:#9D5E7C"></div></div>
+            <span style="font-size:12px;color:#9D5E7C;line-height:1.5">Solo el anfitrión decide quién entra. Puede expulsarte o bloquear tu acceso en cualquier momento.</span>
+          </div>
+        </div>
+        <div style="flex:none;padding:16px 24px 40px"><div style="height:54px;background:#E9B3CB;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;opacity:.4">Unirse</div></div>
+      </div>
+    </div>
+
+    <!-- 07c Host panel -->
+    <div id="f07c" data-screen-label="07c Room-HostPanel" style="display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px">
+      <div style="font:600 11px ui-monospace,Menlo,monospace;color:#6E5987">07c Room-HostPanel · solo anfitrión</div>
+      <div style="width:390px;height:844px;background:#FAF0F5;border-radius:28px;overflow:hidden;display:flex;flex-direction:column;position:relative;color:#3D2A57;box-shadow:0 2px 14px rgba(165,59,101,.16)">
+        <div style="height:44px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 26px"><span style="font-size:14px;font-weight:600">9:41</span><div style="width:22px;height:11px;border:1.5px solid rgba(61,42,87,.5);border-radius:3px;padding:1.5px"><div style="width:60%;height:100%;background:#3D2A57;border-radius:1px"></div></div></div>
+        <div style="height:56px;flex:none;display:flex;align-items:center;gap:14px;padding:0 20px">
+          <span style="font-size:20px">‹</span><span style="font-size:17px;font-weight:700">Participantes</span><span style="font-size:15px;color:#BE87A2;font-weight:600">4</span>
+          <div style="flex:1"></div>
+          <span style="background:#A53B65;color:#fff;font-size:10px;font-weight:800;letter-spacing:.1em;padding:5px 10px;border-radius:999px">ANFITRIÓN</span>
+        </div>
+        <div style="flex:1;padding:10px 20px 0;display:flex;flex-direction:column;gap:10px;overflow:hidden">
+          <div style="display:flex;align-items:center;gap:12px;background:#FFFFFF;border:1px solid #F0D9E4;border-radius:16px;padding:14px 16px">
+            <div style="width:38px;height:38px;border-radius:50%;background:#EBD0DD;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex:none">ES</div>
+            <div style="flex:1"><div style="font-size:14px;font-weight:700">Tú</div><div style="font-size:11px;color:#9D5E7C;margin-top:1px">Sala CMZ-4F7K</div></div>
+            <span style="background:#A53B65;color:#fff;font-size:9px;font-weight:800;letter-spacing:.1em;padding:4px 9px;border-radius:999px">ANFITRIÓN</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;background:#FFFFFF;border:1px solid #F0D9E4;border-radius:16px;padding:14px 16px">
+            <div style="width:38px;height:38px;border-radius:50%;background:#F3DFE9;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#9D5E7C;flex:none">DA</div>
+            <div style="flex:1"><div style="font-size:14px;font-weight:700">Dana</div><div style="font-size:11px;color:#9D5E7C;margin-top:1px">Conectada · hace 2 min</div></div>
+            <div style="display:flex;gap:8px">
+              <span style="font-size:12px;font-weight:600;color:#3D2A57;border:1px solid #EBD0DD;padding:7px 12px;border-radius:999px">Expulsar</span>
+              <span style="font-size:12px;font-weight:700;color:#A53B65;border:1px solid #A53B65;padding:7px 12px;border-radius:999px">Bloquear</span>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;background:#FFFFFF;border:1px solid #F0D9E4;border-radius:16px;padding:14px 16px">
+            <div style="width:38px;height:38px;border-radius:50%;background:#F3DFE9;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#9D5E7C;flex:none">MK</div>
+            <div style="flex:1"><div style="font-size:14px;font-weight:700">Mika</div><div style="font-size:11px;color:#9D5E7C;margin-top:1px">Conectado · hace 8 min</div></div>
+            <div style="display:flex;gap:8px">
+              <span style="font-size:12px;font-weight:600;color:#3D2A57;border:1px solid #EBD0DD;padding:7px 12px;border-radius:999px">Expulsar</span>
+              <span style="font-size:12px;font-weight:700;color:#A53B65;border:1px solid #A53B65;padding:7px 12px;border-radius:999px">Bloquear</span>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;background:#FFFFFF;border:1px solid #F0D9E4;border-radius:16px;padding:14px 16px;opacity:.55">
+            <div style="width:38px;height:38px;border-radius:50%;background:#F3DFE9;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#9D5E7C;flex:none">JO</div>
+            <div style="flex:1"><div style="font-size:14px;font-weight:700">Jo</div><div style="font-size:11px;color:#A53B65;margin-top:1px;font-weight:600">Bloqueado · no puede volver a unirse</div></div>
+            <span style="font-size:12px;font-weight:600;color:#9D5E7C;border:1px solid #EBD0DD;padding:7px 12px;border-radius:999px">Desbloquear</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;background:#FFFFFF;border:1px solid #F0D9E4;border-radius:12px;padding:12px 14px;margin-top:4px"><div style="width:8px;height:8px;border-radius:50%;background:#BE87A2;flex:none"></div><span style="font-size:12px;color:#9D5E7C;line-height:1.45">Bloquear impide volver a entrar con este código. Expulsar permite reintentarlo.</span></div>
+        </div>
+        <div style="flex:none;padding:16px 20px 40px"><div style="height:54px;border:1.5px solid #A53B65;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:#A53B65">Terminar sesión para todos</div></div>
+      </div>
+    </div>
+
+    <!-- 07c2 Block confirm -->
+    <div id="f07c2" data-screen-label="07c2 Room-BlockConfirm" style="display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px">
+      <div style="font:600 11px ui-monospace,Menlo,monospace;color:#6E5987">07c2 Block-Confirm · modal destructivo</div>
+      <div style="width:390px;height:844px;background:#FAF0F5;border-radius:28px;overflow:hidden;display:flex;flex-direction:column;position:relative;color:#3D2A57;box-shadow:0 2px 14px rgba(165,59,101,.16)">
+        <div style="position:absolute;inset:0;background:#F3E1EB"></div>
+        <div style="position:absolute;inset:0;background:rgba(61,42,87,.42)"></div>
+        <div style="position:absolute;left:24px;right:24px;top:50%;transform:translateY(-50%);background:#FFFFFF;border:1px solid #EBD0DD;border-radius:22px;padding:28px 24px;display:flex;flex-direction:column;align-items:center;gap:16px;text-align:center">
+          <div style="width:56px;height:56px;border-radius:50%;border:1.5px solid #A53B65;display:flex;align-items:center;justify-content:center"><div style="width:20px;height:20px;border:2.5px solid #A53B65;border-radius:50%;position:relative"><div style="position:absolute;top:50%;left:-2px;right:-2px;height:2.5px;background:#A53B65;transform:rotate(-45deg)"></div></div></div>
+          <div>
+            <div style="font-size:18px;font-weight:800">¿Bloquear a Dana?</div>
+            <div style="font-size:13px;color:#9D5E7C;margin-top:8px;line-height:1.55">Se le expulsará de la sesión y <strong style="color:#3D2A57">no podrá volver a unirse</strong> con el código CMZ-4F7K. Puedes desbloquearla más tarde desde este panel.</div>
+          </div>
+          <div style="display:flex;gap:10px;width:100%;margin-top:6px">
+            <div style="flex:1;height:50px;border:1px solid #EBD0DD;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600;color:#3D2A57">Cancelar</div>
+            <div style="flex:1;height:50px;background:#E9B3CB;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700">Bloquear</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 07d End session confirm -->
+    <div id="f07d" data-screen-label="07d Room-EndSession" style="display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px">
+      <div style="font:600 11px ui-monospace,Menlo,monospace;color:#6E5987">07d End-Session · confirmación anfitrión</div>
+      <div style="width:390px;height:844px;background:#FAF0F5;border-radius:28px;overflow:hidden;display:flex;flex-direction:column;position:relative;color:#3D2A57;box-shadow:0 2px 14px rgba(165,59,101,.16)">
+        <div style="position:absolute;inset:0;background:#F3E1EB"></div>
+        <div style="position:absolute;inset:0;background:rgba(61,42,87,.42)"></div>
+        <div style="position:absolute;left:0;right:0;bottom:0;background:#FFFFFF;border-radius:26px 26px 0 0;border-top:1px solid #EBD0DD;padding:14px 24px 44px;display:flex;flex-direction:column;gap:18px">
+          <div style="width:40px;height:4px;border-radius:2px;background:#EBD0DD;margin:0 auto"></div>
+          <div style="text-align:center;padding:6px 0 0">
+            <div style="font-size:18px;font-weight:800">¿Terminar la sesión para todos?</div>
+            <div style="font-size:13px;color:#9D5E7C;margin-top:8px;line-height:1.55">Se desconectará a los 3 miembros y el código CMZ-4F7K dejará de funcionar. Esta acción no se puede deshacer.</div>
+          </div>
+          <div style="height:54px;background:#E9B3CB;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700">Terminar para todos</div>
+          <div style="height:54px;border:1px solid #EBD0DD;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600;color:#3D2A57">Cancelar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 07e Member session -->
+    <div id="f07e" data-screen-label="07e Room-MemberSession" style="display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px">
+      <div style="font:600 11px ui-monospace,Menlo,monospace;color:#6E5987">07e Member-Session · sin panel de participantes</div>
+      <div style="width:390px;height:844px;background:#FAF0F5;border-radius:28px;overflow:hidden;display:flex;flex-direction:column;position:relative;color:#3D2A57;box-shadow:0 2px 14px rgba(165,59,101,.16)">
+        <div style="height:44px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 26px"><span style="font-size:14px;font-weight:600">9:41</span><div style="width:22px;height:11px;border:1.5px solid rgba(61,42,87,.5);border-radius:3px;padding:1.5px"><div style="width:60%;height:100%;background:#3D2A57;border-radius:1px"></div></div></div>
+        <div style="height:56px;flex:none;display:flex;align-items:center;gap:12px;padding:0 20px">
+          <div style="display:flex;flex-direction:column;gap:5px;width:20px;flex:none"><div style="height:2px;background:#3D2A57;border-radius:1px"></div><div style="height:2px;width:70%;background:#3D2A57;border-radius:1px"></div></div>
+          <div style="display:flex;align-items:center;gap:7px;border:1px solid #EBD0DD;border-radius:999px;padding:7px 14px 7px 11px"><div style="width:7px;height:7px;border-radius:50%;background:#A53B65"></div><span style="font-size:13px;font-weight:600">Sala CMZ-4F7K</span></div>
+          <div style="flex:1"></div>
+          <span style="background:#DFC6E5;color:#3D2A57;font-size:10px;font-weight:800;letter-spacing:.1em;padding:5px 10px;border-radius:999px">MIEMBRO</span>
+        </div>
+        <div style="flex:1;overflow:hidden;display:flex;flex-direction:column;padding:8px 20px 0;gap:20px">
+          <div style="background:#FFFFFF;border:1px solid #F0D9E4;border-radius:18px;padding:14px 18px;display:flex;align-items:center;gap:14px">
+            <div style="display:flex"><div style="width:28px;height:28px;border-radius:50%;background:#A53B65;border:2px solid #FAF0F5;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800">ES</div><div style="width:28px;height:28px;border-radius:50%;background:#EBD0DD;border:2px solid #FAF0F5;margin-left:-9px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700">DA</div><div style="width:28px;height:28px;border-radius:50%;background:#F3DFE9;border:2px solid #FAF0F5;margin-left:-9px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#9D5E7C">MK</div></div>
+            <div style="flex:1"><div style="font-size:13px;font-weight:700">Sesión activa · 3 personas</div><div style="font-size:11px;color:#9D5E7C;margin-top:1px">El anfitrión controla quién participa</div></div>
+          </div>
+          <div>
+            <div style="font-size:17px;font-weight:700;margin-bottom:12px">Vibración</div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(58px,1fr));gap:10px">
+              <div style="aspect-ratio:1;border:1px solid #EBD0DD;border-radius:14px;background:#FFFFFF;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px"><div style="display:flex;align-items:flex-end;gap:2.5px;height:18px"><div style="width:3px;height:8px;background:#9D5E7C;border-radius:2px"></div><div style="width:3px;height:8px;background:#9D5E7C;border-radius:2px"></div><div style="width:3px;height:8px;background:#9D5E7C;border-radius:2px"></div><div style="width:3px;height:8px;background:#9D5E7C;border-radius:2px"></div></div><span style="font-size:9px;font-weight:700;color:#BE87A2">P1</span></div>
+              <div style="aspect-ratio:1;border:1.5px solid #A53B65;border-radius:14px;background:#FFFFFF;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px"><div style="display:flex;align-items:flex-end;gap:2.5px;height:18px"><div style="width:3px;height:6px;background:#A53B65;border-radius:2px"></div><div style="width:3px;height:12px;background:#A53B65;border-radius:2px"></div><div style="width:3px;height:6px;background:#A53B65;border-radius:2px"></div><div style="width:3px;height:12px;background:#A53B65;border-radius:2px"></div></div><span style="font-size:9px;font-weight:700;color:#A53B65">P2</span></div>
+              <div style="aspect-ratio:1;border:1px solid #EBD0DD;border-radius:14px;background:#FFFFFF;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px"><div style="display:flex;align-items:flex-end;gap:2.5px;height:18px"><div style="width:3px;height:5px;background:#9D5E7C;border-radius:2px"></div><div style="width:3px;height:10px;background:#9D5E7C;border-radius:2px"></div><div style="width:3px;height:16px;background:#9D5E7C;border-radius:2px"></div><div style="width:3px;height:10px;background:#9D5E7C;border-radius:2px"></div></div><span style="font-size:9px;font-weight:700;color:#BE87A2">P3</span></div>
+              <div style="aspect-ratio:1;border:1px solid #EBD0DD;border-radius:14px;background:#FFFFFF;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px"><div style="display:flex;align-items:flex-end;gap:2.5px;height:18px"><div style="width:3px;height:14px;background:#9D5E7C;border-radius:2px"></div><div style="width:3px;height:5px;background:#9D5E7C;border-radius:2px"></div><div style="width:3px;height:14px;background:#9D5E7C;border-radius:2px"></div><div style="width:3px;height:5px;background:#9D5E7C;border-radius:2px"></div></div><span style="font-size:9px;font-weight:700;color:#BE87A2">P4</span></div>
+              <div style="aspect-ratio:1;border:1px solid #EBD0DD;border-radius:14px;background:#FFFFFF;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px"><div style="display:flex;align-items:flex-end;gap:2.5px;height:18px"><div style="width:3px;height:16px;background:#9D5E7C;border-radius:2px"></div><div style="width:3px;height:16px;background:#9D5E7C;border-radius:2px"></div><div style="width:3px;height:16px;background:#9D5E7C;border-radius:2px"></div><div style="width:3px;height:16px;background:#9D5E7C;border-radius:2px"></div></div><span style="font-size:9px;font-weight:700;color:#BE87A2">P5</span></div>
+            </div>
+          </div>
+          <div style="display:flex;gap:10px">
+            <div style="flex:1;display:flex;flex-direction:column;gap:10px;background:#FFFFFF;border:1px solid #F0D9E4;border-radius:16px;padding:16px">
+              <div style="width:34px;height:34px;border-radius:50%;border:1px solid #EBD0DD;display:flex;align-items:center;justify-content:center"><div style="width:8px;height:12px;border:1.5px solid #3D2A57;border-radius:4px"></div></div>
+              <span style="font-size:13px;font-weight:700">Control por sonido</span>
+            </div>
+            <div style="flex:1;display:flex;flex-direction:column;gap:10px;background:#FFFFFF;border:1px solid #F0D9E4;border-radius:16px;padding:16px">
+              <div style="width:34px;height:34px;border-radius:50%;border:1px solid #EBD0DD;display:flex;align-items:center;justify-content:center"><div style="display:flex;align-items:flex-end;gap:2px;height:12px"><div style="width:2.5px;height:7px;background:#3D2A57;border-radius:1px"></div><div style="width:2.5px;height:12px;background:#3D2A57;border-radius:1px"></div><div style="width:2.5px;height:5px;background:#3D2A57;border-radius:1px"></div></div></div>
+              <span style="font-size:13px;font-weight:700">Control musical</span>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:14px;background:#FFFFFF;border:1.5px solid #A53B65;border-radius:16px;padding:14px 16px">
+            <div style="width:34px;height:34px;border-radius:50%;background:#E9B3CB;display:flex;align-items:center;justify-content:center;flex:none"><div style="width:16px;height:12px;border:1.5px solid #3D2A57;border-radius:3px;display:flex;align-items:center;justify-content:center"><div style="width:5px;height:5px;border-radius:50%;border:1.5px solid #3D2A57"></div></div></div>
+            <div style="flex:1"><div style="font-size:13px;font-weight:700">Cámara + efectos</div><div style="font-size:11px;color:#9D5E7C;margin-top:1px">Efectos en vivo sobre tu cámara para la sala</div></div>
+            <div style="width:44px;height:26px;border-radius:13px;background:#A53B65;padding:3px;display:flex;justify-content:flex-end;flex:none"><div style="width:20px;height:20px;border-radius:50%;background:#3D2A57"></div></div>
+          </div>
+          <div style="display:flex;gap:10px;align-items:flex-start;background:#FFFFFF;border:1px solid #F0D9E4;border-radius:14px;padding:14px 16px">
+            <div style="width:16px;height:18px;border:1.5px solid #9D5E7C;border-radius:4px 4px 7px 7px;flex:none;margin-top:1px;display:flex;align-items:center;justify-content:center"><div style="width:4px;height:4px;border-radius:50%;background:#9D5E7C"></div></div>
+            <span style="font-size:12px;color:#9D5E7C;line-height:1.5">Los comandos viajan directo entre dispositivos; solo gestionamos quién puede unirse a la sala.</span>
+          </div>
+        </div>
+        <div style="flex:none;padding:16px 20px 40px"><div style="height:50px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;color:#9D5E7C">Salir de la sala</div></div>
+      </div>
+    </div>
+
+    <!-- 07g Room camera + effects -->
+    <div id="f07g" data-screen-label="07g Room-Camera" style="display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px">
+      <div style="font:600 11px ui-monospace,Menlo,monospace;color:#6E5987">07g Room-Camera · cámara con efectos en vivo</div>
+      <div style="width:390px;height:844px;background:#FAF0F5;border-radius:28px;overflow:hidden;display:flex;flex-direction:column;position:relative;color:#3D2A57;box-shadow:0 2px 14px rgba(165,59,101,.16)">
+        <div style="height:44px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 26px"><span style="font-size:14px;font-weight:600">9:41</span><div style="width:22px;height:11px;border:1.5px solid rgba(61,42,87,.5);border-radius:3px;padding:1.5px"><div style="width:60%;height:100%;background:#3D2A57;border-radius:1px"></div></div></div>
+        <div style="height:56px;flex:none;display:flex;align-items:center;gap:12px;padding:0 20px">
+          <span style="font-size:20px">‹</span>
+          <div style="display:flex;align-items:center;gap:7px;border:1px solid #EBD0DD;border-radius:999px;padding:7px 14px 7px 11px"><div style="width:7px;height:7px;border-radius:50%;background:#A53B65"></div><span style="font-size:13px;font-weight:600">Sala CMZ-4F7K</span></div>
+          <div style="flex:1"></div>
+          <span style="background:#DFC6E5;color:#3D2A57;font-size:10px;font-weight:800;letter-spacing:.1em;padding:5px 10px;border-radius:999px">MIEMBRO</span>
+        </div>
+        <div style="flex:1;margin:8px 20px 0;border-radius:20px;overflow:hidden;position:relative;background:repeating-linear-gradient(45deg,#F3DFE9 0 10px,#FAEBF2 10px 20px);border:1px solid #F0D9E4">
+          <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center"><span style="font:600 10px ui-monospace,Menlo,monospace;color:#9D5E7C;background:#FFFFFF;padding:6px 12px;border-radius:999px;border:1px solid #F0D9E4">[ vista de cámara frontal ]</span></div>
+          <div style="position:absolute;top:14px;left:14px;display:flex;align-items:center;gap:7px;background:#FFFFFF;border-radius:999px;padding:6px 12px;border:1px solid #F0D9E4"><div style="width:7px;height:7px;border-radius:50%;background:#A53B65;animation:czblink 1.4s infinite"></div><span style="font-size:11px;font-weight:700">En vivo para la sala</span></div>
+          <div style="position:absolute;top:14px;right:14px;width:34px;height:34px;border-radius:50%;background:#FFFFFF;border:1px solid #F0D9E4;display:flex;align-items:center;justify-content:center;font-size:14px">⟲</div>
+          <div style="position:absolute;bottom:14px;left:14px;background:#E9B3CB;border-radius:999px;padding:6px 12px"><span style="font-size:11px;font-weight:800">Efecto: Latido</span></div>
+          <div style="position:absolute;bottom:14px;right:14px;display:flex;align-items:flex-end;gap:2px;height:14px"><div style="width:3px;height:7px;background:#A53B65;border-radius:1px;animation:czblink 1s infinite"></div><div style="width:3px;height:14px;background:#A53B65;border-radius:1px;animation:czblink 1s .2s infinite"></div><div style="width:3px;height:10px;background:#A53B65;border-radius:1px;animation:czblink 1s .4s infinite"></div></div>
+        </div>
+        <div style="flex:none;display:flex;gap:12px;padding:14px 20px 0;justify-content:center">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:6px;width:56px"><div style="width:52px;height:52px;border-radius:50%;background:#FFFFFF;border:1px solid #EBD0DD;display:flex;align-items:center;justify-content:center"><div style="width:16px;height:1.5px;background:#BE87A2;transform:rotate(-45deg)"></div></div><span style="font-size:9px;font-weight:600;color:#9D5E7C">Ninguno</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:6px;width:56px"><div style="width:52px;height:52px;border-radius:50%;background:#FFFFFF;border:1px solid #EBD0DD;display:flex;align-items:center;justify-content:center"><div style="width:10px;height:10px;border-radius:50%;background:#E9B3CB;box-shadow:0 0 0 4px #F3DFE9"></div></div><span style="font-size:9px;font-weight:600;color:#9D5E7C">Brillo</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:6px;width:56px"><div style="width:52px;height:52px;border-radius:50%;background:#E9B3CB;border:2px solid #A53B65;display:flex;align-items:center;justify-content:center"><div style="display:flex;align-items:flex-end;gap:2px;height:16px"><div style="width:3px;height:7px;background:#A53B65;border-radius:2px"></div><div style="width:3px;height:15px;background:#A53B65;border-radius:2px"></div><div style="width:3px;height:10px;background:#A53B65;border-radius:2px"></div></div></div><span style="font-size:9px;font-weight:700;color:#A53B65">Latido</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:6px;width:56px"><div style="width:52px;height:52px;border-radius:50%;background:#FFFFFF;border:1px solid #EBD0DD;display:flex;align-items:center;justify-content:center"><div style="width:14px;height:14px;border-radius:50%;border:3px solid #E9B3CB"></div></div><span style="font-size:9px;font-weight:600;color:#9D5E7C">Neón</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:6px;width:56px"><div style="width:52px;height:52px;border-radius:50%;background:#FFFFFF;border:1px solid #EBD0DD;display:flex;align-items:center;justify-content:center"><div style="width:16px;height:16px;border-radius:50%;border:1.5px solid #BE87A2;display:flex;align-items:center;justify-content:center"><div style="width:7px;height:7px;border-radius:50%;border:1.5px solid #BE87A2"></div></div></div><span style="font-size:9px;font-weight:600;color:#9D5E7C">Eco</span></div>
+        </div>
+        <div style="flex:none;margin:14px 20px 0;background:#FFFFFF;border:1px solid #F0D9E4;border-radius:16px;padding:14px 16px;display:flex;align-items:center;gap:12px">
+          <div style="flex:1"><div style="font-size:13px;font-weight:700">Efectos reactivos a la vibración</div><div style="font-size:11px;color:#9D5E7C;margin-top:1px">El efecto late al ritmo de la intensidad actual</div></div>
+          <div style="width:44px;height:26px;border-radius:13px;background:#A53B65;padding:3px;display:flex;justify-content:flex-end;flex:none"><div style="width:20px;height:20px;border-radius:50%;background:#3D2A57"></div></div>
+        </div>
+        <div style="flex:none;margin:10px 20px 0;display:flex;gap:10px;align-items:flex-start;background:#FFFFFF;border:1px solid #F0D9E4;border-radius:14px;padding:12px 14px">
+          <div style="width:16px;height:18px;border:1.5px solid #9D5E7C;border-radius:4px 4px 7px 7px;flex:none;margin-top:1px;display:flex;align-items:center;justify-content:center"><div style="width:4px;height:4px;border-radius:50%;background:#9D5E7C"></div></div>
+          <span style="font-size:12px;color:#9D5E7C;line-height:1.5">La cámara no se graba ni se sube: los efectos se procesan en tu teléfono y solo la sala los ve en directo.</span>
+        </div>
+        <div style="flex:none;padding:14px 20px 36px"><div style="height:54px;border:1.5px solid #A53B65;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:#A53B65">Apagar cámara</div></div>
+      </div>
+    </div>
+
+    <!-- 07f Kicked -->
+    <div id="f07f" data-screen-label="07f Room-Kicked" style="display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px">
+      <div style="font:600 11px ui-monospace,Menlo,monospace;color:#6E5987">07f Room-Kicked / Blocked</div>
+      <div style="width:390px;height:844px;background:#FAF0F5;border-radius:28px;overflow:hidden;display:flex;flex-direction:column;position:relative;color:#3D2A57;box-shadow:0 2px 14px rgba(165,59,101,.16)">
+        <div style="height:44px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 26px"><span style="font-size:14px;font-weight:600">9:41</span><div style="width:22px;height:11px;border:1.5px solid rgba(61,42,87,.5);border-radius:3px;padding:1.5px"><div style="width:60%;height:100%;background:#3D2A57;border-radius:1px"></div></div></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;padding:0 36px;text-align:center">
+          <div style="width:72px;height:72px;border-radius:50%;border:1.5px solid #EBD0DD;display:flex;align-items:center;justify-content:center"><div style="width:26px;height:26px;border:3px solid #A53B65;border-radius:50%;position:relative"><div style="position:absolute;top:50%;left:-3px;right:-3px;height:3px;background:#A53B65;transform:rotate(-45deg)"></div></div></div>
+          <div>
+            <div style="font-size:22px;font-weight:800;letter-spacing:-.01em">Has sido expulsado de la sala</div>
+            <div style="font-size:14px;color:#9D5E7C;margin-top:12px;line-height:1.6">El anfitrión ha finalizado tu acceso a la sala CMZ-4F7K. Si además te bloqueó, no podrás volver a unirte con este código.</div>
+          </div>
+          <div style="font-size:12px;color:#BE87A2;line-height:1.5">Tu dispositivo sigue conectado por Bluetooth<br>y bajo tu control local.</div>
+        </div>
+        <div style="flex:none;padding:0 24px 44px;display:flex;flex-direction:column;gap:12px">
+          <div style="height:54px;background:#E9B3CB;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700">Volver al inicio</div>
+          <div style="height:54px;border:1px solid #EBD0DD;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600;color:#3D2A57">Unirse con otro código</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ============ MODO OSCURO ============ -->
+<section style="padding:32px 48px 44px;border-bottom:1px solid rgba(165,59,101,.18)">
+  <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:18px"><span style="font:600 10px ui-monospace,Menlo,monospace;background:#E9B3CB;color:#3D2A57;padding:3px 8px;border-radius:4px">10</span><span style="font-size:13px;font-weight:700">Modo oscuro · el 669 pasa de texto a superficie, el rosa sigue siendo primario</span></div>
+  <div style="display:flex;flex-wrap:wrap;gap:32px;align-items:flex-start">
+
+    <div id="f10" data-screen-label="10 Tokens-Dark" style="width:100%;max-width:880px;background:#241833;border-radius:14px;padding:26px 30px;display:flex;flex-direction:column;gap:20px;box-shadow:0 1px 4px rgba(61,42,87,.3)">
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <div style="width:96px"><div style="height:56px;border-radius:10px;background:#241833;border:1px solid #574275"></div><div style="font:10px ui-monospace,Menlo,monospace;margin-top:5px;color:#9C82B4">#241833 base</div></div>
+        <div style="width:96px"><div style="height:56px;border-radius:10px;background:#3D2A57"></div><div style="font:10px ui-monospace,Menlo,monospace;margin-top:5px;color:#9C82B4">#3D2A57 card · P669</div></div>
+        <div style="width:96px"><div style="height:56px;border-radius:10px;background:#574275"></div><div style="font:10px ui-monospace,Menlo,monospace;margin-top:5px;color:#9C82B4">#574275 borde</div></div>
+        <div style="width:96px"><div style="height:56px;border-radius:10px;background:#E9B3CB"></div><div style="font:10px ui-monospace,Menlo,monospace;margin-top:5px;color:#E9B3CB">#E9B3CB primario · P203</div></div>
+        <div style="width:96px"><div style="height:56px;border-radius:10px;background:#DFC6E5"></div><div style="font:10px ui-monospace,Menlo,monospace;margin-top:5px;color:#9C82B4">#DFC6E5 secundario · P531</div></div>
+        <div style="width:96px"><div style="height:56px;border-radius:10px;background:#F7ECF3"></div><div style="font:10px ui-monospace,Menlo,monospace;margin-top:5px;color:#9C82B4">#F7ECF3 texto</div></div>
+        <div style="width:96px"><div style="height:56px;border-radius:10px;background:#9C82B4"></div><div style="font:10px ui-monospace,Menlo,monospace;margin-top:5px;color:#9C82B4">#9C82B4 mute</div></div>
+        <div style="width:96px"><div style="height:56px;border-radius:10px;background:#A53B65"></div><div style="font:10px ui-monospace,Menlo,monospace;margin-top:5px;color:#9C82B4">#A53B65 acento</div></div>
+      </div>
+      <div style="display:flex;gap:24px;flex-wrap:wrap;align-items:center">
+        <div style="height:50px;min-width:200px;background:#E9B3CB;color:#3D2A57;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;padding:0 20px">CTA primario</div>
+        <div style="height:50px;min-width:200px;border:1px solid #574275;color:#DFC6E5;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600;padding:0 20px">Secundario</div>
+        <div style="display:flex;gap:8px">
+          <span style="background:#E9B3CB;color:#3D2A57;font-size:10px;font-weight:800;letter-spacing:.1em;padding:5px 10px;border-radius:999px">ANFITRIÓN</span>
+          <span style="background:#574275;color:#DFC6E5;font-size:10px;font-weight:800;letter-spacing:.1em;padding:5px 10px;border-radius:999px">MIEMBRO</span>
+        </div>
+        <div style="width:44px;height:26px;border-radius:13px;background:#E9B3CB;padding:3px;display:flex;justify-content:flex-end"><div style="width:20px;height:20px;border-radius:50%;background:#3D2A57"></div></div>
+        <span style="font:10px/1.6 ui-monospace,Menlo,monospace;color:#9C82B4;max-width:300px">Mismo primario 203 en ambos temas. La identidad de dispositivos (#A53B65 / #E9B3CB) no cambia con el tema.</span>
+      </div>
+    </div>
+
+    <!-- 10a Splash dark -->
+    <div id="f10a" data-screen-label="10a Splash-Dark" style="display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px">
+      <div style="font:600 11px ui-monospace,Menlo,monospace;color:#6E5987">10a Splash · modo oscuro</div>
+      <div style="width:390px;height:844px;background:#241833;border-radius:28px;overflow:hidden;display:flex;flex-direction:column;position:relative;color:#F7ECF3;box-shadow:0 2px 14px rgba(61,42,87,.3)">
+        <div style="height:44px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 26px"><span style="font-size:14px;font-weight:600">9:41</span><div style="width:22px;height:11px;border:1.5px solid rgba(247,236,243,.45);border-radius:3px;padding:1.5px"><div style="width:60%;height:100%;background:#F7ECF3;border-radius:1px"></div></div></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:56px;padding:0 40px">
+          <img src="assets/logo-pink.svg" style="width:230px" alt="Camtoyz">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:22px">
+            <div style="width:44px;height:44px;border-radius:50%;border:3px solid #574275;border-top-color:#E9B3CB;animation:czspin 1s linear infinite"></div>
+            <div style="text-align:center">
+              <div style="font-size:15px;font-weight:700">Verificando carga</div>
+              <div style="font-size:13px;color:#9C82B4;margin-top:6px;line-height:1.5">Mantén pulsado el botón<br>del dispositivo para encenderlo</div>
+            </div>
+          </div>
+        </div>
+        <div style="flex:none;padding:0 24px 44px;display:flex;flex-direction:column;gap:12px">
+          <div style="height:54px;background:#E9B3CB;color:#3D2A57;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700">Comenzar juego</div>
+          <div style="height:54px;border:1px solid #574275;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600;color:#DFC6E5">Modo control remoto</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 10b Multi-device dark -->
+    <div id="f10b" data-screen-label="10b Multi-Device-Dark" style="display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px">
+      <div style="font:600 11px ui-monospace,Menlo,monospace;color:#6E5987">10b Multi-Device · modo oscuro</div>
+      <div style="width:390px;height:844px;background:#241833;border-radius:28px;overflow:hidden;display:flex;flex-direction:column;position:relative;color:#F7ECF3;box-shadow:0 2px 14px rgba(61,42,87,.3)">
+        <div style="height:44px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 26px"><span style="font-size:14px;font-weight:600">9:41</span><div style="width:22px;height:11px;border:1.5px solid rgba(247,236,243,.45);border-radius:3px;padding:1.5px"><div style="width:60%;height:100%;background:#F7ECF3;border-radius:1px"></div></div></div>
+        <div style="height:56px;flex:none;display:flex;align-items:center;gap:14px;padding:0 20px"><span style="font-size:20px">‹</span><span style="font-size:17px;font-weight:700">Mis dispositivos</span><div style="flex:1"></div><span style="font-size:12px;font-weight:700;color:#E9B3CB">2 conectados</span></div>
+        <div style="flex:1;padding:10px 20px 0;display:flex;flex-direction:column;gap:14px;overflow:hidden">
+          <div style="background:#3D2A57;border:1.5px solid #E9B3CB;border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:14px">
+            <div style="display:flex;align-items:center;gap:12px">
+              <div style="width:42px;height:42px;border-radius:12px;background:#4C3669;display:flex;align-items:center;justify-content:center;flex:none"><div style="width:12px;height:22px;border:2px solid #F7ECF3;border-radius:6px"></div></div>
+              <div style="flex:1"><div style="display:flex;align-items:center;gap:7px"><div style="width:8px;height:8px;border-radius:50%;background:#A53B65"></div><span style="font-size:15px;font-weight:700">HyperBullet</span></div><div style="font-size:11px;color:#E9B3CB;font-weight:600;margin-top:2px">Activo · controlando ahora</div></div>
+              <div style="width:30px;height:14px;border:1.5px solid #9C82B4;border-radius:4px;padding:2px;flex:none"><div style="width:72%;height:100%;background:#E9B3CB;border-radius:1px"></div></div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="font:600 9px ui-monospace,Menlo,monospace;color:#9C82B4;letter-spacing:.08em;flex:none">P2 · ONDAS</span>
+              <div style="flex:1;height:6px;border-radius:3px;background:#574275;position:relative"><div style="position:absolute;left:0;top:0;bottom:0;width:64%;border-radius:3px;background:#E9B3CB"></div><div style="position:absolute;left:64%;top:50%;transform:translate(-50%,-50%);width:16px;height:16px;border-radius:50%;background:#F7ECF3"></div></div>
+              <span style="font-size:12px;font-weight:800;color:#E9B3CB;flex:none">64%</span>
+            </div>
+          </div>
+          <div style="background:#3D2A57;border:1px solid #574275;border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:14px">
+            <div style="display:flex;align-items:center;gap:12px">
+              <div style="width:42px;height:42px;border-radius:12px;background:#4C3669;display:flex;align-items:center;justify-content:center;flex:none"><div style="width:8px;height:26px;border:2px solid #F7ECF3;border-radius:4px 4px 2px 2px"></div></div>
+              <div style="flex:1"><div style="display:flex;align-items:center;gap:7px"><div style="width:8px;height:8px;border-radius:50%;background:#E9B3CB"></div><span style="font-size:15px;font-weight:700">Lápiz vibrador</span></div><div style="font-size:11px;color:#9C82B4;margin-top:2px">Conectado · en espera</div></div>
+              <div style="width:30px;height:14px;border:1.5px solid #9C82B4;border-radius:4px;padding:2px;flex:none"><div style="width:45%;height:100%;background:#F7ECF3;border-radius:1px"></div></div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="font:600 9px ui-monospace,Menlo,monospace;color:#9C82B4;letter-spacing:.08em;flex:none">P4 · PULSO</span>
+              <div style="flex:1;height:6px;border-radius:3px;background:#574275;position:relative"><div style="position:absolute;left:0;top:0;bottom:0;width:30%;border-radius:3px;background:#E9B3CB"></div><div style="position:absolute;left:30%;top:50%;transform:translate(-50%,-50%);width:16px;height:16px;border-radius:50%;background:#F7ECF3"></div></div>
+              <span style="font-size:12px;font-weight:800;color:#DFC6E5;flex:none">30%</span>
+            </div>
+          </div>
+          <div style="border:1px dashed #6E548F;border-radius:18px;padding:14px 16px;display:flex;align-items:center;justify-content:center;gap:8px;color:#9C82B4"><span style="font-size:16px">+</span><span style="font-size:13px;font-weight:600">Conectar otro dispositivo</span></div>
+          <div style="background:#3D2A57;border:1px solid #574275;border-radius:16px;padding:14px 16px;display:flex;align-items:center;gap:12px">
+            <div style="flex:1"><div style="font-size:13px;font-weight:700">Sincronizar dispositivos</div><div style="font-size:11px;color:#9C82B4;margin-top:1px">El mismo patrón e intensidad para todos</div></div>
+            <div style="width:44px;height:26px;border-radius:13px;background:#574275;padding:3px;display:flex;justify-content:flex-start;flex:none"><div style="width:20px;height:20px;border-radius:50%;background:#F7ECF3"></div></div>
+          </div>
+          <div style="display:flex;gap:10px;align-items:flex-start;background:#3D2A57;border:1px solid #574275;border-radius:14px;padding:14px 16px">
+            <div style="width:8px;height:8px;border-radius:50%;background:#E9B3CB;flex:none;margin-top:4px"></div>
+            <span style="font-size:12px;color:#9C82B4;line-height:1.5">Toca una tarjeta para hacerla el dispositivo activo: los modos de control actúan sobre él. Con sincronización, actúan sobre todos.</span>
+          </div>
+        </div>
+        <div style="flex:none;padding:16px 20px 40px;display:flex;gap:12px">
+          <div style="flex:1;height:54px;border:1.5px solid #E9B3CB;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:#E9B3CB">Detener todos</div>
+          <div style="flex:1;height:54px;background:#E9B3CB;color:#3D2A57;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700">Abrir control</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 10c Room camera dark -->
+    <div id="f10c" data-screen-label="10c Room-Camera-Dark" style="display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px">
+      <div style="font:600 11px ui-monospace,Menlo,monospace;color:#6E5987">10c Room-Camera · modo oscuro</div>
+      <div style="width:390px;height:844px;background:#241833;border-radius:28px;overflow:hidden;display:flex;flex-direction:column;position:relative;color:#F7ECF3;box-shadow:0 2px 14px rgba(61,42,87,.3)">
+        <div style="height:44px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 26px"><span style="font-size:14px;font-weight:600">9:41</span><div style="width:22px;height:11px;border:1.5px solid rgba(247,236,243,.45);border-radius:3px;padding:1.5px"><div style="width:60%;height:100%;background:#F7ECF3;border-radius:1px"></div></div></div>
+        <div style="height:56px;flex:none;display:flex;align-items:center;gap:12px;padding:0 20px">
+          <span style="font-size:20px">‹</span>
+          <div style="display:flex;align-items:center;gap:7px;border:1px solid #574275;border-radius:999px;padding:7px 14px 7px 11px"><div style="width:7px;height:7px;border-radius:50%;background:#E9B3CB"></div><span style="font-size:13px;font-weight:600">Sala CMZ-4F7K</span></div>
+          <div style="flex:1"></div>
+          <span style="background:#574275;color:#DFC6E5;font-size:10px;font-weight:800;letter-spacing:.1em;padding:5px 10px;border-radius:999px">MIEMBRO</span>
+        </div>
+        <div style="flex:1;margin:8px 20px 0;border-radius:20px;overflow:hidden;position:relative;background:repeating-linear-gradient(45deg,#322349 0 10px,#2A1C3B 10px 20px);border:1px solid #574275">
+          <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center"><span style="font:600 10px ui-monospace,Menlo,monospace;color:#DFC6E5;background:#3D2A57;padding:6px 12px;border-radius:999px;border:1px solid #574275">[ vista de cámara frontal ]</span></div>
+          <div style="position:absolute;top:14px;left:14px;display:flex;align-items:center;gap:7px;background:#3D2A57;border-radius:999px;padding:6px 12px;border:1px solid #574275"><div style="width:7px;height:7px;border-radius:50%;background:#E9B3CB;animation:czblink 1.4s infinite"></div><span style="font-size:11px;font-weight:700">En vivo para la sala</span></div>
+          <div style="position:absolute;top:14px;right:14px;width:34px;height:34px;border-radius:50%;background:#3D2A57;border:1px solid #574275;display:flex;align-items:center;justify-content:center;font-size:14px">⟲</div>
+          <div style="position:absolute;bottom:14px;left:14px;background:#E9B3CB;border-radius:999px;padding:6px 12px"><span style="font-size:11px;font-weight:800;color:#3D2A57">Efecto: Latido</span></div>
+          <div style="position:absolute;bottom:14px;right:14px;display:flex;align-items:flex-end;gap:2px;height:14px"><div style="width:3px;height:7px;background:#E9B3CB;border-radius:1px;animation:czblink 1s infinite"></div><div style="width:3px;height:14px;background:#E9B3CB;border-radius:1px;animation:czblink 1s .2s infinite"></div><div style="width:3px;height:10px;background:#E9B3CB;border-radius:1px;animation:czblink 1s .4s infinite"></div></div>
+        </div>
+        <div style="flex:none;display:flex;gap:12px;padding:14px 20px 0;justify-content:center">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:6px;width:56px"><div style="width:52px;height:52px;border-radius:50%;background:#3D2A57;border:1px solid #574275;display:flex;align-items:center;justify-content:center"><div style="width:16px;height:1.5px;background:#9C82B4;transform:rotate(-45deg)"></div></div><span style="font-size:9px;font-weight:600;color:#9C82B4">Ninguno</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:6px;width:56px"><div style="width:52px;height:52px;border-radius:50%;background:#3D2A57;border:1px solid #574275;display:flex;align-items:center;justify-content:center"><div style="width:10px;height:10px;border-radius:50%;background:#E9B3CB;box-shadow:0 0 0 4px #574275"></div></div><span style="font-size:9px;font-weight:600;color:#9C82B4">Brillo</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:6px;width:56px"><div style="width:52px;height:52px;border-radius:50%;background:#E9B3CB;border:2px solid #F7ECF3;display:flex;align-items:center;justify-content:center"><div style="display:flex;align-items:flex-end;gap:2px;height:16px"><div style="width:3px;height:7px;background:#A53B65;border-radius:2px"></div><div style="width:3px;height:15px;background:#A53B65;border-radius:2px"></div><div style="width:3px;height:10px;background:#A53B65;border-radius:2px"></div></div></div><span style="font-size:9px;font-weight:700;color:#E9B3CB">Latido</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:6px;width:56px"><div style="width:52px;height:52px;border-radius:50%;background:#3D2A57;border:1px solid #574275;display:flex;align-items:center;justify-content:center"><div style="width:14px;height:14px;border-radius:50%;border:3px solid #E9B3CB"></div></div><span style="font-size:9px;font-weight:600;color:#9C82B4">Neón</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:6px;width:56px"><div style="width:52px;height:52px;border-radius:50%;background:#3D2A57;border:1px solid #574275;display:flex;align-items:center;justify-content:center"><div style="width:16px;height:16px;border-radius:50%;border:1.5px solid #9C82B4;display:flex;align-items:center;justify-content:center"><div style="width:7px;height:7px;border-radius:50%;border:1.5px solid #9C82B4"></div></div></div><span style="font-size:9px;font-weight:600;color:#9C82B4">Eco</span></div>
+        </div>
+        <div style="flex:none;margin:14px 20px 0;background:#3D2A57;border:1px solid #574275;border-radius:16px;padding:14px 16px;display:flex;align-items:center;gap:12px">
+          <div style="flex:1"><div style="font-size:13px;font-weight:700">Efectos reactivos a la vibración</div><div style="font-size:11px;color:#9C82B4;margin-top:1px">El efecto late al ritmo de la intensidad actual</div></div>
+          <div style="width:44px;height:26px;border-radius:13px;background:#E9B3CB;padding:3px;display:flex;justify-content:flex-end;flex:none"><div style="width:20px;height:20px;border-radius:50%;background:#3D2A57"></div></div>
+        </div>
+        <div style="flex:none;margin:10px 20px 0;display:flex;gap:10px;align-items:flex-start;background:#3D2A57;border:1px solid #574275;border-radius:14px;padding:12px 14px">
+          <div style="width:16px;height:18px;border:1.5px solid #9C82B4;border-radius:4px 4px 7px 7px;flex:none;margin-top:1px;display:flex;align-items:center;justify-content:center"><div style="width:4px;height:4px;border-radius:50%;background:#9C82B4"></div></div>
+          <span style="font-size:12px;color:#9C82B4;line-height:1.5">La cámara no se graba ni se sube: los efectos se procesan en tu teléfono y solo la sala los ve en directo.</span>
+        </div>
+        <div style="flex:none;padding:14px 20px 36px"><div style="height:54px;border:1.5px solid #E9B3CB;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:#E9B3CB">Apagar cámara</div></div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ============ AJUSTES Y ESTADOS ============ -->
+<section style="padding:32px 48px 60px">
+  <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:18px"><span style="font:600 10px ui-monospace,Menlo,monospace;background:#E9B3CB;color:#3D2A57;padding:3px 8px;border-radius:4px">08–09</span><span style="font-size:13px;font-weight:700">Ajustes y estados de sistema</span></div>
+  <div style="display:flex;flex-wrap:wrap;gap:32px;align-items:flex-start">
+
+    <!-- 08 Settings -->
+    <div id="f08" data-screen-label="08 Settings-Device" style="display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px">
+      <div style="font:600 11px ui-monospace,Menlo,monospace;color:#6E5987">08 Settings-Device</div>
+      <div style="width:390px;height:844px;background:#FAF0F5;border-radius:28px;overflow:hidden;display:flex;flex-direction:column;position:relative;color:#3D2A57;box-shadow:0 2px 14px rgba(165,59,101,.16)">
+        <div style="height:44px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 26px"><span style="font-size:14px;font-weight:600">9:41</span><div style="width:22px;height:11px;border:1.5px solid rgba(61,42,87,.5);border-radius:3px;padding:1.5px"><div style="width:60%;height:100%;background:#3D2A57;border-radius:1px"></div></div></div>
+        <div style="height:56px;flex:none;display:flex;align-items:center;gap:14px;padding:0 20px"><span style="font-size:20px">‹</span><span style="font-size:17px;font-weight:700">Ajustes del dispositivo</span></div>
+        <div style="flex:1;padding:10px 20px 0;display:flex;flex-direction:column;gap:18px;overflow:hidden">
+          <div style="background:#FFFFFF;border:1px solid #F0D9E4;border-radius:18px;padding:18px;display:flex;align-items:center;gap:14px">
+            <div style="width:46px;height:46px;border-radius:14px;background:#F3DFE9;display:flex;align-items:center;justify-content:center;flex:none"><div style="width:13px;height:24px;border:2px solid #3D2A57;border-radius:7px"></div></div>
+            <div style="flex:1"><div style="font-size:16px;font-weight:700">HyperBullet</div><div style="font-size:12px;color:#A53B65;font-weight:600;margin-top:2px">Conectado · BLE · 35%</div></div>
+          </div>
+          <div style="background:#FFFFFF;border:1px solid #F0D9E4;border-radius:18px;overflow:hidden">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid #F0D9E4"><span style="font-size:14px;font-weight:600">Firmware</span><div style="display:flex;align-items:center;gap:8px"><span style="font-size:13px;color:#9D5E7C">v2.1.4</span><div style="width:7px;height:7px;border-radius:50%;background:#A53B65"></div></div></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid #F0D9E4"><span style="font-size:14px;font-weight:600">Actualización disponible</span><span style="font-size:13px;color:#A53B65;font-weight:700">Instalar v2.2.0</span></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid #F0D9E4"><span style="font-size:14px;font-weight:600">Número de serie</span><span style="font:12px ui-monospace,Menlo,monospace;color:#9D5E7C">CTZ-HB-08841</span></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 18px"><span style="font-size:14px;font-weight:600">Reconexión automática</span><div style="width:44px;height:26px;border-radius:13px;background:#A53B65;padding:3px;display:flex;justify-content:flex-end"><div style="width:20px;height:20px;border-radius:50%;background:#3D2A57"></div></div></div>
+          </div>
+          <div style="background:#FFFFFF;border:1px solid #F0D9E4;border-radius:18px;padding:14px 18px;display:flex;align-items:center;gap:12px">
+            <div style="flex:1"><div style="font-size:14px;font-weight:600">Apariencia</div><div style="font-size:11px;color:#9D5E7C;margin-top:1px">El modo oscuro mantiene el rosa como primario</div></div>
+            <div style="display:flex;border:1px solid #EBD0DD;border-radius:999px;padding:3px;gap:2px;flex:none">
+              <span style="background:#E9B3CB;border-radius:999px;padding:6px 12px;font-size:11px;font-weight:700">Claro</span>
+              <span style="padding:6px 12px;font-size:11px;font-weight:600;color:#9D5E7C">Oscuro</span>
+            </div>
+          </div>
+          <div style="background:#FFFFFF;border:1px solid #F0D9E4;border-radius:18px;overflow:hidden">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid #F0D9E4"><span style="font-size:14px;font-weight:600">Desconectar</span><span style="color:#BE87A2;font-size:16px">›</span></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 18px"><span style="font-size:14px;font-weight:700;color:#A53B65">Olvidar dispositivo</span><span style="color:#BE87A2;font-size:16px">›</span></div>
+          </div>
+          <div style="background:#FFFFFF;border:1px solid #F0D9E4;border-radius:18px;overflow:hidden">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid #F0D9E4"><span style="font-size:14px;font-weight:600">Centro de ayuda</span><span style="color:#BE87A2;font-size:16px">›</span></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 18px"><span style="font-size:14px;font-weight:600">Contactar con soporte</span><span style="color:#BE87A2;font-size:16px">›</span></div>
+          </div>
+          <div style="text-align:center;font-size:11px;color:#BE87A2;padding-top:4px">Camtoyz Control 1.0.0 · Términos · Privacidad</div>
+        </div>
+        <div style="height:32px;flex:none"></div>
+      </div>
+    </div>
+
+    <!-- 09a Reconnecting -->
+    <div id="f09a" data-screen-label="09a State-Reconnecting" style="display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px">
+      <div style="font:600 11px ui-monospace,Menlo,monospace;color:#6E5987">09a State-Reconnecting</div>
+      <div style="width:390px;height:844px;background:#FAF0F5;border-radius:28px;overflow:hidden;display:flex;flex-direction:column;position:relative;color:#3D2A57;box-shadow:0 2px 14px rgba(165,59,101,.16)">
+        <div style="height:44px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 26px"><span style="font-size:14px;font-weight:600">9:41</span><div style="width:22px;height:11px;border:1.5px solid rgba(61,42,87,.5);border-radius:3px;padding:1.5px"><div style="width:60%;height:100%;background:#3D2A57;border-radius:1px"></div></div></div>
+        <div style="height:56px;flex:none;display:flex;align-items:center;gap:12px;padding:0 20px">
+          <div style="display:flex;flex-direction:column;gap:5px;width:20px;flex:none"><div style="height:2px;background:#3D2A57;border-radius:1px"></div><div style="height:2px;width:70%;background:#3D2A57;border-radius:1px"></div></div>
+          <div style="display:flex;align-items:center;gap:7px;border:1px solid #EBD0DD;border-radius:999px;padding:7px 14px 7px 11px"><div style="width:7px;height:7px;border-radius:50%;background:#BE87A2;animation:czblink 1.2s infinite"></div><span style="font-size:13px;font-weight:600;color:#9D5E7C">Reconectando…</span></div>
+          <div style="flex:1"></div>
+          <div style="width:32px;height:32px;border-radius:50%;background:#F7E9F1;border:1px solid #EBD0DD;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#3D2A57;flex:none">ES</div>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:26px;padding:0 36px;text-align:center">
+          <div style="position:relative;width:120px;height:120px;display:flex;align-items:center;justify-content:center">
+            <div style="position:absolute;inset:0;border-radius:50%;border:3px solid #EBD0DD;border-top-color:#A53B65;animation:czspin 1.1s linear infinite"></div>
+            <div style="width:13px;height:26px;border:2px solid #3D2A57;border-radius:7px"></div>
+          </div>
+          <div>
+            <div style="font-size:20px;font-weight:800">Reconectando con HyperBullet</div>
+            <div style="font-size:14px;color:#9D5E7C;margin-top:10px;line-height:1.6">Intento 2 de 5 · esto suele tardar unos segundos.<br>Mantén el dispositivo a menos de 5 metros.</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;background:#FFFFFF;border:1px solid #F0D9E4;border-radius:12px;padding:12px 16px"><div style="width:8px;height:8px;border-radius:50%;background:#BE87A2;flex:none"></div><span style="font-size:12px;color:#9D5E7C">Tu patrón y ajustes se conservan al reconectar</span></div>
+        </div>
+        <div style="flex:none;padding:0 24px 44px;display:flex;flex-direction:column;gap:12px">
+          <div style="height:54px;background:#E9B3CB;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700">Reconectar ahora</div>
+          <div style="height:54px;border:1px solid #EBD0DD;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600;color:#3D2A57">Buscar otro dispositivo</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 09b Low battery -->
+    <div id="f09b" data-screen-label="09b State-LowBattery" style="display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px">
+      <div style="font:600 11px ui-monospace,Menlo,monospace;color:#6E5987">09b State-LowBattery · toast sobre dashboard</div>
+      <div style="width:390px;height:844px;background:#FAF0F5;border-radius:28px;overflow:hidden;display:flex;flex-direction:column;position:relative;color:#3D2A57;box-shadow:0 2px 14px rgba(165,59,101,.16)">
+        <div style="height:44px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 26px"><span style="font-size:14px;font-weight:600">9:41</span><div style="width:22px;height:11px;border:1.5px solid rgba(61,42,87,.5);border-radius:3px;padding:1.5px"><div style="width:60%;height:100%;background:#3D2A57;border-radius:1px"></div></div></div>
+        <div style="height:56px;flex:none;display:flex;align-items:center;gap:12px;padding:0 20px">
+          <div style="display:flex;flex-direction:column;gap:5px;width:20px;flex:none"><div style="height:2px;background:#3D2A57;border-radius:1px"></div><div style="height:2px;width:70%;background:#3D2A57;border-radius:1px"></div></div>
+          <div style="display:flex;align-items:center;gap:7px;border:1px solid #EBD0DD;border-radius:999px;padding:7px 14px 7px 11px"><div style="width:7px;height:7px;border-radius:50%;background:#A53B65"></div><span style="font-size:13px;font-weight:600">HyperBullet</span></div>
+          <div style="flex:1"></div>
+          <div style="width:32px;height:32px;border-radius:50%;background:#F7E9F1;border:1px solid #EBD0DD;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#3D2A57;flex:none">ES</div>
+        </div>
+        <div style="flex:1;overflow:hidden;display:flex;flex-direction:column;padding:8px 20px 0;gap:20px">
+          <div style="background:#FFFFFF;border:1.5px solid #A53B65;border-radius:18px;padding:16px 18px;display:flex;align-items:center;gap:14px">
+            <div style="width:42px;height:42px;border-radius:12px;background:#F3DFE9;display:flex;align-items:center;justify-content:center;flex:none"><div style="width:12px;height:22px;border:2px solid #3D2A57;border-radius:6px"></div></div>
+            <div style="flex:1"><div style="font-size:15px;font-weight:700">HyperBullet</div><div style="font-size:12px;color:#A53B65;font-weight:600;margin-top:2px">Batería baja · conéctalo pronto</div></div>
+            <div style="display:flex;align-items:center;gap:8px"><div style="width:30px;height:14px;border:1.5px solid #A53B65;border-radius:4px;padding:2px"><div style="width:12%;height:100%;background:#A53B65;border-radius:1px"></div></div><span style="font-size:13px;font-weight:700;color:#A53B65">12%</span></div>
+          </div>
+          <div>
+            <div style="font-size:17px;font-weight:700;margin-bottom:12px">Vibración</div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(58px,1fr));gap:10px;opacity:.85">
+              <div style="aspect-ratio:1;border:1.5px solid #A53B65;border-radius:14px;background:#FFFFFF;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px"><div style="display:flex;align-items:flex-end;gap:2.5px;height:18px"><div style="width:3px;height:8px;background:#A53B65;border-radius:2px"></div><div style="width:3px;height:8px;background:#A53B65;border-radius:2px"></div><div style="width:3px;height:8px;background:#A53B65;border-radius:2px"></div><div style="width:3px;height:8px;background:#A53B65;border-radius:2px"></div></div><span style="font-size:9px;font-weight:700;color:#A53B65">P1</span></div>
+              <div style="aspect-ratio:1;border:1px solid #EBD0DD;border-radius:14px;background:#FFFFFF;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px"><div style="display:flex;align-items:flex-end;gap:2.5px;height:18px"><div style="width:3px;height:6px;background:#9D5E7C;border-radius:2px"></div><div style="width:3px;height:12px;background:#9D5E7C;border-radius:2px"></div><div style="width:3px;height:6px;background:#9D5E7C;border-radius:2px"></div><div style="width:3px;height:12px;background:#9D5E7C;border-radius:2px"></div></div><span style="font-size:9px;font-weight:700;color:#BE87A2">P2</span></div>
+              <div style="aspect-ratio:1;border:1px solid #EBD0DD;border-radius:14px;background:#FFFFFF;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px"><div style="display:flex;align-items:flex-end;gap:2.5px;height:18px"><div style="width:3px;height:5px;background:#9D5E7C;border-radius:2px"></div><div style="width:3px;height:10px;background:#9D5E7C;border-radius:2px"></div><div style="width:3px;height:16px;background:#9D5E7C;border-radius:2px"></div><div style="width:3px;height:10px;background:#9D5E7C;border-radius:2px"></div></div><span style="font-size:9px;font-weight:700;color:#BE87A2">P3</span></div>
+              <div style="aspect-ratio:1;border:1px solid #EBD0DD;border-radius:14px;background:#FFFFFF;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px"><div style="display:flex;align-items:flex-end;gap:2.5px;height:18px"><div style="width:3px;height:14px;background:#9D5E7C;border-radius:2px"></div><div style="width:3px;height:5px;background:#9D5E7C;border-radius:2px"></div><div style="width:3px;height:14px;background:#9D5E7C;border-radius:2px"></div><div style="width:3px;height:5px;background:#9D5E7C;border-radius:2px"></div></div><span style="font-size:9px;font-weight:700;color:#BE87A2">P4</span></div>
+              <div style="aspect-ratio:1;border:1px solid #EBD0DD;border-radius:14px;background:#FFFFFF;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px"><div style="display:flex;align-items:flex-end;gap:2.5px;height:18px"><div style="width:3px;height:16px;background:#9D5E7C;border-radius:2px"></div><div style="width:3px;height:16px;background:#9D5E7C;border-radius:2px"></div><div style="width:3px;height:16px;background:#9D5E7C;border-radius:2px"></div><div style="width:3px;height:16px;background:#9D5E7C;border-radius:2px"></div></div><span style="font-size:9px;font-weight:700;color:#BE87A2">P5</span></div>
+            </div>
+          </div>
+        </div>
+        <div style="position:absolute;left:16px;right:16px;bottom:28px;background:#FFFFFF;border:1px solid #EBD0DD;border-radius:16px;padding:14px 16px;display:flex;align-items:center;gap:12px;box-shadow:0 8px 24px rgba(61,42,87,.38)">
+          <div style="width:26px;height:13px;border:1.5px solid #A53B65;border-radius:4px;padding:2px;flex:none"><div style="width:12%;height:100%;background:#A53B65"></div></div>
+          <div style="flex:1"><div style="font-size:13px;font-weight:700">Batería baja — 12%</div><div style="font-size:12px;color:#9D5E7C;margin-top:1px">La intensidad puede reducirse para alargar la sesión</div></div>
+          <span style="font-size:13px;font-weight:700;color:#A53B65;flex:none">OK</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 09c Connection error -->
+    <div id="f09c" data-screen-label="09c State-ConnectionError" style="display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px">
+      <div style="font:600 11px ui-monospace,Menlo,monospace;color:#6E5987">09c State-ConnectionError</div>
+      <div style="width:390px;height:844px;background:#FAF0F5;border-radius:28px;overflow:hidden;display:flex;flex-direction:column;position:relative;color:#3D2A57;box-shadow:0 2px 14px rgba(165,59,101,.16)">
+        <div style="height:44px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 26px"><span style="font-size:14px;font-weight:600">9:41</span><div style="width:22px;height:11px;border:1.5px solid rgba(61,42,87,.5);border-radius:3px;padding:1.5px"><div style="width:60%;height:100%;background:#3D2A57;border-radius:1px"></div></div></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;padding:0 36px;text-align:center">
+          <div style="width:72px;height:72px;border-radius:50%;border:1.5px solid #EBD0DD;display:flex;align-items:center;justify-content:center;position:relative">
+            <div style="width:13px;height:26px;border:2px solid #BE87A2;border-radius:7px"></div>
+            <div style="position:absolute;width:44px;height:2.5px;background:#A53B65;transform:rotate(-45deg);border-radius:2px"></div>
+          </div>
+          <div>
+            <div style="font-size:22px;font-weight:800;letter-spacing:-.01em">Se perdió la conexión</div>
+            <div style="font-size:14px;color:#9D5E7C;margin-top:12px;line-height:1.6">Tranquilo: tus ajustes y tu patrón quedaron guardados. Esto suele resolverse acercando el dispositivo o comprobando su carga.</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px;width:100%;max-width:280px">
+            <div style="display:flex;align-items:center;gap:10px;background:#FFFFFF;border:1px solid #F0D9E4;border-radius:12px;padding:11px 14px"><span style="font-size:12px;color:#BE87A2;font-weight:700;flex:none">1</span><span style="font-size:12px;color:#9D5E7C;text-align:left">Acércalo a menos de 5 metros</span></div>
+            <div style="display:flex;align-items:center;gap:10px;background:#FFFFFF;border:1px solid #F0D9E4;border-radius:12px;padding:11px 14px"><span style="font-size:12px;color:#BE87A2;font-weight:700;flex:none">2</span><span style="font-size:12px;color:#9D5E7C;text-align:left">Comprueba que tenga carga</span></div>
+          </div>
+        </div>
+        <div style="flex:none;padding:0 24px 44px;display:flex;flex-direction:column;gap:12px">
+          <div style="height:54px;background:#E9B3CB;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700">Reconectar</div>
+          <div style="height:54px;border:1px solid #EBD0DD;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600;color:#3D2A57">Buscar de nuevo</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+</x-dc>
+</body>
+</html>

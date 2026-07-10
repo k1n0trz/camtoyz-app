@@ -1,0 +1,45 @@
+{
+  "expo": {
+    "name": "Camtoyz Control",
+    "slug": "camtoyz-control",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "scheme": "camtoyz",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "splash": {
+      "backgroundColor": "#FAF0F5"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.camtoyz.control",
+      "infoPlist": {
+        "NSBluetoothAlwaysUsageDescription": "Camtoyz usa Bluetooth para conectarse con tu dispositivo.",
+        "NSMicrophoneUsageDescription": "El control por sonido usa el micrófono para reaccionar al ambiente.",
+        "NSCameraUsageDescription": "La interacción remota permite compartir video en una sala privada."
+      }
+    },
+    "android": {
+      "package": "com.camtoyz.control",
+      "permissions": [
+        "BLUETOOTH_SCAN",
+        "BLUETOOTH_CONNECT",
+        "ACCESS_FINE_LOCATION",
+        "RECORD_AUDIO",
+        "CAMERA"
+      ]
+    },
+    "plugins": [
+      [
+        "react-native-ble-plx",
+        {
+          "isBackgroundEnabled": false,
+          "modes": ["central"],
+          "bluetoothAlwaysPermission": "Camtoyz usa Bluetooth para conectarse con tu dispositivo."
+        }
+      ],
+      "expo-dev-client"
+    ]
+  }
+}
