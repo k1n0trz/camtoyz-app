@@ -10,7 +10,9 @@
     "splash": {
       "backgroundColor": "#FAF0F5"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.camtoyz.control",
@@ -35,11 +37,14 @@
         "react-native-ble-plx",
         {
           "isBackgroundEnabled": false,
-          "modes": ["central"],
+          "modes": [
+            "central"
+          ],
           "bluetoothAlwaysPermission": "Camtoyz usa Bluetooth para conectarse con tu dispositivo."
         }
       ],
-      "expo-dev-client"
+      "expo-dev-client",
+      "expo-asset"
     ]
   }
 }
