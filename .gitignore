@@ -10,7 +10,7 @@ node_modules/
 .expo/
 android/
 ios/
-dist/
+dist*/
 web-build/
 coverage/
 *.orig.*

@@ -1,10 +1,18 @@
 import { useState } from 'react';
-import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
+import {
+  View,
+  Text,
+  ScrollView,
+  Pressable,
+  StyleSheet,
+  type DimensionValue,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import type { RootStackParamList } from '@/navigation/routes';
 import { palette, radii, spacing, typography, patternGrid } from '@/theme';
+import { useBleStore } from '@/state/bleStore';
 
 /**
  * 03 Dashboard-Connected — patrón de referencia con:
@@ -16,23 +24,30 @@ import { palette, radii, spacing, typography, patternGrid } from '@/theme';
 type Props = NativeStackScreenProps<RootStackParamList, 'Dashboard'>;
 
 const PATTERNS = ['P1', 'P2', 'P3', 'P4', 'P5'];
-const MODES: { label: string; sub: string; route: keyof RootStackParamList }[] = [
-  { label: 'Control por sonido', sub: 'Reacciona al sonido ambiente', route: 'SoundControl' },
-  { label: 'Control musical', sub: 'Sincroniza con tu música', route: 'MusicControl' },
-  { label: 'Interacción remota', sub: 'Salas para compartir el control', route: 'RoomCreate' },
-  { label: 'Control por gesto', sub: 'Dibuja la intensidad en la pantalla', route: 'GestureControl' },
+const MODES = [
+  { label: 'Control por sonido', sub: 'Reacciona al sonido ambiente' },
+  { label: 'Control musical', sub: 'Sincroniza con tu música' },
+  { label: 'Interacción remota', sub: 'Salas para compartir el control' },
+  { label: 'Control por gesto', sub: 'Dibuja la intensidad en la pantalla' },
 ];
 
 export default function DashboardScreen({ navigation }: Props) {
   const [active, setActive] = useState(0);
+  const device = useBleStore((state) => state.device);
+  const connectionState = useBleStore((state) => state.connectionState);
+  const connected = connectionState === 'connected';
+  const deviceName = device?.name ?? 'Sin dispositivo';
+  const battery = device?.battery;
+  const batteryWidth: DimensionValue = `${Math.max(0, Math.min(100, battery ?? 0))}%`;
+
   return (
     <SafeAreaView style={s.root} edges={['top']}>
       {/* Top bar: pill de conexión */}
       <View style={s.topbar}>
-        <View style={s.pill}>
-          <View style={s.dot} />
-          <Text style={s.pillText}>HyperBullet</Text>
-        </View>
+        <Pressable style={s.pill} onPress={() => navigation.navigate('Scan')}>
+          <View style={[s.dot, !connected && s.dotInactive]} />
+          <Text style={s.pillText}>{deviceName}</Text>
+        </Pressable>
         <View style={{ flex: 1 }} />
         <View style={s.langChip}>
           <Text style={s.langText}>ES</Text>
@@ -44,14 +59,16 @@ export default function DashboardScreen({ navigation }: Props) {
         <View style={s.deviceCard}>
           <View style={s.deviceIcon} />
           <View style={{ flex: 1 }}>
-            <Text style={s.deviceName}>HyperBullet</Text>
-            <Text style={s.deviceStatus}>Conectado · BLE</Text>
+            <Text style={s.deviceName}>{deviceName}</Text>
+            <Text style={s.deviceStatus}>
+              {connected ? 'Conectado · BLE' : 'Toca arriba para buscar'}
+            </Text>
           </View>
           <View style={s.batteryRow}>
             <View style={s.batteryShell}>
-              <View style={s.batteryFill} />
+              <View style={[s.batteryFill, { width: batteryWidth }]} />
             </View>
-            <Text style={s.batteryPct}>35%</Text>
+            <Text style={s.batteryPct}>{battery === undefined ? '—' : `${battery}%`}</Text>
           </View>
         </View>
 
@@ -59,7 +76,7 @@ export default function DashboardScreen({ navigation }: Props) {
         <View>
           <View style={s.sectionHead}>
             <Text style={s.sectionTitle}>Vibración</Text>
-            <Pressable onPress={() => navigation.navigate('PatternsAll')}>
+            <Pressable disabled>
               <Text style={s.link}>Ver todos</Text>
             </Pressable>
           </View>
@@ -81,7 +98,7 @@ export default function DashboardScreen({ navigation }: Props) {
           <Text style={[s.sectionTitle, { marginBottom: spacing.md }]}>Modos de control</Text>
           <View style={{ gap: spacing.md }}>
             {MODES.map((m) => (
-              <Pressable key={m.label} style={s.modeRow} onPress={() => navigation.navigate(m.route)}>
+              <Pressable key={m.label} style={s.modeRow} disabled>
                 <View style={s.modeIcon} />
                 <View style={{ flex: 1 }}>
                   <Text style={s.modeLabel}>{m.label}</Text>
@@ -111,6 +128,7 @@ const s = StyleSheet.create({
     paddingHorizontal: 14,
   },
   dot: { width: 7, height: 7, borderRadius: 4, backgroundColor: palette.accent },
+  dotInactive: { backgroundColor: palette.textMuted },
   pillText: { fontSize: 13, fontWeight: '600', color: palette.ink },
   langChip: {
     width: 32,
@@ -145,7 +163,7 @@ const s = StyleSheet.create({
     borderRadius: 4,
     padding: 2,
   },
-  batteryFill: { width: '35%', height: '100%', backgroundColor: palette.ink, borderRadius: 1 },
+  batteryFill: { height: '100%', backgroundColor: palette.ink, borderRadius: 1 },
   batteryPct: { fontSize: 13, fontWeight: '700', color: palette.ink },
   sectionHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: spacing.md },
   sectionTitle: { ...typography.section, color: palette.ink },

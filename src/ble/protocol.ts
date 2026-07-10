@@ -9,17 +9,31 @@
  *   Service   0000FFE0-0000-1000-8000-00805F9B34FB  (write de comandos de vibración)
  *   Service   0000FFFE-0000-1000-8000-00805F9B34FB  (handshake / init observado en connectingDevices)
  * Estos son módulos serie-BLE genéricos (tipo HM-10/JDY). La característica de escritura
- * dentro de FFE0 suele ser FFE1 — CONFIRMAR por descubrimiento en tiempo de conexión.
+ * Dentro de FFE0, el APK usa FFE2 para comandos, FFE3 para init y FFE4 para notify.
  */
 
 export const BLE = {
   serviceCommand: '0000FFE0-0000-1000-8000-00805F9B34FB',
   serviceInit: '0000FFFE-0000-1000-8000-00805F9B34FB',
-  // characteristicWrite: se resuelve por descubrimiento; fallback típico:
-  characteristicWriteFallback: '0000FFE1-0000-1000-8000-00805F9B34FB',
+  // Confirmadas en common/utils/bluetooth.js del APK legacy:
+  characteristicCommand: '0000FFE2-0000-1000-8000-00805F9B34FB',
+  characteristicInit: '0000FFE3-0000-1000-8000-00805F9B34FB',
+  characteristicNotify: '0000FFE4-0000-1000-8000-00805F9B34FB',
   // Nombres de dispositivo conocidos para filtrar el escaneo:
-  nameHints: ['HyperBullet', 'Duo Egg', 'CAMTOYZ'],
+  nameHints: ['LHD BLE', 'DSJM', 'HyperBullet', 'Duo Egg', 'CAMTOYZ'],
+  // El APK legacy recibía esta tabla desde su catálogo remoto.
+  nameAliases: { LY379A: 'HyperBullet' } as Readonly<Record<string, string>>,
+  serviceHints: ['ACAB'],
 } as const;
+
+/**
+ * OmniRemote interpreta las notificaciones FFE4 `66 03 XX` como batería.
+ * XX es un byte porcentual y el cliente legacy limita valores anómalos a 100.
+ */
+export function parseBatteryNotification(bytes: Uint8Array): number | undefined {
+  if (bytes.length < 3 || bytes[0] !== 0x66 || bytes[1] !== 0x03) return undefined;
+  return Math.min(bytes[2], 100);
+}
 
 /**
  * Comando de intensidad. TODO(protocol): confirmar rango real del firmware.
@@ -29,7 +43,7 @@ export const BLE = {
 export function buildIntensityCommand(intensity0to100: number): Uint8Array {
   const clamped = Math.max(0, Math.min(100, Math.round(intensity0to100)));
   const byte = Math.round((clamped / 100) * 0xff);
-  // Placeholder de framing — reemplazar por el frame real capturado (posible header/checksum).
+  // Placeholder de framing — el APK confirma cabecera 0x89, pero falta fijar canales/rango del bullet real.
   return new Uint8Array([byte]);
 }
 
