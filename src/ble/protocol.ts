@@ -21,6 +21,8 @@ export const BLE = {
   characteristicNotify: '0000FFE4-0000-1000-8000-00805F9B34FB',
   // Nombres de dispositivo conocidos para filtrar el escaneo:
   nameHints: ['LHD BLE', 'DSJM', 'HyperBullet', 'Duo Egg', 'CAMTOYZ'],
+  // El APK legacy recibía esta tabla desde su catálogo remoto.
+  nameAliases: { LY379A: 'HyperBullet' } as Readonly<Record<string, string>>,
   serviceHints: ['ACAB'],
 } as const;
 

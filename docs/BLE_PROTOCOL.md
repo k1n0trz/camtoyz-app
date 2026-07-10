@@ -9,7 +9,9 @@
 - Handshake/init: **FFE3** con `88 00` seguido de `88 01`.
 - Notificaciones de información/capacidades: **FFE4**; las respuestas observadas comienzan con `66 00` o `66 01`.
 - Se observó un frame con `DataView.setUint8(0,136); setUint8(1,1)` (136 = 0x88) en una ruta de init — posible cabecera de comando. **Confirmar.**
-- Nombres usados por el APK para filtrar: `LHD BLE` y `DSJM`; también acepta un UUID anunciado que contiene `ACAB`. Se conservan `HyperBullet`, `Duo Egg` y `CAMTOYZ` como aliases de producto.
+- Identificación legacy confirmada: además de `LHD BLE`, `DSJM` y un UUID anunciado que contiene `ACAB`, OmniRemote exige la firma ASCII `LHD` (`4C 48 44`) dentro de los bytes del anuncio.
+- `HyperBullet` es un alias comercial obtenido por OmniRemote desde su catálogo remoto; no necesariamente coincide con `name`/`localName` del periférico. La app nueva identifica primero la firma estable y aplica el alias después.
+- El HyperBullet físico validado anuncia el nombre bruto `LY379A`; se conserva un alias local explícito para que el producto siga apareciendo como `HyperBullet` después de conectar.
 - Los comandos de motor observados comienzan con `0x89`; el frame depende del número de motores/canales reportado por el dispositivo.
 
 ## PENDIENTE — capturar con hardware físico (tienes: 2 teléfonos, cable, 1 bullet)

@@ -21,6 +21,7 @@ export type BleConnectionState =
 export interface BleDevice {
   id: string;
   name: string;
+  rawName?: string;
   rssi?: number;
   battery?: number;
 }
@@ -38,15 +39,96 @@ const TARGET_MTU = 185;
 const SCAN_TIMEOUT_MS = 30_000;
 const BATTERY_SERVICE = '0000180F-0000-1000-8000-00805F9B34FB';
 const BATTERY_LEVEL = '00002A19-0000-1000-8000-00805F9B34FB';
+const LHD_SIGNATURE = new Uint8Array([0x4c, 0x48, 0x44]);
 
-function displayName(device: Device): string {
-  return device.localName ?? device.name ?? 'Dispositivo Camtoyz';
+interface DeviceIdentity {
+  matched: boolean;
+  name: string;
+  rawName?: string;
+  source?: 'name' | 'service' | 'lhd-signature';
+}
+
+function base64ToBytes(value: string | null | undefined): Uint8Array {
+  if (!value) return new Uint8Array();
+
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+  const result: number[] = [];
+  let buffer = 0;
+  let bits = 0;
+
+  for (const character of value.replace(/\s/g, '')) {
+    if (character === '=') break;
+    const index = alphabet.indexOf(character);
+    if (index < 0) continue;
+
+    buffer = (buffer << 6) | index;
+    bits += 6;
+    if (bits >= 8) {
+      bits -= 8;
+      result.push((buffer >> bits) & 0xff);
+      buffer &= bits === 0 ? 0 : (1 << bits) - 1;
+    }
+  }
+
+  return Uint8Array.from(result);
+}
+
+function containsBytes(haystack: Uint8Array, needle: Uint8Array): boolean {
+  if (needle.length === 0 || haystack.length < needle.length) return false;
+  for (let offset = 0; offset <= haystack.length - needle.length; offset += 1) {
+    let matches = true;
+    for (let index = 0; index < needle.length; index += 1) {
+      if (haystack[offset + index] !== needle[index]) {
+        matches = false;
+        break;
+      }
+    }
+    if (matches) return true;
+  }
+  return false;
+}
+
+function identifyDevice(device: Device): DeviceIdentity {
+  const rawName = device.localName ?? device.name ?? undefined;
+  const normalizedName = rawName?.toLowerCase() ?? '';
+  const alias = Object.entries(BLE.nameAliases).find(
+    ([advertisedName]) => normalizedName === advertisedName.toLowerCase(),
+  )?.[1];
+  const knownName =
+    Boolean(alias) || BLE.nameHints.some((hint) => normalizedName.includes(hint.toLowerCase()));
+  const knownService = device.serviceUUIDs?.some((uuid) =>
+    BLE.serviceHints.some((hint) => uuid.toUpperCase().includes(hint)),
+  );
+  const hasLhdSignature =
+    containsBytes(base64ToBytes(device.rawScanRecord), LHD_SIGNATURE) ||
+    containsBytes(base64ToBytes(device.manufacturerData), LHD_SIGNATURE);
+
+  const source = hasLhdSignature
+    ? 'lhd-signature'
+    : knownService
+      ? 'service'
+      : knownName
+        ? 'name'
+        : undefined;
+
+  let name = alias ?? rawName ?? 'Dispositivo Camtoyz';
+  if (!alias && normalizedName.includes('duo egg')) {
+    name = 'Duo Egg';
+  } else if (!alias && (normalizedName.includes('hyperbullet') || hasLhdSignature)) {
+    // OmniRemote obtiene este alias de un catálogo remoto; la firma LHD es la
+    // identificación estable que expone el HyperBullet físico probado aquí.
+    name = 'HyperBullet';
+  }
+
+  return { matched: Boolean(source), name, rawName, source };
 }
 
 function toPublicDevice(device: Device, battery?: number): BleDevice {
+  const identity = identifyDevice(device);
   return {
     id: device.id,
-    name: displayName(device),
+    name: identity.name,
+    rawName: identity.rawName,
     rssi: device.rssi ?? undefined,
     battery,
   };
@@ -72,12 +154,7 @@ function bytesToBase64(bytes: Uint8Array): string {
 }
 
 function firstByteFromBase64(value: string | null): number | undefined {
-  if (!value) return undefined;
-  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
-  const high = alphabet.indexOf(value[0]);
-  const low = alphabet.indexOf(value[1]);
-  if (high < 0 || low < 0) return undefined;
-  return (high << 2) | (low >> 4);
+  return base64ToBytes(value)[0];
 }
 
 function errorMessage(error: unknown): string {
@@ -134,6 +211,8 @@ export class BleManager {
     await requestBlePermissions();
     await this.waitUntilPoweredOn();
     await this.stopScan();
+
+    if (await this.recoverConnectedDevice(onFound)) return;
 
     const found = new Set<string>();
     this.setState('scanning');
@@ -192,18 +271,9 @@ export class BleManager {
         autoConnect: false,
         requestMTU: Platform.OS === 'android' ? TARGET_MTU : undefined,
       });
-      const withMtu =
-        Platform.OS === 'android'
-          ? await connected.requestMTU(TARGET_MTU).catch(() => connected)
-          : connected;
-      const discovered = await withMtu.discoverAllServicesAndCharacteristics();
+      const discovered = await connected.discoverAllServicesAndCharacteristics();
 
-      this.nativeDevice = discovered;
-      this.device = toPublicDevice(discovered, this.device?.battery);
-      this.writeCharacteristic = await this.resolveWriteCharacteristic(discovered);
-      this.attachDisconnectListener(discovered.id);
-      await this.initializeProtocol(discovered);
-      await this.attachBatteryMonitor(discovered);
+      await this.activateConnectedDevice(discovered);
       this.reconnectAttempt = 0;
       this.setState('connected');
     } catch (error) {
@@ -218,6 +288,51 @@ export class BleManager {
         throw error;
       }
     }
+  }
+
+  private async recoverConnectedDevice(onFound: (device: BleDevice) => void): Promise<boolean> {
+    if (this.nativeDevice && this.device) {
+      const currentStillConnected = await this.native
+        .isDeviceConnected(this.nativeDevice.id)
+        .catch(() => false);
+      if (currentStillConnected) {
+        onFound(this.device);
+        this.setState('connected');
+        return true;
+      }
+    }
+
+    const connected = await this.native.connectedDevices([BLE.serviceCommand]).catch(() => []);
+
+    for (const candidate of connected) {
+      if (!this.isCamtoyzDevice(candidate)) continue;
+      const isConnected = await this.native.isDeviceConnected(candidate.id).catch(() => false);
+      if (!isConnected) continue;
+
+      try {
+        const discovered = await candidate.discoverAllServicesAndCharacteristics();
+        await this.activateConnectedDevice(discovered);
+        const publicDevice = toPublicDevice(discovered, this.device?.battery);
+        this.device = publicDevice;
+        onFound(publicDevice);
+        this.reconnectAttempt = 0;
+        this.setState('connected');
+        return true;
+      } catch {
+        await this.native.cancelDeviceConnection(candidate.id).catch(() => undefined);
+      }
+    }
+
+    return false;
+  }
+
+  private async activateConnectedDevice(device: Device): Promise<void> {
+    this.nativeDevice = device;
+    this.device = toPublicDevice(device, this.device?.battery);
+    this.writeCharacteristic = await this.resolveWriteCharacteristic(device);
+    this.attachDisconnectListener(device.id);
+    await this.initializeProtocol(device);
+    await this.attachBatteryMonitor(device);
   }
 
   private async resolveWriteCharacteristic(device: Device): Promise<Characteristic> {
@@ -377,12 +492,7 @@ export class BleManager {
   }
 
   private isCamtoyzDevice(device: Device): boolean {
-    const name = (device.localName ?? device.name ?? '').toLowerCase();
-    const knownName = BLE.nameHints.some((hint) => name.includes(hint.toLowerCase()));
-    const knownService = device.serviceUUIDs?.some((uuid) =>
-      BLE.serviceHints.some((hint) => uuid.toUpperCase().includes(hint)),
-    );
-    return knownName || Boolean(knownService);
+    return identifyDevice(device).matched;
   }
 
   private async waitUntilPoweredOn(): Promise<void> {
@@ -408,4 +518,7 @@ export class BleManager {
   }
 }
 
-export const ble = BleManager.shared;
+const globalBle = globalThis as typeof globalThis & { __camtoyzBleManager?: BleManager };
+
+// Mantiene un único cliente nativo incluso durante Fast Refresh, evitando GATT huérfanos.
+export const ble = (globalBle.__camtoyzBleManager ??= BleManager.shared);
