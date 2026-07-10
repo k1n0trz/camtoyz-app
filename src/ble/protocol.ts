@@ -27,6 +27,15 @@ export const BLE = {
 } as const;
 
 /**
+ * OmniRemote interpreta las notificaciones FFE4 `66 03 XX` como batería.
+ * XX es un byte porcentual y el cliente legacy limita valores anómalos a 100.
+ */
+export function parseBatteryNotification(bytes: Uint8Array): number | undefined {
+  if (bytes.length < 3 || bytes[0] !== 0x66 || bytes[1] !== 0x03) return undefined;
+  return Math.min(bytes[2], 100);
+}
+
+/**
  * Comando de intensidad. TODO(protocol): confirmar rango real del firmware.
  * El diseño expone "P1..Pn" (patrones) + intensidad continua (gesto/sonido/música 0-100%).
  * Hipótesis de trabajo: 1 byte de intensidad 0..0xFF. Se ajusta tras el sniffing.

@@ -14,7 +14,7 @@ Fecha: 2026-07-10
 - Conexión GATT, negociación de MTU y descubrimiento de características.
 - Handshake legacy por FFE3 (`88 00`, `88 01`) y monitor FFE4.
 - Escritura centralizada por FFE2, con preferencia por *without response*.
-- Lectura/monitor de Battery Service cuando el firmware lo expone.
+- Lectura de batería propietaria mediante notificaciones FFE4 `66 03 XX`, con fallback al Battery Service estándar cuando exista.
 - Reconexión automática con backoff y cancelación explícita.
 - Store Zustand para conexión, dispositivo, resultados y errores.
 - Pantalla Scan con estados buscando, encontrados y timeout/error.
@@ -29,12 +29,13 @@ Fecha: 2026-07-10
 - Recuperación de una conexión existente validada al volver a la pantalla de escaneo.
 - Reconexión automática validada apagando y encendiendo Bluetooth en el teléfono: overlay `Reconectando…` y retorno a `Conectado · BLE`.
 - Desconexión explícita validada; Android terminó con `GATT_MAX_PHY_CHANNEL in_use: 0`.
-- El firmware no expone Battery Service estándar, por lo que el dashboard muestra `—` sin bloquear la conexión.
+- El firmware no expone Battery Service estándar; la batería se obtiene del frame propietario FFE4 `66 03 XX`.
+- Batería propietaria validada en hardware: el frame reportó y el dashboard mostró `38%`.
 - Se diagnosticó y cerró una conexión GATT huérfana; Android confirmó `GATT_CH_CLOSE` y el desregistro del cliente.
-- Evidencia: [detección real](screenshots/t2-lhd-detection-s22.png), [conexión real](screenshots/t2-connected-s22.png) y [timeout controlado](screenshots/t2-scan-timeout-s22.png).
+- Evidencia: [detección real](screenshots/t2-lhd-detection-s22.png), [conexión con batería real](screenshots/t2-battery-s22.png) y [timeout controlado](screenshots/t2-scan-timeout-s22.png).
 
 ## Cierre de T2
 
 - Detección, conexión, recuperación, reconexión y desconexión quedan validadas con el hardware físico.
-- La ausencia de Battery Service estándar queda documentada como capacidad del firmware, no como fallo de T2.
+- La ausencia de Battery Service estándar queda cubierta mediante el protocolo propietario usado por OmniRemote.
 - No se enviaron comandos de motor; su validación permanece bloqueada hasta T3 con una captura o prueba controlada.

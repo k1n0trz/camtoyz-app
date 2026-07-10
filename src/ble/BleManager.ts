@@ -6,7 +6,13 @@ import {
   type Subscription,
 } from 'react-native-ble-plx';
 
-import { BLE, buildIntensityCommand, buildPatternCommand, stopCommand } from './protocol';
+import {
+  BLE,
+  buildIntensityCommand,
+  buildPatternCommand,
+  parseBatteryNotification,
+  stopCommand,
+} from './protocol';
 import { requestBlePermissions } from './permissions';
 
 export type BleConnectionState =
@@ -421,7 +427,11 @@ export class BleManager {
 
       this.protocolSubscription?.remove();
       if (notify?.isNotifiable || notify?.isIndicatable) {
-        this.protocolSubscription = notify.monitor(() => undefined);
+        this.protocolSubscription = notify.monitor((error, characteristic) => {
+          if (error || !characteristic?.value) return;
+          const battery = parseBatteryNotification(base64ToBytes(characteristic.value));
+          if (battery !== undefined) this.updateDevice({ battery });
+        });
       }
 
       if (init?.isWritableWithoutResponse || init?.isWritableWithResponse) {

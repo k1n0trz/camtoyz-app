@@ -8,6 +8,7 @@
 - Escritura de comandos: **FFE2** dentro de FFE0, confirmada en `common/utils/bluetooth.js` del APK.
 - Handshake/init: **FFE3** con `88 00` seguido de `88 01`.
 - Notificaciones de información/capacidades: **FFE4**; las respuestas observadas comienzan con `66 00` o `66 01`.
+- Batería propietaria confirmada en OmniRemote: notificación FFE4 `66 03 XX`; `XX` es el porcentaje hexadecimal y se limita a 100.
 - Se observó un frame con `DataView.setUint8(0,136); setUint8(1,1)` (136 = 0x88) en una ruta de init — posible cabecera de comando. **Confirmar.**
 - Identificación legacy confirmada: además de `LHD BLE`, `DSJM` y un UUID anunciado que contiene `ACAB`, OmniRemote exige la firma ASCII `LHD` (`4C 48 44`) dentro de los bytes del anuncio.
 - `HyperBullet` es un alias comercial obtenido por OmniRemote desde su catálogo remoto; no necesariamente coincide con `name`/`localName` del periférico. La app nueva identifica primero la firma estable y aplica el alias después.
@@ -32,7 +33,7 @@ Objetivo: documentar el **frame exacto** que la app manda para (a) cada patrón 
 - `stopCommand`: confirmar (¿0x00 basta o requiere frame completo?).
 - Confirmar `characteristicWrite` real y si `withoutResponse` es soportado (clave para latencia del gesto).
 
-### Preguntas abiertas para el proveedor del hardware (si hay contacto)
+### Datos confirmados y preguntas abiertas para el proveedor
 - ¿El firmware soporta intensidad continua (byte 0..255) o solo N escalones discretos? → define cuántos patrones/niveles reales se pueden exponer (defecto #2).
-- ¿Expone batería vía alguna característica GATT estándar (0x2A19) o propietaria? → hoy el dashboard muestra %, confirmar de dónde sale.
+- El HyperBullet no expone Battery Service estándar `0x2A19`; informa la batería mediante FFE4 `66 03 XX`.
 - ¿MTU máximo soportado? → afecta fiabilidad de escritura.
