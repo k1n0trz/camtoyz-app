@@ -27,7 +27,7 @@ export default function SplashScreen({ navigation }: Props) {
         </View>
       </View>
       <View style={s.actions}>
-        <Pressable style={s.primary} onPress={() => navigation.navigate('Dashboard')}>
+        <Pressable style={s.primary} onPress={() => navigation.navigate('Scan')}>
           <Text style={s.primaryLabel}>Comenzar juego</Text>
         </Pressable>
         <Pressable style={s.secondary} onPress={() => navigation.navigate('Dashboard')}>
