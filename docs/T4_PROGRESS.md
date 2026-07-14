@@ -19,8 +19,13 @@ Inicio: 2026-07-14
 - `npx expo export --platform android`: correcto.
 - `npx expo prebuild --platform android --no-install` y `assembleDebug`: correctos.
 
-## Pendiente de cierre
+## Validación en Galaxy S22+ + HyperBullet
 
-- Instalar la build en el Galaxy S22+ y revisar Dashboard, Todos los patrones, Mis dispositivos y el icono del launcher.
-- Con HyperBullet encendido: confirmar que P1..P5 permanecen operativos y P6..P10 permanecen bloqueados.
+- Build instalada y Dashboard, Todos los patrones y Mis dispositivos cargan correctamente.
+- HyperBullet anunció cinco patrones: P1..P5 quedaron habilitados y P6..P10 quedaron bloqueados en la UI.
+- P1 emitió `89 05 02 01 01`; al detenerlo, los últimos frames fueron `89 04 01 00` y `89 05 02 01 00`.
+- La configuración de icono general y adaptive icon se incluyó en la build Android instalada.
+
+## Pendiente de ampliación
+
 - Validar multi-conexión real cuando haya un segundo periférico físico compatible.
