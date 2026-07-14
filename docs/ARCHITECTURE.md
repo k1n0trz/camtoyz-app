@@ -35,7 +35,7 @@ Roles:
 - **Anfitrión** (quien comparte el código): panel de participantes, expulsar, bloquear (no puede re-unirse), terminar sesión para todos. Se distingue con el acento P7433.
 - **Miembro**: controla pero no ve el panel; badge "Miembro".
 
-Estado actual: `server/` y el contrato compartido `shared/roomProtocol.ts` están implementados y probados. Falta `src/features/room/RoomClient.ts`, que conectará Socket.IO para membresía/señalización y WebRTC DataChannel para el control P2P. El servidor nunca recibe audio, video ni comandos de vibración.
+Estado actual: `server/`, `shared/roomProtocol.ts`, `src/features/room/RoomClient.ts`, `RoomPeerController.ts` y el estado de sala están implementados. Socket.IO gestiona membresía y señalización; WebRTC DataChannel transporta patrón, intensidad y detener entre pares. El servidor nunca recibe audio, video ni comandos de vibración. La validación pendiente es física, entre dos teléfonos, antes de habilitar video.
 
 ## 3. Protocolo con el hardware
 

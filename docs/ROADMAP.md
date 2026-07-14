@@ -33,7 +33,7 @@ Fases incrementales. Cada una entrega algo verificable en el teléfono físico. 
 ## Fase 6 — Interacción remota (salas)
 - Servidor `server/` (Node + socket.io) para membresía/roles + WebRTC DataChannel para control. Video opcional (07g).
 - 07a–07g: crear/unirse, panel anfitrión (expulsar/bloquear/terminar), vista miembro, expulsado, badge de privacidad.
-- **Progreso:** servidor base, contrato compartido, seguridad y pruebas de integración ✅; cliente móvil, pantallas y prueba entre dos teléfonos pendientes.
+- **Progreso:** servidor, contrato compartido, seguridad, recuperación de sesión, cliente móvil y pantallas 07a–07f ✅. La creación de sala y la membresía en tiempo real se validaron en Galaxy. Pendiente: prueba física de DataChannel y BLE con dos teléfonos; 07g continúa opcional.
 - **DoD:** dos teléfonos: uno controla el bullet del otro por sala; el anfitrión expulsa/bloquea; al perder red se ve "conexión perdida", no sala fantasma.
 
 ## Fase 7 — Pulido y release

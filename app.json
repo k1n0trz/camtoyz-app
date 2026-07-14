@@ -49,7 +49,15 @@
         }
       ],
       "expo-dev-client",
-      "expo-asset"
+      "expo-asset",
+      "expo-secure-store",
+      [
+        "@config-plugins/react-native-webrtc",
+        {
+          "cameraPermission": "Camtoyz usa la cámara solo cuando activas video en una sala privada.",
+          "microphonePermission": "Camtoyz usa el micrófono para el control por sonido y las salas privadas."
+        }
+      ]
     ]
   }
 }

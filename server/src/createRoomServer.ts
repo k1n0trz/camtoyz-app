@@ -58,6 +58,17 @@ function isValidSignal(signal: PeerSignalPayload): boolean {
   }
 }
 
+function isAllowedOrigin(origin: string | undefined, host: string | undefined, allowedOrigins: string[]): boolean {
+  if (!origin || allowedOrigins.includes(origin)) return true;
+  try {
+    // Algunos clientes nativos anuncian el propio destino WebSocket como Origin.
+    // Se permite únicamente si coincide con el host que recibirá la conexión.
+    return new URL(origin).host === host;
+  } catch {
+    return false;
+  }
+}
+
 function clearMembership(socket: RoomSocket): void {
   delete socket.data.roomCode;
   delete socket.data.participantId;
@@ -98,7 +109,7 @@ export function createRoomServer(options: RoomServerOptions = {}): RunningRoomSe
     cors: { origin: allowedOrigins },
     allowRequest: (request, callback) => {
       const origin = request.headers.origin;
-      callback(null, !origin || allowedOrigins.includes(origin));
+      callback(null, isAllowedOrigin(origin, request.headers.host, allowedOrigins));
     },
     connectionStateRecovery: {
       maxDisconnectionDuration: recoveryWindowMs,
@@ -200,9 +211,18 @@ export function createRoomServer(options: RoomServerOptions = {}): RunningRoomSe
       try {
         if (rateLimited('entry', 10)) throw new RoomRegistryError('RATE_LIMITED', 'Espera antes de reanudar.');
         ensureAvailable();
+        const previousSocketId = registry.getConnectedSocketId(request?.roomCode ?? '', request?.participantId ?? '');
         const session = registry.resume(request?.roomCode ?? '', request?.participantId ?? '', request?.resumeToken ?? '', socket.id);
         const participant = registry.getParticipant(session.snapshot.code, request.participantId);
         if (!participant) throw new RoomRegistryError('PARTICIPANT_NOT_FOUND', 'La sesión ya no existe.');
+        if (previousSocketId && previousSocketId !== socket.id) {
+          const previousSocket = io.of('/').sockets.get(previousSocketId);
+          if (previousSocket) {
+            previousSocket.leave(roomChannel(session.snapshot.code));
+            clearMembership(previousSocket);
+            previousSocket.disconnect(true);
+          }
+        }
         await attach(session.snapshot.code, participant.id, participant.role);
         ack(success(session));
         emitSnapshot(session.snapshot.code);

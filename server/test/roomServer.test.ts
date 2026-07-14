@@ -203,6 +203,29 @@ test('reanuda una sesión solo con el token secreto correcto', async () => {
   }
 });
 
+test('un token correcto recupera la misma sesión y reemplaza su socket anterior', async () => {
+  const host = await connectClient();
+  const replacement = await connectClient();
+  const created = await createRoom(host, { participantId: HOST_ID, displayName: 'Host' });
+  assert.equal(created.ok, true);
+  if (!created.ok) return;
+
+  const disconnected = new Promise<void>((resolve) => host.once('disconnect', () => resolve()));
+  const resumed = await new Promise<RoomAck<RoomSessionData>>((resolve) => {
+    replacement.emit('room:resume', {
+      roomCode: created.data.snapshot.code,
+      participantId: HOST_ID,
+      resumeToken: created.data.resumeToken,
+    }, resolve);
+  });
+  assert.equal(resumed.ok, true);
+  await disconnected;
+  if (resumed.ok) {
+    const participant = resumed.data.snapshot.participants.find(({ id }) => id === HOST_ID);
+    assert.equal(participant?.connected, true);
+  }
+});
+
 test('cierra la sala si el anfitrión no vuelve dentro de la ventana de recuperación', async () => {
   const host = await connectClient();
   const member = await connectClient();

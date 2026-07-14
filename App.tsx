@@ -14,6 +14,11 @@ import MultiDeviceScreen from '@/screens/MultiDeviceScreen';
 import GestureControlScreen from '@/screens/GestureControlScreen';
 import SoundControlScreen from '@/screens/SoundControlScreen';
 import MusicControlScreen from '@/screens/MusicControlScreen';
+import RoomCreateScreen from '@/screens/RoomCreateScreen';
+import RoomJoinScreen from '@/screens/RoomJoinScreen';
+import RoomHostPanelScreen from '@/screens/RoomHostPanelScreen';
+import RoomMemberSessionScreen from '@/screens/RoomMemberSessionScreen';
+import RoomKickedScreen from '@/screens/RoomKickedScreen';
 import { ConnectionStatusOverlay } from '@/components/ConnectionStatusOverlay';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -39,6 +44,11 @@ export default function App() {
             <Stack.Screen name="GestureControl" component={GestureControlScreen} />
             <Stack.Screen name="SoundControl" component={SoundControlScreen} />
             <Stack.Screen name="MusicControl" component={MusicControlScreen} />
+            <Stack.Screen name="RoomCreate" component={RoomCreateScreen} />
+            <Stack.Screen name="RoomJoin" component={RoomJoinScreen} />
+            <Stack.Screen name="RoomHostPanel" component={RoomHostPanelScreen} />
+            <Stack.Screen name="RoomMemberSession" component={RoomMemberSessionScreen} />
+            <Stack.Screen name="RoomKicked" component={RoomKickedScreen} />
             {/* Codex: registrar aquí el resto de rutas de src/navigation/routes.ts
                 a medida que se construyen (Scan, PatternsAll, MultiDevice, GestureControl,
                 SoundControl, MusicControl, Room*, SettingsDevice). */}

@@ -151,9 +151,6 @@ export class RoomRegistry {
     if (!tokensMatch(resumeToken, participant.resumeTokenHash)) {
       throw new RoomRegistryError('INVALID_RESUME_TOKEN', 'No fue posible verificar la sesión.');
     }
-    if (participant.connected && participant.socketId !== socketId) {
-      throw new RoomRegistryError('IDENTITY_IN_USE', 'La sesión ya está activa en otro dispositivo.');
-    }
     participant.connected = true;
     participant.socketId = socketId;
     return { snapshot: this.toSnapshot(room), resumeToken };

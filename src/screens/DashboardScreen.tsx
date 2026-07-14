@@ -29,7 +29,7 @@ const MODES = [
   { label: 'Mis dispositivos', sub: 'Administra tus dispositivos conectados', route: 'MultiDevice' as const },
   { label: 'Control por sonido', sub: 'Reacciona al sonido ambiente', route: 'SoundControl' as const },
   { label: 'Control musical', sub: 'Sincroniza con tu música', route: 'MusicControl' as const },
-  { label: 'Interacción remota', sub: 'Salas para compartir el control' },
+  { label: 'Interacción remota', sub: 'Salas privadas para compartir el control', route: 'RoomCreate' as const },
   { label: 'Control por gesto', sub: 'Dibuja la intensidad en la pantalla', route: 'GestureControl' as const },
 ];
 

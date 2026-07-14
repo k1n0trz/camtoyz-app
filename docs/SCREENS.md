@@ -17,13 +17,13 @@ Contrato de rutas: `src/navigation/routes.ts`. Estado por pantalla: ✅ base hec
 | 04b Gesture-MultiDevice | `GestureMultiDevice` | Pad asignando a varios dispositivos. | 🟡 |
 | 05 Sound-Control | `SoundControl` | Waveform en vivo, sensibilidad, curva de respuesta. Micrófono. | ✅ |
 | 06 Music-Control | `MusicControl` | Sincronía con música, visualización rítmica. | ✅ |
-| 07a Room-Create-Host | `RoomCreate` | Código/QR de invitación, contador, iniciar sesión. | 🟡 |
-| 07b Room-Join | `RoomJoin` | Input de código / escaneo QR. | 🟡 |
-| 07c Room-HostPanel | `RoomHostPanel` | Panel de participantes (solo anfitrión): expulsar/bloquear. | 🟡 |
-| 07c2 Room-BlockConfirm | `RoomHostPanel` (modal) | Confirmación destructiva de bloqueo. | 🟡 |
-| 07d Room-EndSession | `RoomHostPanel` (modal) | "Terminar sesión para todos". | 🟡 |
-| 07e Room-MemberSession | `RoomMemberSession` | Vista de invitado sin panel; badge "Miembro". | 🟡 |
-| 07f Room-Kicked | `RoomKicked` | "Has sido expulsado/bloqueado" + volver. | 🟡 |
+| 07a Room-Create-Host | `RoomCreate` | Crear sala, código de invitación y recuperación de sesión. | ✅ |
+| 07b Room-Join | `RoomJoin` | Input de código y unión segura a la sala. | ✅ |
+| 07c Room-HostPanel | `RoomHostPanel` | Panel en tiempo real; expulsar/bloquear. | ✅ |
+| 07c2 Room-BlockConfirm | `RoomHostPanel` (modal) | Confirmación destructiva de bloqueo. | ✅ |
+| 07d Room-EndSession | `RoomHostPanel` (modal) | "Terminar sesión para todos". | ✅ |
+| 07e Room-MemberSession | `RoomMemberSession` | Vista de invitado y controles P2P. | ✅ (pendiente validación física P2P) |
+| 07f Room-Kicked | `RoomKicked` | "Has sido expulsado/bloqueado" + volver. | ✅ |
 | 07g Room-Camera | `RoomCamera` | Video en sala (WebRTC). Badge de privacidad. | 🟡 |
 | 08 Settings-Device | `SettingsDevice` | Firmware, desconectar, olvidar, soporte. | 🟡 |
 | 09a State-Reconnecting | overlay | Spinner + "Reconectando…" + botón Reconectar visible. | 🟡 |

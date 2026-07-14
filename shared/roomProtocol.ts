@@ -87,6 +87,12 @@ export interface ReceivedPeerSignal {
   signal: PeerSignalPayload;
 }
 
+/** Contrato del DataChannel P2P. El servidor nunca recibe estos mensajes. */
+export type RoomControlCommand =
+  | { version: 1; sequence: number; sentAt: number; type: 'stop' }
+  | { version: 1; sequence: number; sentAt: number; type: 'pattern'; value: number }
+  | { version: 1; sequence: number; sentAt: number; type: 'intensity'; value: number };
+
 export interface ClientToServerEvents {
   'room:create': (request: RoomIdentityRequest, ack: (response: RoomAck<RoomSessionData>) => void) => void;
   'room:join': (request: JoinRoomRequest, ack: (response: RoomAck<RoomSessionData>) => void) => void;

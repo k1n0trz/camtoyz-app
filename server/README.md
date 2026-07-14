@@ -17,11 +17,13 @@ El endpoint `GET /health` devuelve el estado del servicio. La configuración par
 
 | Variable | Uso |
 |---|---|
-| `PORT` | Puerto HTTP/Socket.IO. |
+| `PORT` | Puerto HTTP/Socket.IO (predeterminado: `8787`). |
 | `ROOM_ALLOWED_ORIGINS` | Orígenes web permitidos, separados por coma. Los clientes nativos sin `Origin` son aceptados. |
 | `ROOM_MAX_PARTICIPANTS` | Límite total por sala, incluido el anfitrión. |
 | `ROOM_TTL_MS` | Vida máxima de una sala. |
 | `ROOM_RECOVERY_WINDOW_MS` | Ventana para recuperar una desconexión antes de cerrar la sala del anfitrión. |
+
+En desarrollo móvil, si no se define `EXPO_PUBLIC_ROOM_SERVER_URL`, el cliente usa el host de Metro con el puerto `8787`. Para un servidor desplegado, define una URL `https://`/`wss://` explícita. Los clientes nativos pueden anunciar el propio destino WebSocket como `Origin`; el servidor lo acepta solo cuando coincide con el `Host` de esa conexión, además de los orígenes web configurados.
 
 ## Contrato
 
