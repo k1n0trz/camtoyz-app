@@ -7,16 +7,16 @@ Contrato de rutas: `src/navigation/routes.ts`. Estado por pantalla: ✅ base hec
 |---|---|---|---|
 | 00 Tokens | `src/theme/tokens.ts` | Color/tipografía/espaciado. Fuente de verdad. | ✅ |
 | 01 Splash | `Splash` | Logo, spinner "Verificando carga", 2 CTAs. | ✅ |
-| 02a Scan-Empty | `Scan` (empty) | Bottom sheet, animación de pulso, auto-stop 30 s. | 🟡 |
-| 02b Scan-Found | `Scan` (found) | Lista de dispositivos con conectar/desconectar. | 🟡 |
-| 02c Scan-Error | `Scan` (error) | "No se encontró", reintentar + ayuda. | 🟡 |
+| 02a Scan-Empty | `Scan` (empty) | Bottom sheet, animación de pulso, auto-stop 30 s. | ✅ |
+| 02b Scan-Found | `Scan` (found) | Lista de dispositivos con conectar/desconectar. | ✅ |
+| 02c Scan-Error | `Scan` (error) | "No se encontró", reintentar + ayuda. | ✅ |
 | 03 Dashboard-Connected | `Dashboard` | Batería, grid patrones, modos de control. | ✅ |
-| 03b Patterns-Extended | `PatternsAll` | Grid escalable por categorías (Constantes/Ondas/Ráfagas) + "Nuevo". | 🟡 |
-| 03c Multi-Device | `MultiDevice` | Varios dispositivos, intensidad por dispositivo. | 🟡 |
-| 04 Gesture-Control | `GestureControl` | **Pad táctil** → intensidad en tiempo real. reanimated + throttle BLE. | 🟡 |
+| 03b Patterns-Extended | `PatternsAll` | Grid escalable por categorías (Constantes/Ondas/Ráfagas) + "Nuevo". | ✅ |
+| 03c Multi-Device | `MultiDevice` | Varios dispositivos, intensidad por dispositivo. | ✅ |
+| 04 Gesture-Control | `GestureControl` | **Pad táctil** → intensidad en tiempo real. reanimated + throttle BLE. | ✅ |
 | 04b Gesture-MultiDevice | `GestureMultiDevice` | Pad asignando a varios dispositivos. | 🟡 |
-| 05 Sound-Control | `SoundControl` | Waveform en vivo, sensibilidad, curva de respuesta. Micrófono. | 🟡 |
-| 06 Music-Control | `MusicControl` | Sincronía con música, visualización rítmica. | 🟡 |
+| 05 Sound-Control | `SoundControl` | Waveform en vivo, sensibilidad, curva de respuesta. Micrófono. | ✅ |
+| 06 Music-Control | `MusicControl` | Sincronía con música, visualización rítmica. | ✅ |
 | 07a Room-Create-Host | `RoomCreate` | Código/QR de invitación, contador, iniciar sesión. | 🟡 |
 | 07b Room-Join | `RoomJoin` | Input de código / escaneo QR. | 🟡 |
 | 07c Room-HostPanel | `RoomHostPanel` | Panel de participantes (solo anfitrión): expulsar/bloquear. | 🟡 |

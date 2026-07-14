@@ -2,6 +2,9 @@
   "name": "camtoyz-control",
   "version": "0.1.0",
   "private": true,
+  "workspaces": [
+    "server"
+  ],
   "description": "Camtoyz Control — app de control remoto BLE para juguetes íntimos Camtoyz. Reemplazo de OmniRemote.",
   "main": "index.js",
   "scripts": {
@@ -10,7 +13,10 @@
     "ios": "expo run:ios",
     "prebuild": "expo prebuild",
     "lint": "eslint . --ext .ts,.tsx",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "server:build": "npm run build --workspace @camtoyz/room-server",
+    "server:start": "npm run start --workspace @camtoyz/room-server",
+    "server:test": "npm run test --workspace @camtoyz/room-server"
   },
   "dependencies": {
     "@react-navigation/native": "^7.0.0",
