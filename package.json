@@ -17,6 +17,7 @@
     "@react-navigation/native-stack": "^7.0.0",
     "expo": "^52.0.0",
     "expo-asset": "~11.0.5",
+    "expo-av": "~15.0.2",
     "expo-dev-client": "~5.0.0",
     "expo-status-bar": "~2.0.0",
     "expo-system-ui": "~4.0.9",
@@ -32,9 +33,9 @@
   },
   "devDependencies": {
     "@types/react": "~18.3.12",
-    "typescript": "^5.3.3",
     "eslint": "^8.57.0",
-    "eslint-config-expo": "^8.0.0"
+    "eslint-config-expo": "^8.0.0",
+    "typescript": "^5.3.3"
   },
   "//": "Codex: NO confíes en estas versiones a ciegas. Corre `npx expo install` para alinear módulos nativos con la SDK de Expo instalada. react-native-webrtc y socket.io-client se añaden en la Fase 5 (salas)."
 }
