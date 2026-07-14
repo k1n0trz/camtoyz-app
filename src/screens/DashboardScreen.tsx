@@ -13,6 +13,8 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
 import { palette, radii, spacing, typography, patternGrid } from '@/theme';
 import { useBleStore } from '@/state/bleStore';
+import { PatternTile } from '@/components/PatternTile';
+import { featuredPatterns, isPatternSupported } from '@/features/patterns/catalog';
 
 /**
  * 03 Dashboard-Connected — patrón de referencia con:
@@ -23,8 +25,8 @@ import { useBleStore } from '@/state/bleStore';
  */
 type Props = NativeStackScreenProps<RootStackParamList, 'Dashboard'>;
 
-const PATTERNS = ['P1', 'P2', 'P3', 'P4', 'P5'];
 const MODES = [
+  { label: 'Mis dispositivos', sub: 'Administra tus dispositivos conectados', route: 'MultiDevice' as const },
   { label: 'Control por sonido', sub: 'Reacciona al sonido ambiente' },
   { label: 'Control musical', sub: 'Sincroniza con tu música' },
   { label: 'Interacción remota', sub: 'Salas para compartir el control' },
@@ -97,30 +99,23 @@ export default function DashboardScreen({ navigation }: Props) {
         <View>
           <View style={s.sectionHead}>
             <Text style={s.sectionTitle}>Vibración</Text>
-            <Pressable disabled>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Ver todos los patrones"
+              onPress={() => navigation.navigate('PatternsAll')}
+            >
               <Text style={s.link}>Ver todos</Text>
             </Pressable>
           </View>
           <View style={s.grid}>
-            {PATTERNS.map((p, i) => (
-              <Pressable
-                key={p}
-                accessibilityRole="button"
-                accessibilityLabel={activePattern === i + 1 ? `Detener ${p}` : `Activar ${p}`}
-                disabled={!connected || commandBusy || i + 1 > patternCount}
-                onPress={() => void handlePattern(i + 1)}
-                style={[
-                  s.cell,
-                  activePattern === i + 1 && s.cellActive,
-                  (!connected || i + 1 > patternCount) && s.cellDisabled,
-                ]}
-              >
-                <Text
-                  style={[s.cellLabel, activePattern === i + 1 && s.cellLabelActive]}
-                >
-                  {p}
-                </Text>
-              </Pressable>
+            {featuredPatterns.map((pattern) => (
+              <PatternTile
+                key={pattern.id}
+                pattern={pattern}
+                active={activePattern === pattern.id}
+                disabled={!connected || commandBusy || !isPatternSupported(pattern, patternCount)}
+                onPress={() => void handlePattern(pattern.id)}
+              />
             ))}
           </View>
           <View style={s.safetyRow}>
@@ -145,7 +140,14 @@ export default function DashboardScreen({ navigation }: Props) {
           <Text style={[s.sectionTitle, { marginBottom: spacing.md }]}>Modos de control</Text>
           <View style={{ gap: spacing.md }}>
             {MODES.map((m) => (
-              <Pressable key={m.label} style={s.modeRow} disabled>
+              <Pressable
+                key={m.label}
+                accessibilityRole="button"
+                accessibilityLabel={m.label}
+                onPress={m.route ? () => navigation.navigate(m.route) : undefined}
+                disabled={!m.route}
+                style={[s.modeRow, !m.route && s.modeDisabled]}
+              >
                 <View style={s.modeIcon} />
                 <View style={{ flex: 1 }}>
                   <Text style={s.modeLabel}>{m.label}</Text>
@@ -216,20 +218,6 @@ const s = StyleSheet.create({
   sectionTitle: { ...typography.section, color: palette.ink },
   link: { fontSize: 12, fontWeight: '600', color: palette.textMuted },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: patternGrid.gap },
-  cell: {
-    width: patternGrid.minCell,
-    height: patternGrid.minCell,
-    borderRadius: radii.lg,
-    borderWidth: 1,
-    borderColor: palette.borderStrong,
-    backgroundColor: palette.card,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cellActive: { borderWidth: 1.5, borderColor: palette.accent },
-  cellDisabled: { opacity: 0.4 },
-  cellLabel: { fontSize: 9, fontWeight: '700', color: palette.textMuted },
-  cellLabelActive: { color: palette.accent },
   safetyRow: {
     marginTop: spacing.md,
     flexDirection: 'row',
@@ -260,6 +248,7 @@ const s = StyleSheet.create({
     paddingVertical: 15,
     paddingHorizontal: spacing.lg,
   },
+  modeDisabled: { opacity: 0.55 },
   modeIcon: { width: 38, height: 38, borderRadius: 19, borderWidth: 1, borderColor: palette.borderStrong },
   modeLabel: { fontSize: 14, fontWeight: '700', color: palette.ink },
   modeSub: { fontSize: 12, color: palette.textSecondary, marginTop: 1 },
