@@ -30,8 +30,13 @@ export default function SplashScreen({ navigation }: Props) {
         <Pressable style={s.primary} onPress={() => navigation.navigate('Scan')}>
           <Text style={s.primaryLabel}>Comenzar juego</Text>
         </Pressable>
-        <Pressable style={s.secondary} onPress={() => navigation.navigate('Dashboard')}>
-          <Text style={s.secondaryLabel}>Modo control remoto</Text>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Continuar sin juguete y unirse a una sala"
+          style={s.secondary}
+          onPress={() => navigation.navigate('RoomJoin')}
+        >
+          <Text style={s.secondaryLabel}>Continuar sin juguete</Text>
         </Pressable>
       </View>
     </SafeAreaView>

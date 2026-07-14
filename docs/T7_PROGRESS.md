@@ -33,7 +33,8 @@ La segunda entrega de la Fase 6 está en curso: servidor, cliente móvil de sala
 
 ## Próxima entrega
 
-1. Validación física entre dos teléfonos, con la bala conectada al anfitrión/receptor.
-2. Confirmar patrón, intensidad, detener y parada automática al perder DataChannel.
-3. Configurar STUN/TURN propio para uso fuera de la misma red local.
-4. Video opcional 07g y cámara/efectos solo después de cerrar el control remoto.
+1. Distribuir una APK interna autónoma para que los miembros puedan entrar sin instalar una build de desarrollo.
+2. Validación física entre dos teléfonos, con la bala conectada al anfitrión/receptor.
+3. Confirmar patrón, intensidad, detener y parada automática al perder DataChannel.
+4. Configurar STUN/TURN propio para uso fuera de la misma red local.
+5. Video opcional 07g y cámara/efectos solo después de cerrar el control remoto.
