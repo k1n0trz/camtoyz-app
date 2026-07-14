@@ -147,21 +147,24 @@ export class RoomClient {
     const participantId = await getInstallationId();
     this.storedSession = { roomCode: session.snapshot.code, participantId, resumeToken: session.resumeToken };
     await saveRoomSession(this.storedSession);
+    let iceConfig: RoomIceConfig | undefined;
+    try {
+      const socket = this.socket;
+      if (socket?.connected) {
+        iceConfig = await this.emitWithAck<RoomIceConfig>((ack) => socket.emit('room:ice', ack));
+      }
+    } catch {
+      // La sala sigue siendo útil en LAN aunque TURN no esté disponible.
+    }
     this.update({
       room: session.snapshot,
       participantId,
-      iceConfig: undefined,
+      iceConfig,
       connectionState: 'connected',
       error: undefined,
       removedReason: undefined,
       endedReason: undefined,
     });
-    try {
-      const iceConfig = await this.emitWithAck<RoomIceConfig>((ack) => this.socket?.emit('room:ice', ack));
-      this.update({ iceConfig });
-    } catch {
-      // La sala sigue siendo útil en LAN aunque TURN no esté disponible.
-    }
   }
 
   private async fail(error: unknown): Promise<never> {
