@@ -3,12 +3,13 @@ import { create } from 'zustand';
 import { roomClient, type RoomConnectionState } from '@/features/room/RoomClient';
 import { RoomPeerController } from '@/features/room/RoomPeerController';
 import { useBleStore } from '@/state/bleStore';
-import type { RoomEndedReason, RoomParticipant, RoomRemovedReason, RoomSnapshot } from '../../shared/roomProtocol';
+import type { RoomEndedReason, RoomIceConfig, RoomParticipant, RoomRemovedReason, RoomSnapshot } from '../../shared/roomProtocol';
 
 interface RoomStore {
   connectionState: RoomConnectionState;
   room?: RoomSnapshot;
   participantId?: string;
+  iceConfig?: RoomIceConfig;
   error?: string;
   removedReason?: RoomRemovedReason;
   endedReason?: RoomEndedReason;
@@ -78,6 +79,7 @@ export const useRoomStore = create<RoomStore>(() => ({
 
 roomClient.subscribe((snapshot) => {
   useRoomStore.setState(snapshot);
+  roomPeers.setIceConfig(snapshot.iceConfig);
   void roomPeers.sync(snapshot.room, snapshot.participantId);
 });
 roomClient.subscribePeerSignals((signal) => void roomPeers.receiveSignal(signal));

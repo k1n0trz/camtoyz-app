@@ -1,11 +1,11 @@
 {
-  "name": "camtoyz-control",
+  "name": "camtoyz-app",
   "version": "0.1.0",
   "private": true,
   "workspaces": [
     "server"
   ],
-  "description": "Camtoyz Control — app de control remoto BLE para juguetes íntimos Camtoyz. Reemplazo de OmniRemote.",
+  "description": "Camtoyz App — app de control remoto BLE para juguetes íntimos Camtoyz. Reemplazo de OmniRemote.",
   "main": "index.js",
   "scripts": {
     "start": "expo start --dev-client",

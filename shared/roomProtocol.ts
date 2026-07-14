@@ -68,6 +68,18 @@ export interface RoomSessionData {
   resumeToken: string;
 }
 
+/** Credenciales TURN efímeras emitidas únicamente a un miembro autenticado de la sala. */
+export interface RoomIceServer {
+  urls: string | string[];
+  username?: string;
+  credential?: string;
+}
+
+export interface RoomIceConfig {
+  iceServers: RoomIceServer[];
+  expiresAt: number;
+}
+
 export interface ModerateParticipantRequest {
   participantId: string;
 }
@@ -101,6 +113,7 @@ export interface ClientToServerEvents {
   'room:kick': (request: ModerateParticipantRequest, ack: (response: RoomAck<RoomSnapshot>) => void) => void;
   'room:block': (request: ModerateParticipantRequest, ack: (response: RoomAck<RoomSnapshot>) => void) => void;
   'room:end': (ack: (response: RoomAck<{ ended: true }>) => void) => void;
+  'room:ice': (ack: (response: RoomAck<RoomIceConfig>) => void) => void;
   'peer:signal': (request: SendPeerSignalRequest, ack: (response: RoomAck<{ delivered: true }>) => void) => void;
 }
 

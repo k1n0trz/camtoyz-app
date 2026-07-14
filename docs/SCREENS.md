@@ -1,6 +1,6 @@
 # Inventario de pantallas (28 frames)
 
-Fuente: `design/reference/Camtoyz-Control-Sistema-de-pantallas.html` (Claude Design).
+Fuente: `design/reference/Camtoyz-App-Sistema-de-pantallas.html` (Claude Design).
 Contrato de rutas: `src/navigation/routes.ts`. Estado por pantalla: ✅ base hecha · 🟡 stub/por construir.
 
 | Frame diseño | Ruta / estado | Notas de implementación | Estado |

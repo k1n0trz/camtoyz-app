@@ -40,9 +40,9 @@
         <action android:name="android.intent.action.VIEW"/>
         <category android:name="android.intent.category.DEFAULT"/>
         <category android:name="android.intent.category.BROWSABLE"/>
-        <data android:scheme="camtoyz"/>
-        <data android:scheme="com.camtoyz.control"/>
-        <data android:scheme="exp+camtoyz-control"/>
+        <data android:scheme="camtoyz-app"/>
+        <data android:scheme="com.camtoyz.app"/>
+        <data android:scheme="exp+camtoyz-app"/>
       </intent-filter>
     </activity>
   </application>

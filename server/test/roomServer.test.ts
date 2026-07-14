@@ -7,6 +7,7 @@ import type {
   ClientToServerEvents,
   JoinRoomRequest,
   RoomAck,
+  RoomIceConfig,
   RoomIdentityRequest,
   RoomSessionData,
   RoomSnapshot,
@@ -44,6 +45,10 @@ function createRoom(client: TestClient, request: RoomIdentityRequest): Promise<R
 
 function joinRoom(client: TestClient, request: JoinRoomRequest): Promise<RoomAck<RoomSessionData>> {
   return new Promise((resolve) => client.emit('room:join', request, resolve));
+}
+
+function requestIceConfig(client: TestClient): Promise<RoomAck<RoomIceConfig>> {
+  return new Promise((resolve) => client.emit('room:ice', resolve));
 }
 
 function waitForRoomEnded(client: TestClient): Promise<{ reason: 'host_ended' | 'host_disconnected' | 'expired' }> {
@@ -264,4 +269,36 @@ test('respeta el límite de participantes', async () => {
   const overflow = await joinRoom(other, { roomCode: created.data.snapshot.code, participantId: OTHER_ID, displayName: 'Other' });
   assert.equal(overflow.ok, false);
   if (!overflow.ok) assert.equal(overflow.error.code, 'ROOM_FULL');
+});
+
+test('emite credenciales TURN temporales solo después de verificar la membresía', async () => {
+  for (const client of clients) client.disconnect();
+  await server.close();
+  clients = [];
+  server = createRoomServer({
+    turnUrls: ['turn:app.camtoyz.com:3478?transport=udp', 'turn:app.camtoyz.com:3478?transport=tcp'],
+    turnSharedSecret: 'secret-only-on-server',
+    turnCredentialTtlMs: 60_000,
+    logger: silentLogger(),
+  });
+  const port = await server.listen();
+  url = `http://127.0.0.1:${port}`;
+
+  const host = await connectClient();
+  const unauthorized = await requestIceConfig(host);
+  assert.equal(unauthorized.ok, false);
+  if (!unauthorized.ok) assert.equal(unauthorized.error.code, 'NOT_IN_ROOM');
+
+  const created = await createRoom(host, { participantId: HOST_ID, displayName: 'Host' });
+  assert.equal(created.ok, true);
+  const issued = await requestIceConfig(host);
+  assert.equal(issued.ok, true);
+  if (!issued.ok) return;
+  assert.deepEqual(issued.data.iceServers[0]?.urls, [
+    'turn:app.camtoyz.com:3478?transport=udp',
+    'turn:app.camtoyz.com:3478?transport=tcp',
+  ]);
+  assert.match(issued.data.iceServers[0]?.username ?? '', /^\d+:host_installation_0001$/);
+  assert.ok(issued.data.iceServers[0]?.credential);
+  assert.ok(issued.data.expiresAt > Date.now());
 });

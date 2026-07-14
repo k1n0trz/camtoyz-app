@@ -1,3 +1,4 @@
+import { createHmac } from 'node:crypto';
 import { createServer, type Server as HttpServer } from 'node:http';
 
 import { Server, type Socket } from 'socket.io';
@@ -10,6 +11,7 @@ import {
   type RoomAck,
   type RoomEndedReason,
   type RoomErrorPayload,
+  type RoomIceConfig,
   type RoomRole,
   type RoomSnapshot,
   type RoomSocketData,
@@ -23,6 +25,9 @@ export interface RoomServerOptions extends RoomRegistryOptions {
   allowedOrigins?: string[];
   recoveryWindowMs?: number;
   cleanupIntervalMs?: number;
+  turnUrls?: string[];
+  turnSharedSecret?: string;
+  turnCredentialTtlMs?: number;
   logger?: Pick<Console, 'info' | 'error'>;
 }
 
@@ -95,6 +100,9 @@ export function createRoomServer(options: RoomServerOptions = {}): RunningRoomSe
   const recoveryWindowMs = Math.max(1_000, options.recoveryWindowMs ?? 30_000);
   const cleanupIntervalMs = Math.max(1_000, options.cleanupIntervalMs ?? 60_000);
   const allowedOrigins = options.allowedOrigins ?? [];
+  const turnUrls = (options.turnUrls ?? []).map((url) => url.trim()).filter(Boolean);
+  const turnSharedSecret = options.turnSharedSecret?.trim();
+  const turnCredentialTtlMs = Math.max(60_000, options.turnCredentialTtlMs ?? 60 * 60 * 1_000);
   const registry = new RoomRegistry(options);
   const httpServer = createServer((request, response) => {
     if (request.method === 'GET' && request.url === '/health') {
@@ -119,6 +127,14 @@ export function createRoomServer(options: RoomServerOptions = {}): RunningRoomSe
   });
   const disconnectTimers = new Map<string, NodeJS.Timeout>();
   const keyFor = (roomCode: string, participantId: string) => `${roomCode}:${participantId}`;
+
+  const issueIceConfig = (participantId: string): RoomIceConfig => {
+    const expiresAt = Date.now() + turnCredentialTtlMs;
+    if (!turnSharedSecret || !turnUrls.length) return { iceServers: [], expiresAt };
+    const username = `${Math.floor(expiresAt / 1_000)}:${participantId}`;
+    const credential = createHmac('sha1', turnSharedSecret).update(username).digest('base64');
+    return { iceServers: [{ urls: turnUrls, username, credential }], expiresAt };
+  };
 
   const cancelDisconnect = (roomCode: string, participantId: string) => {
     const key = keyFor(roomCode, participantId);
@@ -282,6 +298,15 @@ export function createRoomServer(options: RoomServerOptions = {}): RunningRoomSe
         const membership = requireHost();
         endRoom(membership.roomCode, 'host_ended');
         ack(success({ ended: true }));
+      } catch (error) {
+        ack(failure(error));
+      }
+    });
+
+    socket.on('room:ice', (ack) => {
+      try {
+        const membership = requireMembership();
+        ack(success(issueIceConfig(membership.participantId)));
       } catch (error) {
         ack(failure(error));
       }

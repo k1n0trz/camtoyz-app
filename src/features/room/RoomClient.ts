@@ -7,6 +7,7 @@ import type {
   RoomRemovedReason,
   ReceivedPeerSignal,
   PeerSignalPayload,
+  RoomIceConfig,
   RoomSessionData,
   RoomSnapshot,
   ServerToClientEvents,
@@ -26,6 +27,7 @@ export interface RoomClientSnapshot {
   connectionState: RoomConnectionState;
   room?: RoomSnapshot;
   participantId?: string;
+  iceConfig?: RoomIceConfig;
   error?: string;
   removedReason?: RoomRemovedReason;
   endedReason?: RoomEndedReason;
@@ -148,11 +150,18 @@ export class RoomClient {
     this.update({
       room: session.snapshot,
       participantId,
+      iceConfig: undefined,
       connectionState: 'connected',
       error: undefined,
       removedReason: undefined,
       endedReason: undefined,
     });
+    try {
+      const iceConfig = await this.emitWithAck<RoomIceConfig>((ack) => this.socket?.emit('room:ice', ack));
+      this.update({ iceConfig });
+    } catch {
+      // La sala sigue siendo útil en LAN aunque TURN no esté disponible.
+    }
   }
 
   private async fail(error: unknown): Promise<never> {
@@ -283,6 +292,7 @@ export class RoomClient {
     this.update({
       room: undefined,
       participantId: undefined,
+      iceConfig: undefined,
       connectionState: this.socket?.connected ? 'connected' : 'idle',
       ...outcome,
     });

@@ -1,4 +1,4 @@
-# Roadmap — Camtoyz Control
+# Roadmap — Camtoyz App
 
 Fases incrementales. Cada una entrega algo verificable en el teléfono físico. No pasar de fase sin cumplir el "Definition of done" (DoD).
 

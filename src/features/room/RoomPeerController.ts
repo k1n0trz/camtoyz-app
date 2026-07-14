@@ -8,6 +8,7 @@ import type {
   PeerSignalPayload,
   ReceivedPeerSignal,
   RoomControlCommand,
+  RoomIceConfig,
   RoomSnapshot,
 } from '../../../shared/roomProtocol';
 
@@ -31,19 +32,9 @@ type SignalSender = (targetParticipantId: string, signal: PeerSignalPayload) => 
 type CommandReceiver = (command: RoomControlCommand) => Promise<void>;
 type Listener = (snapshot: RoomPeerSnapshot) => void;
 
-const CHANNEL_LABEL = 'camtoyz-control-v1';
+const CHANNEL_LABEL = 'camtoyz-app-v1';
 const MAX_COMMAND_BYTES = 512;
 const MAX_COMMAND_AGE_MS = 10_000;
-
-function iceServers() {
-  const url = process.env.EXPO_PUBLIC_ROOM_ICE_URL?.trim();
-  if (!url) return [];
-  return [{
-    urls: url,
-    username: process.env.EXPO_PUBLIC_ROOM_ICE_USERNAME,
-    credential: process.env.EXPO_PUBLIC_ROOM_ICE_CREDENTIAL,
-  }];
-}
 
 function controlCommand(value: unknown): RoomControlCommand | undefined {
   if (!value || typeof value !== 'object') return undefined;
@@ -62,6 +53,7 @@ export class RoomPeerController {
   private latestRoom?: RoomSnapshot;
   private participantId?: string;
   private acceptsCommands = false;
+  private iceServers: RoomIceConfig['iceServers'] = [];
   private sequence = 0;
   private lastIntensityAt = 0;
   private pendingIntensity?: number;
@@ -82,6 +74,10 @@ export class RoomPeerController {
     this.listeners.add(listener);
     listener(this.state);
     return () => this.listeners.delete(listener);
+  }
+
+  setIceConfig(config?: RoomIceConfig): void {
+    this.iceServers = config?.iceServers ?? [];
   }
 
   private update(next: Partial<RoomPeerSnapshot>): void {
@@ -186,7 +182,7 @@ export class RoomPeerController {
     const existing = this.peers.get(peerId);
     if (existing) return existing;
 
-    const connection = new RTCPeerConnection({ iceServers: iceServers() });
+    const connection = new RTCPeerConnection({ iceServers: this.iceServers });
     const entry: PeerEntry = { connection, pendingCandidates: [], offerStarted: false, lastSequence: -1 };
     this.peers.set(peerId, entry);
     connection.addEventListener('icecandidate', (event) => {

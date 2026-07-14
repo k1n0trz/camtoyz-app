@@ -1,4 +1,4 @@
-package com.camtoyz.control
+package com.camtoyz.app
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -42,9 +42,9 @@ class PlaybackCaptureService : Service() {
   }
 
   companion object {
-    const val ACTION_START = "com.camtoyz.control.playback.START"
-    const val ACTION_START_LOCAL = "com.camtoyz.control.playback.START_LOCAL"
-    const val ACTION_STOP = "com.camtoyz.control.playback.STOP"
+    const val ACTION_START = "com.camtoyz.app.playback.START"
+    const val ACTION_START_LOCAL = "com.camtoyz.app.playback.START_LOCAL"
+    const val ACTION_STOP = "com.camtoyz.app.playback.STOP"
     const val EXTRA_RESULT_CODE = "resultCode"
     const val EXTRA_RESULT_DATA = "resultData"
     const val EXTRA_TRACK_URI = "trackUri"

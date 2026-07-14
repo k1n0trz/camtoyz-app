@@ -18,6 +18,9 @@ El endpoint `GET /health` devuelve el estado del servicio. La configuración par
 | Variable | Uso |
 |---|---|
 | `PORT` | Puerto HTTP/Socket.IO (predeterminado: `8787`). |
+| `TURN_URLS` | URLs TURN, separadas por coma, para conectar teléfonos en redes distintas. |
+| `TURN_SHARED_SECRET` | Secreto solo del servidor para emitir credenciales TURN efímeras. |
+| `TURN_CREDENTIAL_TTL_MS` | Vida útil de esas credenciales temporales. |
 | `ROOM_ALLOWED_ORIGINS` | Orígenes web permitidos, separados por coma. Los clientes nativos sin `Origin` son aceptados. |
 | `ROOM_MAX_PARTICIPANTS` | Límite total por sala, incluido el anfitrión. |
 | `ROOM_TTL_MS` | Vida máxima de una sala. |

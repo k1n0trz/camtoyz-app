@@ -8,7 +8,7 @@ Fecha: 2026-07-10
 - Android SDK: API 35 / Build Tools 35.0.0
 - JDK: Temurin 17
 - Variante: dev-client debug
-- Package: `com.camtoyz.control`
+- Package: `com.camtoyz.app`
 
 ## Resultado
 

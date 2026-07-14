@@ -1,6 +1,6 @@
 /**
- * Camtoyz Control — Design Tokens
- * Fuente de verdad: "Camtoyz Control - Sistema de pantallas.dc.html" (Claude Design, aprobado por Edison Múnera).
+ * Camtoyz App — Design Tokens
+ * Fuente de verdad: "Camtoyz App - Sistema de pantallas.dc.html" (Claude Design, aprobado por Edison Múnera).
  * Paleta canónica: rosa/lila (Pantone). SIN rojo.
  *
  * Regla: NINGÚN componente debe usar colores hardcodeados. Todo sale de aquí.

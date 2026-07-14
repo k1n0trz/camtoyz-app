@@ -1,10 +1,10 @@
 {
   "expo": {
-    "name": "Camtoyz Control",
-    "slug": "camtoyz-control",
+    "name": "Camtoyz App",
+    "slug": "camtoyz-app",
     "version": "0.1.0",
     "orientation": "portrait",
-    "scheme": "camtoyz",
+    "scheme": "camtoyz-app",
     "icon": "./assets/icon/app-icon.png",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -16,7 +16,7 @@
     ],
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.camtoyz.control",
+      "bundleIdentifier": "com.camtoyz.app",
       "infoPlist": {
         "NSBluetoothAlwaysUsageDescription": "Camtoyz usa Bluetooth para conectarse con tu dispositivo.",
         "NSMicrophoneUsageDescription": "El control por sonido usa el micrófono para reaccionar al ambiente.",
@@ -24,7 +24,7 @@
       }
     },
     "android": {
-      "package": "com.camtoyz.control",
+      "package": "com.camtoyz.app",
       "adaptiveIcon": {
         "foregroundImage": "./assets/icon/adaptive-foreground.png",
         "backgroundColor": "#E8B4CB"

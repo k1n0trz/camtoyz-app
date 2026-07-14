@@ -1,0 +1,54 @@
+services:
+  rooms:
+    build:
+      context: .
+      dockerfile: Dockerfile.rooms
+    restart: unless-stopped
+    environment:
+      PORT: "8787"
+      ROOM_ALLOWED_ORIGINS: "https://${ROOM_HOST}"
+      ROOM_MAX_PARTICIPANTS: "2"
+      ROOM_TTL_MS: "21600000"
+      ROOM_RECOVERY_WINDOW_MS: "30000"
+      TURN_URLS: "turn:${ROOM_HOST}:3478?transport=udp,turn:${ROOM_HOST}:3478?transport=tcp"
+      TURN_SHARED_SECRET: "${TURN_SHARED_SECRET}"
+      TURN_CREDENTIAL_TTL_MS: "3600000"
+    expose:
+      - "8787"
+
+  caddy:
+    image: caddy:2.8-alpine
+    restart: unless-stopped
+    depends_on:
+      - rooms
+    environment:
+      ROOM_HOST: "${ROOM_HOST}"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+  coturn:
+    image: coturn/coturn:4.6
+    network_mode: host
+    restart: unless-stopped
+    command:
+      - -n
+      - --log-file=stdout
+      - --listening-port=3478
+      - --external-ip=${TURN_EXTERNAL_IP}/${TURN_INTERNAL_IP}
+      - --realm=${ROOM_HOST}
+      - --use-auth-secret
+      - --static-auth-secret=${TURN_SHARED_SECRET}
+      - --fingerprint
+      - --no-cli
+      - --no-multicast-peers
+      - --min-port=49160
+      - --max-port=49200
+
+volumes:
+  caddy_data:
+  caddy_config:

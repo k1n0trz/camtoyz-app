@@ -1,4 +1,4 @@
-# Arquitectura — Camtoyz Control
+# Arquitectura — Camtoyz App
 
 ## 1. App cliente (React Native + TS / Expo dev-client)
 

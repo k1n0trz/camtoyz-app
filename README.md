@@ -1,4 +1,4 @@
-# Camtoyz Control
+# Camtoyz App
 
 Aplicación móvil de control Bluetooth Low Energy (BLE) para dispositivos **Camtoyz**. Sustituye la aplicación legacy con una sesión BLE estable, controles gestuales, respuesta a sonido y música, e interacción remota por salas.
 

@@ -5,17 +5,21 @@ function readPositiveInt(name: string, fallback: number): number {
   return Number.isFinite(value) && value > 0 ? Math.floor(value) : fallback;
 }
 
+function readCsv(name: string): string[] {
+  return (process.env[name] ?? '').split(',').map((value) => value.trim()).filter(Boolean);
+}
+
 async function main(): Promise<void> {
   const port = readPositiveInt('PORT', 8787);
-  const allowedOrigins = (process.env.ROOM_ALLOWED_ORIGINS ?? '')
-    .split(',')
-    .map((origin) => origin.trim())
-    .filter(Boolean);
+  const allowedOrigins = readCsv('ROOM_ALLOWED_ORIGINS');
   const server = createRoomServer({
     allowedOrigins,
-    maxParticipants: readPositiveInt('ROOM_MAX_PARTICIPANTS', 8),
+    maxParticipants: readPositiveInt('ROOM_MAX_PARTICIPANTS', 2),
     roomTtlMs: readPositiveInt('ROOM_TTL_MS', 6 * 60 * 60 * 1000),
     recoveryWindowMs: readPositiveInt('ROOM_RECOVERY_WINDOW_MS', 30_000),
+    turnUrls: readCsv('TURN_URLS'),
+    turnSharedSecret: process.env.TURN_SHARED_SECRET,
+    turnCredentialTtlMs: readPositiveInt('TURN_CREDENTIAL_TTL_MS', 60 * 60 * 1_000),
   });
   await server.listen(port, '0.0.0.0');
 

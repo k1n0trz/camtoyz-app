@@ -85,7 +85,7 @@ export class RoomRegistry {
   private readonly now: () => number;
 
   constructor(options: RoomRegistryOptions = {}) {
-    this.maxParticipants = Math.max(2, Math.min(32, options.maxParticipants ?? 8));
+    this.maxParticipants = 2;
     this.roomTtlMs = Math.max(60_000, options.roomTtlMs ?? DEFAULT_ROOM_TTL_MS);
     this.now = options.now ?? Date.now;
   }
