@@ -12,20 +12,20 @@ Guía operativa para implementar Camtoyz Control sobre este scaffold. Trabaja **
 
 ## Tareas
 
-### T1 · Levantar el proyecto en el teléfono (Fase 1)
+### T1 · Levantar el proyecto en el teléfono (Fase 1) ✅
 1. `npm install` → `npx expo install` para alinear nativos → `npx expo prebuild`.
 2. `npm run android` con el Android físico conectado (depuración USB). Resuelve permisos.
 3. Verifica navegación Splash→Dashboard y que los tokens se ven bien.
 - **Entregable:** app instalada; captura de Splash y Dashboard reales.
 
-### T2 · BleManager real (Fase 2)
+### T2 · BleManager real (Fase 2) ✅
 1. Implementa escaneo/conexión/MTU/reconexión en `BleManager` con react-native-ble-plx.
 2. Crea `src/state/` (zustand) con estado de conexión/dispositivo/batería, alimentado por el `subscribe` del manager.
 3. Construye pantalla `Scan` (02a/b/c) como bottom sheet con los 3 estados.
 4. Overlays/estados 09a (reconectando, con botón), 09b (batería baja), 09c (error).
 - **Entregable:** conectar el bullet físico, ver batería real, recuperación automática tras caída.
 
-### T3 · Protocolo real (Fase 2, en paralelo con T2)
+### T3 · Protocolo real (Fase 2, en paralelo con T2) ✅
 - Sigue `docs/BLE_PROTOCOL.md`: captura los bytes con el hardware y fija `src/ble/protocol.ts` (rango de intensidad, opcodes de patrón, stop, característica de escritura, `withoutResponse`).
 - **Entregable:** un patrón y una intensidad continua funcionando en el bullet.
 

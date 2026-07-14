@@ -13,27 +13,32 @@
 - Identificación legacy confirmada: además de `LHD BLE`, `DSJM` y un UUID anunciado que contiene `ACAB`, OmniRemote exige la firma ASCII `LHD` (`4C 48 44`) dentro de los bytes del anuncio.
 - `HyperBullet` es un alias comercial obtenido por OmniRemote desde su catálogo remoto; no necesariamente coincide con `name`/`localName` del periférico. La app nueva identifica primero la firma estable y aplica el alias después.
 - El HyperBullet físico validado anuncia el nombre bruto `LY379A`; se conserva un alias local explícito para que el producto siga apareciendo como `HyperBullet` después de conectar.
-- Los comandos de motor observados comienzan con `0x89`; el frame depende del número de motores/canales reportado por el dispositivo.
+- Los comandos de motor comienzan con `0x89`; el frame depende del número de canales reportado por el dispositivo.
+- El HyperBullet probado respondió `66 01 02 00 05`: un canal y cinco patrones (`P1..P5`).
+- FFE2 expone *write without response*. En la captura HCI corresponde al ATT Write Command `0x52`, handle `0x0029`.
 
-## PENDIENTE — capturar con hardware físico (tienes: 2 teléfonos, cable, 1 bullet)
+## Frames reales de control
 
-Objetivo: documentar el **frame exacto** que la app manda para (a) cada patrón P1..Pn y (b) intensidad continua.
+No hay checksum, terminador ni CRC.
 
-### Método recomendado (sin descompilar más)
-1. Teléfono A: instala **nRF Connect** (Nordic) o usa el logcat con `BLUETOOTH` verbose.
-2. Empareja el bullet con la app **OmniRemote actual** y activa cada nivel de vibración.
-3. Con nRF Connect en modo *sniffer* (o el HCI snoop log de Android: Ajustes desarrollador → "Habilitar registro Bluetooth HCI"), captura los bytes escritos en FFE0/FFE2 para:
-   - Cada uno de los 5 patrones actuales.
-   - Si hay slider de intensidad (sonido/música), varios valores para inferir la escala (lineal vs no lineal, rango 0..? ).
-4. Exporta el `btsnoop_hci.log` y ábrelo en Wireshark → filtra `btatt` → columna *Value*.
+- Intensidad continua global: `89 04 N v0 … vN-1`. Cada `v` usa rango raw `0..255`; la UI convierte `0..100%` linealmente.
+- Estado de patrón: `89 05 2N s0 p0 … sN-1 pN-1`. Cada `s` es intensidad discreta `0..10`; cada `p` es patrón, limitado por `66 01`.
+- Stop continuo: `89 04 N 00…`.
+- Stop patrón: `89 05 2N 01 00…`.
+- Calefacción, para hardware que la exponga: `89 06 h0 … hN-1`.
 
-### Qué rellenar después en `src/ble/protocol.ts`
-- `buildIntensityCommand`: rango real (¿0..100? ¿0..255? ¿con cabecera/checksum?).
-- `buildPatternCommand`: opcode + índice reales.
-- `stopCommand`: confirmar (¿0x00 basta o requiere frame completo?).
-- Confirmar `characteristicWrite` real y si `withoutResponse` es soportado (clave para latencia del gesto).
+Vectores validados para el HyperBullet de un canal:
+
+| Acción | Bytes FFE2 |
+|---|---|
+| P1, intensidad mínima | `89 05 02 01 01` |
+| Intensidad continua 10% | `89 04 01 1A` |
+| Stop continuo | `89 04 01 00` |
+| Stop patrón | `89 05 02 01 00` |
+
+La captura HCI registró estos cuatro valores exactamente sobre handle `0x0029`. Un `00` aislado **no** es un comando de parada válido.
 
 ### Datos confirmados y preguntas abiertas para el proveedor
-- ¿El firmware soporta intensidad continua (byte 0..255) o solo N escalones discretos? → define cuántos patrones/niveles reales se pueden exponer (defecto #2).
+- El firmware soporta intensidad continua raw `0..255` y, en modo patrón, intensidad discreta `0..10`.
 - El HyperBullet no expone Battery Service estándar `0x2A19`; informa la batería mediante FFE4 `66 03 XX`.
-- ¿MTU máximo soportado? → afecta fiabilidad de escritura.
+- El enlace probado negoció MTU 260 correctamente.

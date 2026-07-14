@@ -6,12 +6,17 @@ interface BleStore {
   connectionState: BleConnectionState;
   device?: BleDevice;
   devices: BleDevice[];
+  activePattern?: number;
+  commandBusy: boolean;
   error?: string;
   scan: () => Promise<void>;
   stopScan: () => Promise<void>;
   connect: (deviceId: string) => Promise<boolean>;
   disconnect: () => Promise<void>;
   retryConnection: () => Promise<void>;
+  setPattern: (index: number) => Promise<boolean>;
+  setIntensity: (percent: number) => Promise<boolean>;
+  stop: () => Promise<boolean>;
   clearError: () => void;
 }
 
@@ -25,6 +30,8 @@ export const useBleStore = create<BleStore>((set) => ({
   connectionState: ble.snapshot.state,
   device: ble.snapshot.device,
   devices: [],
+  activePattern: ble.snapshot.activePattern,
+  commandBusy: false,
   error: ble.snapshot.error,
 
   scan: async () => {
@@ -69,6 +76,49 @@ export const useBleStore = create<BleStore>((set) => ({
     }
   },
 
+  setPattern: async (index) => {
+    set({ commandBusy: true, error: undefined });
+    try {
+      await ble.setPattern(index);
+      return true;
+    } catch (error) {
+      set({
+        error: error instanceof Error ? error.message : 'No fue posible activar el patrón.',
+      });
+      return false;
+    } finally {
+      set({ commandBusy: false });
+    }
+  },
+
+  setIntensity: async (percent) => {
+    set({ commandBusy: true, error: undefined });
+    try {
+      await ble.setIntensity(percent);
+      return true;
+    } catch (error) {
+      set({
+        error: error instanceof Error ? error.message : 'No fue posible cambiar la intensidad.',
+      });
+      return false;
+    } finally {
+      set({ commandBusy: false });
+    }
+  },
+
+  stop: async () => {
+    set({ commandBusy: true, error: undefined });
+    try {
+      await ble.stop();
+      return true;
+    } catch (error) {
+      set({ error: error instanceof Error ? error.message : 'No fue posible detener el motor.' });
+      return false;
+    } finally {
+      set({ commandBusy: false });
+    }
+  },
+
   clearError: () => set({ error: undefined }),
 }));
 
@@ -76,6 +126,7 @@ ble.subscribe((snapshot) => {
   useBleStore.setState({
     connectionState: snapshot.state,
     device: snapshot.device,
+    activePattern: snapshot.activePattern,
     error: snapshot.error,
   });
 });

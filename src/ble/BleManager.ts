@@ -1,4 +1,4 @@
-import { Platform } from 'react-native';
+import { AppState, Platform } from 'react-native';
 import {
   BleManager as NativeBleManager,
   type Characteristic,
@@ -10,8 +10,12 @@ import {
   BLE,
   buildIntensityCommand,
   buildPatternCommand,
+  buildPatternStopCommand,
   parseBatteryNotification,
+  parseCapabilitiesNotification,
   stopCommand,
+  type PatternChannelState,
+  type ProtocolCapabilities,
 } from './protocol';
 import { requestBlePermissions } from './permissions';
 
@@ -30,11 +34,14 @@ export interface BleDevice {
   rawName?: string;
   rssi?: number;
   battery?: number;
+  channelCount?: number;
+  patternCount?: number;
 }
 
 export interface BleSnapshot {
   state: BleConnectionState;
   device?: BleDevice;
+  activePattern?: number;
   error?: string;
 }
 
@@ -43,6 +50,8 @@ type Listener = (snapshot: BleSnapshot) => void;
 const RECONNECT_BACKOFF_MS = [500, 1000, 2000, 4000, 8000];
 const TARGET_MTU = 185;
 const SCAN_TIMEOUT_MS = 30_000;
+const CAPABILITIES_TIMEOUT_MS = 1_500;
+const STOP_SETTLE_MS = 100;
 const BATTERY_SERVICE = '0000180F-0000-1000-8000-00805F9B34FB';
 const BATTERY_LEVEL = '00002A19-0000-1000-8000-00805F9B34FB';
 const LHD_SIGNATURE = new Uint8Array([0x4c, 0x48, 0x44]);
@@ -189,6 +198,18 @@ export class BleManager {
   private reconnectAttempt = 0;
   private intentionalDisconnect = false;
   private lastError?: string;
+  private capabilities?: ProtocolCapabilities;
+  private patternChannels: PatternChannelState[] = [];
+  private activePattern?: number;
+  private capabilityResolvers = new Set<() => void>();
+
+  private constructor() {
+    AppState.addEventListener('change', (nextState) => {
+      if (nextState !== 'active' && this.state === 'connected') {
+        void this.emergencyStop().catch(() => undefined);
+      }
+    });
+  }
 
   subscribe(listener: Listener): () => void {
     this.listeners.add(listener);
@@ -211,6 +232,48 @@ export class BleManager {
     if (!this.device) return;
     this.device = { ...this.device, ...patch };
     this.emit();
+  }
+
+  private applyCapabilities(capabilities: ProtocolCapabilities) {
+    this.capabilities = capabilities;
+    this.patternChannels = capabilities.channels.map(
+      (_, index) => this.patternChannels[index] ?? { intensity: 1, pattern: 0 },
+    );
+    this.updateDevice({
+      channelCount: capabilities.channels.length,
+      patternCount: capabilities.channels[0]?.patternCount,
+    });
+    for (const resolve of this.capabilityResolvers) resolve();
+    this.capabilityResolvers.clear();
+  }
+
+  private async waitForCapabilities(): Promise<void> {
+    if (this.capabilities) return;
+
+    await new Promise<void>((resolve) => {
+      const done = () => {
+        clearTimeout(timeout);
+        this.capabilityResolvers.delete(done);
+        resolve();
+      };
+      const timeout = setTimeout(done, CAPABILITIES_TIMEOUT_MS);
+      this.capabilityResolvers.add(done);
+    });
+  }
+
+  private requireCapabilities(): ProtocolCapabilities {
+    if (!this.capabilities?.channels.length) {
+      throw new Error('El dispositivo aún no ha informado sus capacidades de control.');
+    }
+    return this.capabilities;
+  }
+
+  private resetProtocolState() {
+    this.capabilities = undefined;
+    this.patternChannels = [];
+    this.activePattern = undefined;
+    for (const resolve of this.capabilityResolvers) resolve();
+    this.capabilityResolvers.clear();
   }
 
   async scan(onFound: (device: BleDevice) => void): Promise<void> {
@@ -287,6 +350,7 @@ export class BleManager {
       await this.native.cancelDeviceConnection(deviceId).catch(() => undefined);
       this.nativeDevice = undefined;
       this.writeCharacteristic = undefined;
+      this.resetProtocolState();
       if (reconnecting) {
         this.scheduleReconnect();
       } else {
@@ -318,8 +382,7 @@ export class BleManager {
       try {
         const discovered = await candidate.discoverAllServicesAndCharacteristics();
         await this.activateConnectedDevice(discovered);
-        const publicDevice = toPublicDevice(discovered, this.device?.battery);
-        this.device = publicDevice;
+        const publicDevice = this.device ?? toPublicDevice(discovered);
         onFound(publicDevice);
         this.reconnectAttempt = 0;
         this.setState('connected');
@@ -333,6 +396,7 @@ export class BleManager {
   }
 
   private async activateConnectedDevice(device: Device): Promise<void> {
+    this.resetProtocolState();
     this.nativeDevice = device;
     this.device = toPublicDevice(device, this.device?.battery);
     this.writeCharacteristic = await this.resolveWriteCharacteristic(device);
@@ -344,19 +408,14 @@ export class BleManager {
   private async resolveWriteCharacteristic(device: Device): Promise<Characteristic> {
     const characteristics = await device.characteristicsForService(BLE.serviceCommand);
     const commandUuid = BLE.characteristicCommand.toLowerCase();
-    const writable =
-      characteristics.find(
-        (characteristic) =>
-          characteristic.uuid.toLowerCase() === commandUuid &&
-          (characteristic.isWritableWithoutResponse || characteristic.isWritableWithResponse),
-      ) ??
-      characteristics.find(
-        (characteristic) =>
-          characteristic.isWritableWithoutResponse || characteristic.isWritableWithResponse,
-      );
+    const writable = characteristics.find(
+      (characteristic) =>
+        characteristic.uuid.toLowerCase() === commandUuid &&
+        (characteristic.isWritableWithoutResponse || characteristic.isWritableWithResponse),
+    );
 
     if (!writable) {
-      throw new Error('El dispositivo no expone una característica BLE de escritura compatible.');
+      throw new Error('El dispositivo no expone la característica de comandos FFE2.');
     }
     return writable;
   }
@@ -369,6 +428,7 @@ export class BleManager {
       this.batterySubscription = undefined;
       this.protocolSubscription?.remove();
       this.protocolSubscription = undefined;
+      this.resetProtocolState();
       if (this.intentionalDisconnect) {
         this.setState('disconnected');
         return;
@@ -429,7 +489,10 @@ export class BleManager {
       if (notify?.isNotifiable || notify?.isIndicatable) {
         this.protocolSubscription = notify.monitor((error, characteristic) => {
           if (error || !characteristic?.value) return;
-          const battery = parseBatteryNotification(base64ToBytes(characteristic.value));
+          const bytes = base64ToBytes(characteristic.value);
+          const capabilities = parseCapabilitiesNotification(bytes);
+          if (capabilities) this.applyCapabilities(capabilities);
+          const battery = parseBatteryNotification(bytes);
           if (battery !== undefined) this.updateDevice({ battery });
         });
       }
@@ -439,10 +502,12 @@ export class BleManager {
           init.isWritableWithoutResponse
             ? init.writeWithoutResponse(bytesToBase64(bytes))
             : init.writeWithResponse(bytesToBase64(bytes));
+        await new Promise((resolve) => setTimeout(resolve, 100));
         await write(new Uint8Array([0x88, 0x00]));
         await new Promise((resolve) => setTimeout(resolve, 100));
         await write(new Uint8Array([0x88, 0x01]));
       }
+      await this.waitForCapabilities();
     } catch {
       // El handshake aporta capacidades, pero no debe impedir usar firmwares antiguos.
     }
@@ -453,6 +518,11 @@ export class BleManager {
     if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
     this.reconnectTimer = undefined;
     await this.stopScan();
+
+    if (this.state === 'connected') {
+      await this.emergencyStop().catch(() => undefined);
+      await new Promise((resolve) => setTimeout(resolve, STOP_SETTLE_MS));
+    }
 
     const deviceId = this.nativeDevice?.id ?? this.device?.id;
     if (deviceId) {
@@ -467,19 +537,68 @@ export class BleManager {
     this.protocolSubscription = undefined;
     this.nativeDevice = undefined;
     this.writeCharacteristic = undefined;
+    this.resetProtocolState();
     this.setState('disconnected');
   }
 
   async setIntensity(percent: number): Promise<void> {
-    await this.write(buildIntensityCommand(percent));
+    if (percent <= 0) {
+      await this.stop();
+      return;
+    }
+
+    const capabilities = this.requireCapabilities();
+    await this.write(buildIntensityCommand(percent, capabilities.channels.length));
+    this.activePattern = undefined;
+    this.emit();
   }
 
   async setPattern(index: number): Promise<void> {
-    await this.write(buildPatternCommand(index));
+    const capabilities = this.requireCapabilities();
+    const patternCount = capabilities.channels[0]?.patternCount ?? 0;
+    if (!Number.isInteger(index) || index < 1 || index > patternCount) {
+      throw new RangeError(`El dispositivo admite patrones entre P1 y P${patternCount}.`);
+    }
+
+    const nextChannels = capabilities.channels.map((_, channelIndex) => {
+      const current = this.patternChannels[channelIndex] ?? { intensity: 1, pattern: 0 };
+      return channelIndex === 0 ? { ...current, pattern: index } : current;
+    });
+    await this.write(buildPatternCommand(nextChannels));
+    this.patternChannels = nextChannels;
+    this.activePattern = index;
+    this.emit();
   }
 
   async stop(): Promise<void> {
-    await this.write(stopCommand());
+    await this.emergencyStop();
+  }
+
+  private async emergencyStop(): Promise<void> {
+    const capabilities = this.capabilities;
+    this.activePattern = undefined;
+
+    if (!capabilities?.channels.length || this.state !== 'connected' || !this.writeCharacteristic) {
+      this.emit();
+      return;
+    }
+
+    const channelCount = capabilities.channels.length;
+    let firstError: unknown;
+    try {
+      await this.write(stopCommand(channelCount));
+    } catch (error) {
+      firstError = error;
+    }
+    try {
+      await this.write(buildPatternStopCommand(channelCount));
+    } catch (error) {
+      firstError ??= error;
+    }
+
+    this.patternChannels = capabilities.channels.map(() => ({ intensity: 1, pattern: 0 }));
+    this.emit();
+    if (firstError) throw firstError;
   }
 
   private async write(bytes: Uint8Array): Promise<void> {
@@ -489,6 +608,12 @@ export class BleManager {
 
     try {
       const value = bytesToBase64(bytes);
+      if (__DEV__) {
+        console.info(
+          '[Camtoyz BLE] FFE2',
+          Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join(' '),
+        );
+      }
       if (this.writeCharacteristic.isWritableWithoutResponse) {
         await this.writeCharacteristic.writeWithoutResponse(value);
       } else {
@@ -524,7 +649,12 @@ export class BleManager {
   }
 
   get snapshot(): BleSnapshot {
-    return { state: this.state, device: this.device, error: this.lastError };
+    return {
+      state: this.state,
+      device: this.device,
+      activePattern: this.activePattern,
+      error: this.lastError,
+    };
   }
 }
 

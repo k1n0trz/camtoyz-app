@@ -39,7 +39,7 @@ Componentes a crear en Fase 5: `src/features/room/RoomClient.ts` (WebRTC + socke
 
 ## 3. Protocolo con el hardware
 
-Ver `docs/BLE_PROTOCOL.md`. UUID confirmados desde el APK; el framing exacto de bytes se captura con el bullet físico antes de fijar `src/ble/protocol.ts`.
+Ver `docs/BLE_PROTOCOL.md`. UUID, capacidades y frames de control quedaron confirmados contra el APK y validados en el bullet físico antes de fijar `src/ble/protocol.ts`.
 
 ## 4. Principios de código para Codex
 - Cero colores hardcodeados: todo desde `src/theme`.
