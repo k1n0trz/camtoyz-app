@@ -5,6 +5,10 @@ import { ble, type BleConnectionState, type BleDevice } from '@/ble/BleManager';
 interface BleStore {
   connectionState: BleConnectionState;
   device?: BleDevice;
+  connectedDevices: BleDevice[];
+  activeDeviceId?: string;
+  syncEnabled: boolean;
+  isScanning: boolean;
   devices: BleDevice[];
   activePattern?: number;
   commandBusy: boolean;
@@ -12,8 +16,10 @@ interface BleStore {
   scan: () => Promise<void>;
   stopScan: () => Promise<void>;
   connect: (deviceId: string) => Promise<boolean>;
-  disconnect: () => Promise<void>;
+  disconnect: (deviceId?: string) => Promise<void>;
   retryConnection: () => Promise<void>;
+  setActiveDevice: (deviceId: string) => void;
+  setSyncEnabled: (enabled: boolean) => void;
   setPattern: (index: number) => Promise<boolean>;
   setIntensity: (percent: number) => Promise<boolean>;
   stop: () => Promise<boolean>;
@@ -29,6 +35,10 @@ function upsertDevice(devices: BleDevice[], incoming: BleDevice): BleDevice[] {
 export const useBleStore = create<BleStore>((set) => ({
   connectionState: ble.snapshot.state,
   device: ble.snapshot.device,
+  connectedDevices: ble.snapshot.devices,
+  activeDeviceId: ble.snapshot.activeDeviceId,
+  syncEnabled: ble.snapshot.syncEnabled,
+  isScanning: ble.snapshot.isScanning,
   devices: [],
   activePattern: ble.snapshot.activePattern,
   commandBusy: false,
@@ -63,7 +73,7 @@ export const useBleStore = create<BleStore>((set) => ({
     }
   },
 
-  disconnect: () => ble.disconnect(),
+  disconnect: (deviceId) => ble.disconnect(deviceId),
 
   retryConnection: async () => {
     try {
@@ -75,6 +85,10 @@ export const useBleStore = create<BleStore>((set) => ({
       });
     }
   },
+
+  setActiveDevice: (deviceId) => ble.setActiveDevice(deviceId),
+
+  setSyncEnabled: (enabled) => ble.setSyncEnabled(enabled),
 
   setPattern: async (index) => {
     set({ commandBusy: true, error: undefined });
@@ -126,6 +140,10 @@ ble.subscribe((snapshot) => {
   useBleStore.setState({
     connectionState: snapshot.state,
     device: snapshot.device,
+    connectedDevices: snapshot.devices,
+    activeDeviceId: snapshot.activeDeviceId,
+    syncEnabled: snapshot.syncEnabled,
+    isScanning: snapshot.isScanning,
     activePattern: snapshot.activePattern,
     error: snapshot.error,
   });

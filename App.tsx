@@ -1,5 +1,6 @@
+import { useEffect, useRef } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -20,15 +21,34 @@ import RoomHostPanelScreen from '@/screens/RoomHostPanelScreen';
 import RoomMemberSessionScreen from '@/screens/RoomMemberSessionScreen';
 import RoomKickedScreen from '@/screens/RoomKickedScreen';
 import { ConnectionStatusOverlay } from '@/components/ConnectionStatusOverlay';
+import { useBleStore } from '@/state/bleStore';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
+const navigationRef = createNavigationContainerRef<RootStackParamList>();
+
+function BluetoothRecoveryNavigation() {
+  const connectionState = useBleStore((state) => state.connectionState);
+  const previousState = useRef(connectionState);
+
+  useEffect(() => {
+    const lostConnection =
+      connectionState === 'disconnected' &&
+      (previousState.current === 'connected' || previousState.current === 'connecting' || previousState.current === 'reconnecting');
+    if (lostConnection && navigationRef.isReady()) {
+      navigationRef.reset({ index: 0, routes: [{ name: 'Scan' }] });
+    }
+    previousState.current = connectionState;
+  }, [connectionState]);
+
+  return null;
+}
 
 export default function App() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <StatusBar style="dark" />
-        <NavigationContainer>
+        <NavigationContainer ref={navigationRef}>
           <Stack.Navigator
             initialRouteName="Splash"
             screenOptions={{
@@ -53,6 +73,7 @@ export default function App() {
                 a medida que se construyen (Scan, PatternsAll, MultiDevice, GestureControl,
                 SoundControl, MusicControl, Room*, SettingsDevice). */}
           </Stack.Navigator>
+          <BluetoothRecoveryNavigation />
         </NavigationContainer>
         <ConnectionStatusOverlay />
       </SafeAreaProvider>

@@ -8,17 +8,15 @@ import { palette, radii, spacing, typography } from '@/theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'MultiDevice'>;
 
-/**
- * Modelo de Fase 3: muestra el dispositivo activo y deja preparada la entrada
- * para añadir otro. El transporte BLE sigue siendo de una conexión hasta que
- * la capa de multi-conexión sea implementada y validada con dos periféricos.
- */
 export default function MultiDeviceScreen({ navigation }: Props) {
-  const device = useBleStore((state) => state.device);
-  const connectionState = useBleStore((state) => state.connectionState);
-  const activePattern = useBleStore((state) => state.activePattern);
+  const connectedDevices = useBleStore((state) => state.connectedDevices);
+  const activeDeviceId = useBleStore((state) => state.activeDeviceId);
+  const syncEnabled = useBleStore((state) => state.syncEnabled);
+  const setActiveDevice = useBleStore((state) => state.setActiveDevice);
+  const setSyncEnabled = useBleStore((state) => state.setSyncEnabled);
+  const disconnect = useBleStore((state) => state.disconnect);
   const stop = useBleStore((state) => state.stop);
-  const connected = connectionState === 'connected';
+  const canSync = connectedDevices.length > 1;
 
   return (
     <SafeAreaView style={s.root} edges={['top']}>
@@ -28,27 +26,52 @@ export default function MultiDeviceScreen({ navigation }: Props) {
         </Pressable>
         <Text style={s.title}>Mis dispositivos</Text>
         <View style={{ flex: 1 }} />
-        <Text style={s.count}>{connected ? '1 conectado' : 'Sin conexión'}</Text>
+        <Text style={s.count}>
+          {connectedDevices.length === 1 ? '1 conectado' : `${connectedDevices.length} conectados`}
+        </Text>
       </View>
 
       <ScrollView contentContainerStyle={s.content}>
-        {connected && device ? (
-          <View style={s.activeCard}>
-            <View style={s.deviceRow}>
-              <View style={s.deviceIcon} />
-              <View style={{ flex: 1 }}>
-                <Text style={s.deviceName}>{device.name}</Text>
-                <Text style={s.deviceStatus}>Activo · controlando ahora</Text>
-              </View>
-              <Text style={s.battery}>{device.battery === undefined ? '—' : `${device.battery}%`}</Text>
-            </View>
-            <Text style={s.patternStatus}>{activePattern ? `P${activePattern} activo` : 'Motor detenido'}</Text>
-          </View>
-        ) : (
+        {connectedDevices.length === 0 ? (
           <View style={s.emptyCard}>
             <Text style={s.emptyTitle}>Aún no hay un dispositivo activo</Text>
             <Text style={s.emptyText}>Conecta uno para empezar a administrar tus controles.</Text>
           </View>
+        ) : (
+          connectedDevices.map((device) => {
+            const active = device.id === activeDeviceId;
+            return (
+              <View key={device.id} style={[s.deviceCard, active && s.deviceCardActive]}>
+                <View style={s.deviceRow}>
+                  <View style={s.deviceIcon} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={s.deviceName}>{device.name}</Text>
+                    <Text style={s.deviceStatus}>{active ? 'Activo · recibe los controles' : 'Conectado · listo'}</Text>
+                  </View>
+                  <Text style={s.battery}>{device.battery === undefined ? '—' : `${device.battery}%`}</Text>
+                </View>
+                <View style={s.deviceActions}>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`Usar ${device.name}`}
+                    disabled={active}
+                    onPress={() => setActiveDevice(device.id)}
+                    style={[s.selectButton, active && s.selectButtonActive]}
+                  >
+                    <Text style={[s.selectLabel, active && s.selectLabelActive]}>{active ? 'Activo' : 'Usar este'}</Text>
+                  </Pressable>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`Desconectar ${device.name}`}
+                    onPress={() => void disconnect(device.id)}
+                    style={s.disconnectButton}
+                  >
+                    <Text style={s.disconnectLabel}>Desconectar</Text>
+                  </Pressable>
+                </View>
+              </View>
+            );
+          })
         )}
 
         <Pressable
@@ -61,18 +84,32 @@ export default function MultiDeviceScreen({ navigation }: Props) {
           <Text style={s.addLabel}>Conectar otro dispositivo</Text>
         </Pressable>
 
-        <View style={s.syncCard}>
+        <Pressable
+          accessibilityRole="switch"
+          accessibilityState={{ checked: syncEnabled, disabled: !canSync }}
+          disabled={!canSync}
+          onPress={() => setSyncEnabled(!syncEnabled)}
+          style={[s.syncCard, !canSync && s.syncDisabled]}
+        >
           <View style={{ flex: 1 }}>
             <Text style={s.syncTitle}>Sincronizar dispositivos</Text>
-            <Text style={s.syncText}>Disponible cuando haya dos dispositivos conectados.</Text>
+            <Text style={s.syncText}>
+              {canSync
+                ? syncEnabled
+                  ? 'Patrones e intensidad se aplicarán a todos.'
+                  : 'Solo responde el dispositivo activo.'
+                : 'Conecta otro dispositivo para habilitarlo.'}
+            </Text>
           </View>
-          <View style={s.switchOff}><View style={s.switchKnob} /></View>
-        </View>
+          <View style={[s.switchTrack, syncEnabled && s.switchTrackOn]}>
+            <View style={[s.switchKnob, syncEnabled && s.switchKnobOn]} />
+          </View>
+        </Pressable>
 
         <View style={s.infoCard}>
           <View style={s.infoDot} />
           <Text style={s.infoText}>
-            La interfaz está lista para múltiples dispositivos. La conexión simultánea se habilitará tras validarla con dos equipos físicos.
+            Detener siempre detiene todos los dispositivos conectados, incluso si la sincronización está apagada.
           </Text>
         </View>
       </ScrollView>
@@ -81,9 +118,9 @@ export default function MultiDeviceScreen({ navigation }: Props) {
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Detener todos los dispositivos"
-          disabled={!connected}
+          disabled={connectedDevices.length === 0}
           onPress={() => void stop()}
-          style={[s.stopButton, !connected && s.disabled]}
+          style={[s.stopButton, connectedDevices.length === 0 && s.disabled]}
         >
           <Text style={s.stopLabel}>Detener todos</Text>
         </Pressable>
@@ -102,24 +139,34 @@ const s = StyleSheet.create({
   title: { ...typography.section, color: palette.ink },
   count: { ...typography.small, color: palette.accent, fontWeight: '700' },
   content: { padding: spacing.xl, paddingTop: spacing.sm, gap: spacing.lg },
-  activeCard: { backgroundColor: palette.card, borderColor: palette.accent, borderWidth: 1.5, borderRadius: radii.cardLg, padding: spacing.lg, gap: spacing.md },
+  deviceCard: { backgroundColor: palette.card, borderColor: palette.border, borderWidth: 1, borderRadius: radii.cardLg, padding: spacing.lg, gap: spacing.md },
+  deviceCardActive: { borderColor: palette.accent, borderWidth: 1.5 },
   emptyCard: { backgroundColor: palette.card, borderColor: palette.border, borderWidth: 1, borderRadius: radii.cardLg, padding: spacing.lg, gap: spacing.sm },
   deviceRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   deviceIcon: { width: 42, height: 42, borderRadius: radii.md, backgroundColor: palette.tint },
   deviceName: { ...typography.label, color: palette.ink, fontWeight: '700' },
   deviceStatus: { ...typography.small, color: palette.accent, marginTop: 2 },
   battery: { ...typography.label, color: palette.ink, fontWeight: '700' },
-  patternStatus: { ...typography.mono, color: palette.textSecondary },
+  deviceActions: { flexDirection: 'row', gap: spacing.sm },
+  selectButton: { flex: 1, minHeight: 40, borderRadius: radii.md, borderWidth: 1, borderColor: palette.borderStrong, alignItems: 'center', justifyContent: 'center' },
+  selectButtonActive: { backgroundColor: palette.primary, borderColor: palette.primary },
+  selectLabel: { ...typography.small, color: palette.ink, fontWeight: '700' },
+  selectLabelActive: { color: palette.ink },
+  disconnectButton: { minHeight: 40, borderRadius: radii.md, paddingHorizontal: spacing.md, alignItems: 'center', justifyContent: 'center' },
+  disconnectLabel: { ...typography.small, color: palette.accent, fontWeight: '700' },
   emptyTitle: { ...typography.label, color: palette.ink, fontWeight: '700' },
   emptyText: { ...typography.small, color: palette.textSecondary },
   addCard: { minHeight: 66, borderColor: palette.textMuted, borderWidth: 1, borderStyle: 'dashed', borderRadius: radii.cardLg, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: spacing.sm },
   addPlus: { color: palette.textSecondary, fontSize: 18 },
   addLabel: { ...typography.label, color: palette.textSecondary },
   syncCard: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, backgroundColor: palette.card, borderColor: palette.border, borderWidth: 1, borderRadius: radii.card, padding: spacing.lg },
+  syncDisabled: { opacity: 0.55 },
   syncTitle: { ...typography.label, color: palette.ink, fontWeight: '700' },
   syncText: { ...typography.small, color: palette.textSecondary, marginTop: 2 },
-  switchOff: { width: 44, height: 26, padding: 3, borderRadius: radii.pill, backgroundColor: palette.borderStrong },
-  switchKnob: { width: 20, height: 20, borderRadius: 10, backgroundColor: palette.card },
+  switchTrack: { width: 46, height: 27, padding: 3, borderRadius: radii.pill, backgroundColor: palette.borderStrong },
+  switchTrackOn: { backgroundColor: palette.accent },
+  switchKnob: { width: 21, height: 21, borderRadius: 11, backgroundColor: palette.card },
+  switchKnobOn: { transform: [{ translateX: 19 }] },
   infoCard: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.md, backgroundColor: palette.card, borderColor: palette.border, borderWidth: 1, borderRadius: radii.lg, padding: spacing.lg },
   infoDot: { width: 8, height: 8, borderRadius: 4, marginTop: 4, backgroundColor: palette.accent },
   infoText: { ...typography.small, color: palette.textSecondary, flex: 1, lineHeight: 18 },

@@ -20,7 +20,8 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Scan'>;
 export default function ScanScreen({ navigation }: Props) {
   const devices = useBleStore((state) => state.devices);
   const connectionState = useBleStore((state) => state.connectionState);
-  const connectedDevice = useBleStore((state) => state.device);
+  const connectedDevices = useBleStore((state) => state.connectedDevices);
+  const isScanning = useBleStore((state) => state.isScanning);
   const error = useBleStore((state) => state.error);
   const scan = useBleStore((state) => state.scan);
   const stopScan = useBleStore((state) => state.stopScan);
@@ -49,7 +50,12 @@ export default function ScanScreen({ navigation }: Props) {
 
   const close = () => {
     void stopScan();
-    navigation.goBack();
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+      return;
+    }
+
+    navigation.reset({ index: 0, routes: [{ name: 'Splash' }] });
   };
 
   const handleConnect = async (deviceId: string) => {
@@ -57,7 +63,7 @@ export default function ScanScreen({ navigation }: Props) {
     if (connected) navigation.replace('Dashboard');
   };
 
-  const searching = connectionState === 'scanning';
+  const searching = isScanning;
   const connecting = connectionState === 'connecting';
   const showError = connectionState === 'error' && devices.length === 0;
 
@@ -136,8 +142,7 @@ export default function ScanScreen({ navigation }: Props) {
             </View>
             <ScrollView contentContainerStyle={s.deviceList}>
               {devices.map((device) => {
-                const isConnected =
-                  connectionState === 'connected' && connectedDevice?.id === device.id;
+                const isConnected = connectedDevices.some((connectedDevice) => connectedDevice.id === device.id);
                 return (
                   <View key={device.id} style={s.deviceRow}>
                     <View style={s.deviceIcon}>
@@ -157,7 +162,7 @@ export default function ScanScreen({ navigation }: Props) {
                       disabled={connecting}
                       style={isConnected ? s.disconnectButton : s.connectButton}
                       onPress={() =>
-                        isConnected ? void disconnect() : void handleConnect(device.id)
+                        isConnected ? void disconnect(device.id) : void handleConnect(device.id)
                       }
                     >
                       {connecting && !isConnected ? (
