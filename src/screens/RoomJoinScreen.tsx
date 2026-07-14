@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -16,6 +16,11 @@ export default function RoomJoinScreen({ navigation }: Props) {
   const [busy, setBusy] = useState(false);
   const error = useRoomStore((state) => state.error);
   const joinRoom = useRoomStore((state) => state.joinRoom);
+  const clearError = useRoomStore((state) => state.clearError);
+
+  useEffect(() => {
+    clearError();
+  }, [clearError]);
 
   const normalizedCode = code.toUpperCase().replace(/[^ABCDEFGHJKLMNPQRSTUVWXYZ23456789]/g, '').slice(0, 6);
   const join = async () => {
