@@ -30,7 +30,7 @@ const MODES = [
   { label: 'Control por sonido', sub: 'Reacciona al sonido ambiente' },
   { label: 'Control musical', sub: 'Sincroniza con tu música' },
   { label: 'Interacción remota', sub: 'Salas para compartir el control' },
-  { label: 'Control por gesto', sub: 'Dibuja la intensidad en la pantalla' },
+  { label: 'Control por gesto', sub: 'Dibuja la intensidad en la pantalla', route: 'GestureControl' as const },
 ];
 
 export default function DashboardScreen({ navigation }: Props) {
