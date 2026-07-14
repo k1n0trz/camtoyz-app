@@ -17,16 +17,16 @@ Fases incrementales. Cada una entrega algo verificable en el teléfono físico. 
 - **Capturar el protocolo real** (docs/BLE_PROTOCOL.md) y fijar `protocol.ts`.
 - **DoD:** conectar el bullet, ver batería real, disparar 1 patrón, y que **recupere solo** tras apagar/alejar el dispositivo.
 
-## Fase 3 — Vibración: patrones escalables
+## Fase 3 — Vibración: patrones escalables ✅
 - Grid de patrones data-driven (03 + 03b por categorías). Multi-device (03c).
 - **DoD:** añadir un patrón nuevo no toca el layout; funciona en el hardware.
 
-## Fase 4 — Control por gesto ("lápiz vibrador")
+## Fase 4 — Control por gesto ("lápiz vibrador") ✅
 - Pad con gesture-handler + reanimated en hilo de UI; throttle ~20–33 ms → `BleManager.setIntensity`.
 - 04 + 04b (multi-device).
 - **DoD:** arrastrar el dedo cambia la intensidad en tiempo real sin cortar la conexión.
 
-## Fase 5 — Sonido y música
+## Fase 5 — Sonido y música ✅
 - Micrófono → decibelios/curva de respuesta (05). Análisis de música (06).
 - **DoD:** sensibilidad y curva ajustan la respuesta de forma perceptible.
 

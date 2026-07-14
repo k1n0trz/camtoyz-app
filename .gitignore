@@ -6,14 +6,24 @@ node_modules/
 .vscode/
 .idea/
 
-# expo / native build artifacts (generados por `expo prebuild`)
+# expo / native build artifacts
 .expo/
-android/
 ios/
 dist*/
 web-build/
 coverage/
 *.orig.*
+
+# Android: el proyecto se versiona porque contiene integraciones nativas propias.
+# Solo se excluyen salidas de compilacion y estado local de Gradle/Android Studio.
+android/.gradle/
+android/.kotlin/
+android/.idea/
+android/build/
+android/app/build/
+android/app/.cxx/
+android/captures/
+android/**/local.properties
 
 # env / secrets
 .env
