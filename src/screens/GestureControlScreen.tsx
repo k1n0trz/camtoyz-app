@@ -28,8 +28,11 @@ export default function GestureControlScreen({ navigation }: Props) {
   const inFlight = useRef(false);
   const pending = useRef<number>();
   const throttleTimer = useRef<ReturnType<typeof setTimeout>>();
+  const gestureEnabled = useRef(false);
+  const commandGeneration = useRef(0);
 
   const clearThrottle = useCallback(() => {
+    commandGeneration.current += 1;
     if (throttleTimer.current) clearTimeout(throttleTimer.current);
     throttleTimer.current = undefined;
     pending.current = undefined;
@@ -37,14 +40,25 @@ export default function GestureControlScreen({ navigation }: Props) {
 
   const flushIntensity = useCallback(async () => {
     throttleTimer.current = undefined;
-    if (inFlight.current || pending.current === undefined || !connected || frozen) return;
+    if (
+      inFlight.current ||
+      pending.current === undefined ||
+      !connected ||
+      frozen ||
+      !gestureEnabled.current
+    ) {
+      return;
+    }
 
     const next = pending.current;
+    const generation = commandGeneration.current;
     pending.current = undefined;
     inFlight.current = true;
     lastSentAt.current = Date.now();
     await setIntensity(next);
     inFlight.current = false;
+
+    if (generation !== commandGeneration.current || !gestureEnabled.current) return;
 
     if (pending.current !== undefined) {
       const wait = Math.max(0, GESTURE_THROTTLE_MS - (Date.now() - lastSentAt.current));
@@ -54,7 +68,7 @@ export default function GestureControlScreen({ navigation }: Props) {
 
   const queueIntensity = useCallback(
     (value: number) => {
-      if (!connected || frozen) return;
+      if (!connected || frozen || !gestureEnabled.current) return;
       const next = clampIntensity(value);
       setIntensityLabel(next);
       pending.current = next;
@@ -65,6 +79,22 @@ export default function GestureControlScreen({ navigation }: Props) {
     },
     [connected, flushIntensity, frozen],
   );
+
+  const beginGesture = useCallback(
+    (value: number) => {
+      if (!connected || frozen) return;
+      gestureEnabled.current = true;
+      queueIntensity(value);
+    },
+    [connected, frozen, queueIntensity],
+  );
+
+  const waitForInFlight = useCallback(async () => {
+    const timeoutAt = Date.now() + 200;
+    while (inFlight.current && Date.now() < timeoutAt) {
+      await new Promise<void>((resolve) => setTimeout(resolve, 5));
+    }
+  }, []);
 
   useEffect(
     () =>
@@ -85,7 +115,7 @@ export default function GestureControlScreen({ navigation }: Props) {
     .onBegin((event) => {
       cursorX.value = event.x;
       cursorY.value = event.y;
-      runOnJS(queueIntensity)(intensityFromY(event.y, padHeight.value));
+      runOnJS(beginGesture)(intensityFromY(event.y, padHeight.value));
     })
     .onUpdate((event) => {
       cursorX.value = event.x;
@@ -100,14 +130,19 @@ export default function GestureControlScreen({ navigation }: Props) {
 
   const handleFreeze = () => {
     setFrozen((current) => {
-      if (!current) clearThrottle();
+      if (!current) {
+        gestureEnabled.current = false;
+        clearThrottle();
+      }
       return !current;
     });
   };
 
   const handleStop = async () => {
+    gestureEnabled.current = false;
     clearThrottle();
     setIntensityLabel(0);
+    await waitForInFlight();
     await stop();
   };
 
@@ -160,9 +195,9 @@ export default function GestureControlScreen({ navigation }: Props) {
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Detener vibración"
-          disabled={!connected || commandBusy}
+          disabled={!connected}
           onPress={() => void handleStop()}
-          style={[s.stopButton, (!connected || commandBusy) && s.disabled]}
+          style={[s.stopButton, !connected && s.disabled]}
         >
           <Text style={s.stopLabel}>Detener</Text>
         </Pressable>

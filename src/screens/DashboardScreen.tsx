@@ -125,9 +125,9 @@ export default function DashboardScreen({ navigation }: Props) {
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Detener vibración"
-              disabled={!connected || commandBusy}
+              disabled={!connected}
               onPress={() => void stop()}
-              style={[s.stopButton, (!connected || commandBusy) && s.stopButtonDisabled]}
+              style={[s.stopButton, !connected && s.stopButtonDisabled]}
             >
               <Text style={s.stopLabel}>Detener</Text>
             </Pressable>
