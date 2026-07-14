@@ -35,23 +35,108 @@ export function parseBatteryNotification(bytes: Uint8Array): number | undefined 
   return Math.min(bytes[2], 100);
 }
 
-/**
- * Comando de intensidad. TODO(protocol): confirmar rango real del firmware.
- * El diseño expone "P1..Pn" (patrones) + intensidad continua (gesto/sonido/música 0-100%).
- * Hipótesis de trabajo: 1 byte de intensidad 0..0xFF. Se ajusta tras el sniffing.
- */
-export function buildIntensityCommand(intensity0to100: number): Uint8Array {
-  const clamped = Math.max(0, Math.min(100, Math.round(intensity0to100)));
-  const byte = Math.round((clamped / 100) * 0xff);
-  // Placeholder de framing — el APK confirma cabecera 0x89, pero falta fijar canales/rango del bullet real.
-  return new Uint8Array([byte]);
+export interface ChannelCapabilities {
+  intensityLevels: number;
+  patternCount: number;
 }
 
-/** Patrón por índice (P1..Pn). El mapeo real de bytes se completa tras sniffing. */
-export function buildPatternCommand(patternIndex: number): Uint8Array {
-  return new Uint8Array([0x01, patternIndex & 0xff]);
+export interface ProtocolCapabilities {
+  channels: ChannelCapabilities[];
 }
 
-export function stopCommand(): Uint8Array {
-  return new Uint8Array([0x00]);
+export interface PatternChannelState {
+  intensity: number;
+  pattern: number;
+}
+
+const COMMAND_HEADER = 0x89;
+const COMMAND_CONTINUOUS = 0x04;
+const COMMAND_PATTERN = 0x05;
+const PATTERN_INTENSITY_MAX = 10;
+
+/** FFE4 `66 01 LL ...`: LL bytes, organizados en pares por canal. */
+export function parseCapabilitiesNotification(
+  bytes: Uint8Array,
+): ProtocolCapabilities | undefined {
+  if (bytes.length < 5 || bytes[0] !== 0x66 || bytes[1] !== 0x01) return undefined;
+
+  const payloadLength = bytes[2];
+  if (payloadLength === 0 || payloadLength % 2 !== 0 || bytes.length < 3 + payloadLength) {
+    return undefined;
+  }
+
+  const channels: ChannelCapabilities[] = [];
+  for (let offset = 3; offset < 3 + payloadLength; offset += 2) {
+    channels.push({ intensityLevels: bytes[offset], patternCount: bytes[offset + 1] });
+  }
+  return { channels };
+}
+
+function assertChannelCount(channelCount: number, bytesPerChannel: number): void {
+  if (
+    !Number.isInteger(channelCount) ||
+    channelCount < 1 ||
+    channelCount * bytesPerChannel > 0xff
+  ) {
+    throw new RangeError('La cantidad de canales BLE no es válida.');
+  }
+}
+
+/** Modo continuo legacy: `89 04 N VV...`, con VV en rango 0..255. */
+export function buildIntensityCommand(
+  intensity0to100: number,
+  channelCount: number,
+): Uint8Array {
+  assertChannelCount(channelCount, 1);
+  if (!Number.isFinite(intensity0to100)) {
+    throw new RangeError('La intensidad continua debe ser un número finito.');
+  }
+  const clamped = Math.max(0, Math.min(100, intensity0to100));
+  const value = Math.round((clamped / 100) * 0xff);
+  return new Uint8Array([
+    COMMAND_HEADER,
+    COMMAND_CONTINUOUS,
+    channelCount,
+    ...Array(channelCount).fill(value),
+  ]);
+}
+
+/** Modo patrón legacy: `89 05 2N (intensidad, patrón)...`. */
+export function buildPatternCommand(channels: readonly PatternChannelState[]): Uint8Array {
+  assertChannelCount(channels.length, 2);
+  const payload: number[] = [];
+
+  for (const channel of channels) {
+    if (
+      !Number.isInteger(channel.intensity) ||
+      channel.intensity < 0 ||
+      channel.intensity > PATTERN_INTENSITY_MAX
+    ) {
+      throw new RangeError('La intensidad discreta debe estar entre 0 y 10.');
+    }
+    if (!Number.isInteger(channel.pattern) || channel.pattern < 0 || channel.pattern > 0xff) {
+      throw new RangeError('El índice de patrón debe estar entre 0 y 255.');
+    }
+    payload.push(channel.intensity, channel.pattern);
+  }
+
+  return new Uint8Array([
+    COMMAND_HEADER,
+    COMMAND_PATTERN,
+    payload.length,
+    ...payload,
+  ]);
+}
+
+/** Stop global para el modo continuo. Para emergencia se combina con `buildPatternStopCommand`. */
+export function stopCommand(channelCount: number): Uint8Array {
+  return buildIntensityCommand(0, channelCount);
+}
+
+/** Stop explícito del modo patrón, conservando una intensidad mínima inocua. */
+export function buildPatternStopCommand(channelCount: number): Uint8Array {
+  assertChannelCount(channelCount, 2);
+  return buildPatternCommand(
+    Array.from({ length: channelCount }, () => ({ intensity: 1, pattern: 0 })),
+  );
 }

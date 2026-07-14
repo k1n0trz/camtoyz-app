@@ -6,12 +6,12 @@ Fases incrementales. Cada una entrega algo verificable en el teléfono físico. 
 - Estructura RN+TS, tokens de diseño, inventario de rutas, esqueleto BleManager, docs.
 - **DoD:** repo abre; `npm install` + `npm run typecheck` en verde tras instalar deps.
 
-## Fase 1 — App corre en dispositivo
+## Fase 1 — App corre en dispositivo ✅
 - `expo prebuild` + build dev-client en el Android físico. Splash → Dashboard navegan.
 - Permisos BLE/ubicación pedidos correctamente.
 - **DoD:** la app abre en el teléfono, se ve Splash y Dashboard con los tokens correctos.
 
-## Fase 2 — Conectividad BLE sólida (el diferenciador)
+## Fase 2 — Conectividad BLE sólida (el diferenciador) ✅
 - Implementar `BleManager` con react-native-ble-plx: escaneo (filtrado por nombre), conexión, descubrimiento, MTU, **auto-reconexión con backoff**, lectura de batería.
 - Pantallas Scan (02a/b/c) + estados de sistema 09a/09b/09c.
 - **Capturar el protocolo real** (docs/BLE_PROTOCOL.md) y fijar `protocol.ts`.

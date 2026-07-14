@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect } from 'react';
 import {
   View,
   Text,
@@ -32,13 +32,34 @@ const MODES = [
 ];
 
 export default function DashboardScreen({ navigation }: Props) {
-  const [active, setActive] = useState(0);
   const device = useBleStore((state) => state.device);
   const connectionState = useBleStore((state) => state.connectionState);
+  const activePattern = useBleStore((state) => state.activePattern);
+  const commandBusy = useBleStore((state) => state.commandBusy);
+  const commandError = useBleStore((state) => state.error);
+  const setPattern = useBleStore((state) => state.setPattern);
+  const stop = useBleStore((state) => state.stop);
   const connected = connectionState === 'connected';
   const deviceName = device?.name ?? 'Sin dispositivo';
   const battery = device?.battery;
+  const patternCount = device?.patternCount ?? 0;
   const batteryWidth: DimensionValue = `${Math.max(0, Math.min(100, battery ?? 0))}%`;
+
+  useEffect(
+    () =>
+      navigation.addListener('blur', () => {
+        void stop();
+      }),
+    [navigation, stop],
+  );
+
+  const handlePattern = async (pattern: number) => {
+    if (activePattern === pattern) {
+      await stop();
+    } else {
+      await setPattern(pattern);
+    }
+  };
 
   return (
     <SafeAreaView style={s.root} edges={['top']}>
@@ -84,13 +105,39 @@ export default function DashboardScreen({ navigation }: Props) {
             {PATTERNS.map((p, i) => (
               <Pressable
                 key={p}
-                onPress={() => setActive(i)}
-                style={[s.cell, i === active && s.cellActive]}
+                accessibilityRole="button"
+                accessibilityLabel={activePattern === i + 1 ? `Detener ${p}` : `Activar ${p}`}
+                disabled={!connected || commandBusy || i + 1 > patternCount}
+                onPress={() => void handlePattern(i + 1)}
+                style={[
+                  s.cell,
+                  activePattern === i + 1 && s.cellActive,
+                  (!connected || i + 1 > patternCount) && s.cellDisabled,
+                ]}
               >
-                <Text style={[s.cellLabel, i === active && s.cellLabelActive]}>{p}</Text>
+                <Text
+                  style={[s.cellLabel, activePattern === i + 1 && s.cellLabelActive]}
+                >
+                  {p}
+                </Text>
               </Pressable>
             ))}
           </View>
+          <View style={s.safetyRow}>
+            <Text style={s.safetyHint}>
+              {activePattern ? `Patrón P${activePattern} activo` : 'Motor detenido'}
+            </Text>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Detener vibración"
+              disabled={!connected || commandBusy}
+              onPress={() => void stop()}
+              style={[s.stopButton, (!connected || commandBusy) && s.stopButtonDisabled]}
+            >
+              <Text style={s.stopLabel}>Detener</Text>
+            </Pressable>
+          </View>
+          {connected && commandError ? <Text style={s.commandError}>{commandError}</Text> : null}
         </View>
 
         {/* Modos de control */}
@@ -180,8 +227,28 @@ const s = StyleSheet.create({
     justifyContent: 'center',
   },
   cellActive: { borderWidth: 1.5, borderColor: palette.accent },
+  cellDisabled: { opacity: 0.4 },
   cellLabel: { fontSize: 9, fontWeight: '700', color: palette.textMuted },
   cellLabelActive: { color: palette.accent },
+  safetyRow: {
+    marginTop: spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  safetyHint: { ...typography.small, color: palette.textSecondary },
+  stopButton: {
+    minHeight: 38,
+    borderRadius: radii.pill,
+    borderWidth: 1.5,
+    borderColor: palette.accent,
+    paddingHorizontal: spacing.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stopButtonDisabled: { opacity: 0.4 },
+  stopLabel: { ...typography.small, color: palette.accent, fontWeight: '700' },
+  commandError: { ...typography.small, color: palette.danger, marginTop: spacing.sm },
   modeRow: {
     flexDirection: 'row',
     alignItems: 'center',
