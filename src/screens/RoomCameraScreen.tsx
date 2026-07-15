@@ -1,10 +1,11 @@
 import { useEffect } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RTCView } from 'react-native-webrtc';
 
 import { PrimaryButton, PrivacyCard, RoomHeader, RoomStatus } from '@/components/RoomUi';
+import { RoomVibrationControls } from '@/components/RoomVibrationControls';
 import type { RootStackParamList } from '@/navigation/routes';
 import { currentParticipant, useRoomStore } from '@/state/roomStore';
 import { palette, radii, spacing, typography } from '@/theme';
@@ -25,6 +26,11 @@ export default function RoomCameraScreen({ navigation }: Props) {
   const isVideoStarting = useRoomStore((state) => state.isVideoStarting);
   const mediaError = useRoomStore((state) => state.mediaError);
   const totalPeers = useRoomStore((state) => state.totalPeers);
+  const connectedPeers = useRoomStore((state) => state.connectedPeers);
+  const peerError = useRoomStore((state) => state.peerError);
+  const sendPattern = useRoomStore((state) => state.sendPattern);
+  const sendIntensity = useRoomStore((state) => state.sendIntensity);
+  const sendStop = useRoomStore((state) => state.sendStop);
   const startVideo = useRoomStore((state) => state.startVideo);
   const stopVideo = useRoomStore((state) => state.stopVideo);
   const toggleCamera = useRoomStore((state) => state.toggleCamera);
@@ -59,11 +65,11 @@ export default function RoomCameraScreen({ navigation }: Props) {
   return (
     <SafeAreaView style={s.root} edges={['top', 'bottom']}>
       <RoomHeader
-        title={room ? `Cámara · ${room.code}` : 'Cámara'}
+        title={room ? `Sala · ${room.code}` : 'Sala'}
         badge={me?.role === 'host' ? 'ANFITRIÓN' : 'MIEMBRO'}
         onBack={close}
       />
-      <View style={s.content}>
+      <ScrollView contentContainerStyle={s.content}>
         <RoomStatus>{status}</RoomStatus>
         <View style={s.stage}>
           {remoteStream ? (
@@ -109,18 +115,26 @@ export default function RoomCameraScreen({ navigation }: Props) {
           </View>
         )}
 
+        {me?.role === 'member' ? (
+          <RoomVibrationControls
+            connected={connectedPeers > 0}
+            onPattern={sendPattern}
+            onIntensity={sendIntensity}
+            onStop={sendStop}
+          />
+        ) : null}
         {mediaError ? <Text style={s.error}>{mediaError}</Text> : null}
+        {peerError ? <Text style={s.error}>{peerError}</Text> : null}
         <PrivacyCard />
-        <View style={{ flex: 1 }} />
         {localStream ? <Pressable accessibilityRole="button" onPress={close} style={s.stopVideo}><Text style={s.stopVideoText}>Detener cámara y volver</Text></Pressable> : null}
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: palette.bg },
-  content: { flex: 1, padding: spacing.xl, gap: spacing.lg },
+  content: { flexGrow: 1, padding: spacing.xl, paddingBottom: spacing.xxl, gap: spacing.lg },
   stage: {
     height: 330,
     borderRadius: radii.cardLg,

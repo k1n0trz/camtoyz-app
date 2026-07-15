@@ -1,12 +1,10 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { PrivacyCard, RoomHeader, RoomStatus } from '@/components/RoomUi';
-import IntensitySlider from '@/components/IntensitySlider';
-import { PatternTile } from '@/components/PatternTile';
-import { featuredPatterns } from '@/features/patterns/catalog';
+import { RoomVibrationControls } from '@/components/RoomVibrationControls';
 import type { RootStackParamList } from '@/navigation/routes';
 import { currentParticipant, useRoomStore } from '@/state/roomStore';
 import { palette, radii, spacing, typography } from '@/theme';
@@ -27,8 +25,6 @@ export default function RoomMemberSessionScreen({ navigation }: Props) {
   const sendPattern = useRoomStore((state) => state.sendPattern);
   const sendIntensity = useRoomStore((state) => state.sendIntensity);
   const sendStop = useRoomStore((state) => state.sendStop);
-  const [activePattern, setActivePattern] = useState<number>();
-  const [intensity, setIntensity] = useState(45);
   const me = currentParticipant(room, participantId);
 
   useEffect(() => {
@@ -49,19 +45,6 @@ export default function RoomMemberSessionScreen({ navigation }: Props) {
     navigation.popToTop();
   };
 
-  const changeIntensity = useCallback((value: number) => {
-    setIntensity(value);
-    void sendIntensity(value);
-  }, [sendIntensity]);
-
-  const togglePattern = async (pattern: number) => {
-    if (activePattern === pattern) {
-      if (await sendStop()) setActivePattern(undefined);
-    } else if (await sendPattern(pattern)) {
-      setActivePattern(pattern);
-    }
-  };
-
   return (
     <SafeAreaView style={s.root} edges={['top', 'bottom']}>
       <RoomHeader title={room ? `Sala ${room.code}` : 'Sala'} badge="MIEMBRO" onBack={() => navigation.goBack()} />
@@ -69,26 +52,12 @@ export default function RoomMemberSessionScreen({ navigation }: Props) {
         {room ? (
           <>
             <RoomStatus>{connectionState === 'reconnecting' ? 'Reconectando…' : connectedPeers > 0 ? 'Control directo conectado' : 'Preparando canal directo…'}</RoomStatus>
-            <View style={s.card}>
-              <Text style={s.cardTitle}>Vibración remota</Text>
-              <View style={s.patterns}>
-                {featuredPatterns.map((pattern) => (
-                  <PatternTile
-                    key={pattern.id}
-                    pattern={pattern}
-                    active={activePattern === pattern.id}
-                    disabled={connectedPeers === 0}
-                    onPress={() => void togglePattern(pattern.id)}
-                  />
-                ))}
-              </View>
-              <View style={s.intensityHead}><Text style={s.intensityLabel}>Intensidad</Text><Text style={s.intensityValue}>{intensity}%</Text></View>
-              <IntensitySlider value={intensity} onChange={changeIntensity} />
-              <Pressable disabled={connectedPeers === 0} onPress={() => { void sendStop(); setActivePattern(undefined); }} style={s.stop}><Text style={s.stopText}>Detener vibración</Text></Pressable>
+            <>
+              <RoomVibrationControls connected={connectedPeers > 0} onPattern={sendPattern} onIntensity={sendIntensity} onStop={sendStop} />
               <Pressable accessibilityRole="button" onPress={() => navigation.navigate('RoomCamera')} style={s.camera}>
                 <Text style={s.cameraText}>Abrir cámara de la sala</Text>
               </Pressable>
-            </View>
+            </>
             <PrivacyCard />
             {peerError ? <Text style={s.error}>{peerError}</Text> : null}
           </>
@@ -103,15 +72,6 @@ export default function RoomMemberSessionScreen({ navigation }: Props) {
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: palette.bg },
   content: { flex: 1, padding: spacing.xl, gap: spacing.xl },
-  card: { backgroundColor: palette.card, borderWidth: 1, borderColor: palette.border, borderRadius: radii.cardLg, padding: spacing.xl },
-  cardTitle: { ...typography.section, color: palette.ink },
-  cardCopy: { ...typography.body, color: palette.textSecondary, lineHeight: 20, marginTop: spacing.sm },
-  patterns: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: spacing.lg },
-  intensityHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: spacing.xl },
-  intensityLabel: { ...typography.label, color: palette.ink },
-  intensityValue: { ...typography.label, color: palette.accent, fontWeight: '800' },
-  stop: { height: 44, borderWidth: 1.5, borderColor: palette.accent, borderRadius: radii.lg, alignItems: 'center', justifyContent: 'center', marginTop: spacing.md },
-  stopText: { ...typography.label, color: palette.accent, fontWeight: '700' },
   camera: { height: 44, borderRadius: radii.lg, alignItems: 'center', justifyContent: 'center', marginTop: spacing.sm, backgroundColor: palette.secondary },
   cameraText: { ...typography.label, color: palette.ink, fontWeight: '700' },
   error: { ...typography.small, color: palette.danger, textAlign: 'center' },
