@@ -145,6 +145,15 @@ function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : 'No fue posible completar la operación Bluetooth.';
 }
 
+function connectionErrorMessage(error: unknown): string {
+  const detail = errorMessage(error);
+  const normalized = detail.toLowerCase();
+  if (normalized.includes('gatt') || normalized.includes('already connected') || normalized.includes('not connected') || normalized.includes('status 133')) {
+    return 'No fue posible conectar. Si el dispositivo está conectado a otro celular, desconéctalo allí; después apágalo, enciéndelo y pulsa “Buscar de nuevo”.';
+  }
+  return `No fue posible conectar el dispositivo. ${detail}`;
+}
+
 function suffixForDevice(id: string): string {
   const compact = id.replace(/[^a-z0-9]/gi, '').toUpperCase();
   return compact.slice(-4) || 'BLE';
@@ -352,20 +361,20 @@ export class BleManager {
 
     this.setState('connecting');
     try {
-      const connected = await this.native.connectToDevice(deviceId, {
-        autoConnect: false,
-        requestMTU: Platform.OS === 'android' ? TARGET_MTU : undefined,
-      });
-      const discovered = await connected.discoverAllServicesAndCharacteristics();
+      const connected = await this.native.connectToDevice(deviceId, { autoConnect: false });
+      const transport = Platform.OS === 'android'
+        ? await connected.requestMTU(TARGET_MTU).catch(() => connected)
+        : connected;
+      const discovered = await transport.discoverAllServicesAndCharacteristics();
       const connection = await this.activateConnectedDevice(discovered);
       this.activeDeviceId = connection.id;
       this.lastSelectedDeviceId = connection.id;
       this.setState('connected');
     } catch (error) {
       await this.native.cancelDeviceConnection(deviceId).catch(() => undefined);
-      const message = errorMessage(error);
+      const message = connectionErrorMessage(error);
       this.setState(this.connections.size > 0 ? 'connected' : 'error', message);
-      throw error;
+      throw new Error(message);
     }
   }
 

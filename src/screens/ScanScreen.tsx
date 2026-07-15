@@ -14,6 +14,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
 import { palette, radii, spacing, typography } from '@/theme';
 import { useBleStore } from '@/state/bleStore';
+import { ProductImage } from '@/components/ProductImage';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Scan'>;
 
@@ -63,9 +64,14 @@ export default function ScanScreen({ navigation }: Props) {
     if (connected) navigation.replace('Dashboard');
   };
 
+  const restartSearch = () => {
+    void scan();
+  };
+
   const searching = isScanning;
   const connecting = connectionState === 'connecting';
   const showError = connectionState === 'error' && devices.length === 0;
+  const connectionError = connectionState === 'error' ? error : undefined;
 
   return (
     <SafeAreaView style={s.root} edges={[]}>
@@ -135,19 +141,23 @@ export default function ScanScreen({ navigation }: Props) {
         ) : (
           <View style={s.foundBody}>
             <View style={s.foundStatus}>
-              {searching && <ActivityIndicator color={palette.accent} />}
-              <Text style={s.foundStatusText}>
-                Buscando… <Text style={s.foundCount}>{devices.length} detectado(s)</Text>
-              </Text>
+              <View style={s.foundState}>
+                {searching && <ActivityIndicator color={palette.accent} />}
+                <Text style={s.foundStatusText}>
+                  {searching ? 'Buscando…' : 'Búsqueda pausada'} <Text style={s.foundCount}>{devices.length} detectado(s)</Text>
+                </Text>
+              </View>
+              <Pressable accessibilityRole="button" accessibilityLabel="Reiniciar búsqueda de dispositivos" onPress={restartSearch} style={s.restartButton}>
+                <Text style={s.restartLabel}>{searching ? 'Reiniciar' : 'Buscar de nuevo'}</Text>
+              </Pressable>
             </View>
+            {connectionError ? <Text style={s.connectionError}>{connectionError}</Text> : null}
             <ScrollView contentContainerStyle={s.deviceList}>
               {devices.map((device) => {
                 const isConnected = connectedDevices.some((connectedDevice) => connectedDevice.id === device.id);
                 return (
                   <View key={device.id} style={s.deviceRow}>
-                    <View style={s.deviceIcon}>
-                      <View style={s.deviceDot} />
-                    </View>
+                    <ProductImage name={device.name} />
                     <View style={s.deviceInfo}>
                       <Text style={s.deviceName}>{device.name}</Text>
                       <Text style={isConnected ? s.deviceConnected : s.deviceMeta}>
@@ -177,7 +187,7 @@ export default function ScanScreen({ navigation }: Props) {
                 );
               })}
             </ScrollView>
-            <Text style={s.guide}>¿No aparece tu dispositivo? Comprueba que esté encendido.</Text>
+            <Text style={s.guide}>¿No aparece tu dispositivo? Comprueba que esté encendido y pulsa “Buscar de nuevo”.</Text>
           </View>
         )}
       </View>
@@ -270,9 +280,13 @@ const s = StyleSheet.create({
   noteDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: palette.textMuted },
   noteText: { ...typography.small, color: palette.textSecondary, lineHeight: 17, flex: 1 },
   foundBody: { flex: 1 },
-  foundStatus: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: spacing.lg },
+  foundStatus: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm, paddingVertical: spacing.lg },
+  foundState: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
   foundStatusText: { ...typography.body, color: palette.textSecondary },
   foundCount: { fontWeight: '700', color: palette.ink },
+  restartButton: { minHeight: 34, borderRadius: radii.pill, borderWidth: 1, borderColor: palette.borderStrong, paddingHorizontal: spacing.md, alignItems: 'center', justifyContent: 'center' },
+  restartLabel: { ...typography.small, color: palette.accent, fontWeight: '700' },
+  connectionError: { ...typography.small, color: palette.danger, lineHeight: 18, marginBottom: spacing.md },
   deviceList: { gap: spacing.md },
   deviceRow: {
     flexDirection: 'row',
@@ -284,17 +298,6 @@ const s = StyleSheet.create({
     borderRadius: radii.card,
     padding: spacing.lg,
   },
-  deviceIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: radii.md,
-    backgroundColor: palette.card,
-    borderWidth: 1,
-    borderColor: palette.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  deviceDot: { width: 12, height: 22, borderRadius: 6, borderWidth: 2, borderColor: palette.ink },
   deviceInfo: { flex: 1 },
   deviceName: { fontSize: 15, fontWeight: '700', color: palette.ink },
   deviceMeta: { ...typography.small, color: palette.textSecondary, marginTop: 2 },

@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import {
   View,
   Text,
+  Image,
   ScrollView,
   Pressable,
   StyleSheet,
@@ -14,6 +15,7 @@ import type { RootStackParamList } from '@/navigation/routes';
 import { palette, radii, spacing, typography, patternGrid } from '@/theme';
 import { useBleStore } from '@/state/bleStore';
 import { PatternTile } from '@/components/PatternTile';
+import { ProductImage } from '@/components/ProductImage';
 import { featuredPatterns, isPatternSupported } from '@/features/patterns/catalog';
 
 /**
@@ -26,11 +28,11 @@ import { featuredPatterns, isPatternSupported } from '@/features/patterns/catalo
 type Props = NativeStackScreenProps<RootStackParamList, 'Dashboard'>;
 
 const MODES = [
-  { label: 'Mis dispositivos', sub: 'Administra tus dispositivos conectados', route: 'MultiDevice' as const },
-  { label: 'Control por sonido', sub: 'Reacciona al sonido ambiente', route: 'SoundControl' as const },
-  { label: 'Control musical', sub: 'Sincroniza con tu música', route: 'MusicControl' as const },
-  { label: 'Interacción remota', sub: 'Salas privadas para compartir el control', route: 'RoomCreate' as const },
-  { label: 'Control por gesto', sub: 'Dibuja la intensidad en la pantalla', route: 'GestureControl' as const },
+  { label: 'Mis dispositivos', sub: 'Administra tus dispositivos conectados', route: 'MultiDevice' as const, icon: require('../../assets/dashboard/mis-dispositivos.png') },
+  { label: 'Control por sonido', sub: 'Reacciona al sonido ambiente', route: 'SoundControl' as const, icon: require('../../assets/dashboard/control-sonido.png') },
+  { label: 'Control musical', sub: 'Sincroniza con tu música', route: 'MusicControl' as const, icon: require('../../assets/dashboard/control-musica.png') },
+  { label: 'Interacción remota', sub: 'Salas privadas para compartir el control', route: 'RoomCreate' as const, icon: require('../../assets/dashboard/interaccion-remota.png') },
+  { label: 'Control por gesto', sub: 'Dibuja la intensidad en la pantalla', route: 'GestureControl' as const, icon: require('../../assets/dashboard/control-gesto.png') },
 ];
 
 export default function DashboardScreen({ navigation }: Props) {
@@ -80,7 +82,7 @@ export default function DashboardScreen({ navigation }: Props) {
       <ScrollView contentContainerStyle={{ padding: spacing.xl, gap: spacing.xl }}>
         {/* Card de dispositivo + batería */}
         <View style={s.deviceCard}>
-          <View style={s.deviceIcon} />
+          <ProductImage name={deviceName} size={46} />
           <View style={{ flex: 1 }}>
             <Text style={s.deviceName}>{deviceName}</Text>
             <Text style={s.deviceStatus}>
@@ -148,7 +150,7 @@ export default function DashboardScreen({ navigation }: Props) {
                 disabled={!m.route}
                 style={[s.modeRow, !m.route && s.modeDisabled]}
               >
-                <View style={s.modeIcon} />
+                <Image source={m.icon} resizeMode="contain" style={s.modeIcon} />
                 <View style={{ flex: 1 }}>
                   <Text style={s.modeLabel}>{m.label}</Text>
                   <Text style={s.modeSub}>{m.sub}</Text>
@@ -200,7 +202,6 @@ const s = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.lg,
   },
-  deviceIcon: { width: 42, height: 42, borderRadius: radii.md, backgroundColor: palette.tint },
   deviceName: { fontSize: 15, fontWeight: '700', color: palette.ink },
   deviceStatus: { fontSize: 12, fontWeight: '600', color: palette.accent, marginTop: 2 },
   batteryRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
@@ -249,7 +250,7 @@ const s = StyleSheet.create({
     paddingHorizontal: spacing.lg,
   },
   modeDisabled: { opacity: 0.55 },
-  modeIcon: { width: 38, height: 38, borderRadius: 19, borderWidth: 1, borderColor: palette.borderStrong },
+  modeIcon: { width: 42, height: 42, borderRadius: 21 },
   modeLabel: { fontSize: 14, fontWeight: '700', color: palette.ink },
   modeSub: { fontSize: 12, color: palette.textSecondary, marginTop: 1 },
   chevron: { color: palette.textMuted, fontSize: 18 },

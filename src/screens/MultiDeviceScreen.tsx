@@ -4,6 +4,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import type { RootStackParamList } from '@/navigation/routes';
 import { useBleStore } from '@/state/bleStore';
+import { ProductImage } from '@/components/ProductImage';
 import { palette, radii, spacing, typography } from '@/theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'MultiDevice'>;
@@ -43,7 +44,7 @@ export default function MultiDeviceScreen({ navigation }: Props) {
             return (
               <View key={device.id} style={[s.deviceCard, active && s.deviceCardActive]}>
                 <View style={s.deviceRow}>
-                  <View style={s.deviceIcon} />
+                  <ProductImage name={device.name} size={42} />
                   <View style={{ flex: 1 }}>
                     <Text style={s.deviceName}>{device.name}</Text>
                     <Text style={s.deviceStatus}>{active ? 'Activo · recibe los controles' : 'Conectado · listo'}</Text>
@@ -143,7 +144,6 @@ const s = StyleSheet.create({
   deviceCardActive: { borderColor: palette.accent, borderWidth: 1.5 },
   emptyCard: { backgroundColor: palette.card, borderColor: palette.border, borderWidth: 1, borderRadius: radii.cardLg, padding: spacing.lg, gap: spacing.sm },
   deviceRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  deviceIcon: { width: 42, height: 42, borderRadius: radii.md, backgroundColor: palette.tint },
   deviceName: { ...typography.label, color: palette.ink, fontWeight: '700' },
   deviceStatus: { ...typography.small, color: palette.accent, marginTop: 2 },
   battery: { ...typography.label, color: palette.ink, fontWeight: '700' },
