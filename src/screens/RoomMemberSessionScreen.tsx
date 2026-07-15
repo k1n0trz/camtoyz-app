@@ -25,6 +25,7 @@ export default function RoomMemberSessionScreen({ navigation }: Props) {
   const sendPattern = useRoomStore((state) => state.sendPattern);
   const sendIntensity = useRoomStore((state) => state.sendIntensity);
   const sendStop = useRoomStore((state) => state.sendStop);
+  const remoteControlAllowed = useRoomStore((state) => state.remoteControlAllowed);
   const me = currentParticipant(room, participantId);
 
   useEffect(() => {
@@ -53,7 +54,8 @@ export default function RoomMemberSessionScreen({ navigation }: Props) {
           <>
             <RoomStatus>{connectionState === 'reconnecting' ? 'Reconectando…' : connectedPeers > 0 ? 'Control directo conectado' : 'Preparando canal directo…'}</RoomStatus>
             <>
-              <RoomVibrationControls connected={connectedPeers > 0} onPattern={sendPattern} onIntensity={sendIntensity} onStop={sendStop} />
+              {!remoteControlAllowed ? <Text style={s.permissionNotice}>La otra persona todavía no ha permitido el control remoto.</Text> : null}
+              <RoomVibrationControls connected={connectedPeers > 0 && remoteControlAllowed} onPattern={sendPattern} onIntensity={sendIntensity} onStop={sendStop} />
               <Pressable accessibilityRole="button" onPress={() => navigation.navigate('RoomCamera')} style={s.camera}>
                 <Text style={s.cameraText}>Abrir cámara de la sala</Text>
               </Pressable>
@@ -75,6 +77,7 @@ const s = StyleSheet.create({
   camera: { height: 44, borderRadius: radii.lg, alignItems: 'center', justifyContent: 'center', marginTop: spacing.sm, backgroundColor: palette.secondary },
   cameraText: { ...typography.label, color: palette.ink, fontWeight: '700' },
   error: { ...typography.small, color: palette.danger, textAlign: 'center' },
+  permissionNotice: { ...typography.body, color: palette.textSubtle, textAlign: 'center', lineHeight: 20, backgroundColor: palette.tint, borderRadius: radii.lg, padding: spacing.md },
   muted: { ...typography.body, color: palette.textSecondary, textAlign: 'center', marginTop: 80 },
   leave: { minHeight: 50, alignItems: 'center', justifyContent: 'center' },
   leaveText: { ...typography.label, color: palette.textSecondary },

@@ -11,6 +11,7 @@ import type {
   PeerSignalPayload,
   ReceivedPeerSignal,
   RoomControlCommand,
+  RoomControlPermission,
   RoomIceConfig,
   RoomSnapshot,
 } from '../../../shared/roomProtocol';
@@ -40,6 +41,7 @@ export interface RoomPeerSnapshot {
   microphoneEnabled: boolean;
   isVideoStarting: boolean;
   mediaError?: string;
+  remoteControlAllowed: boolean;
 }
 
 type SignalSender = (targetParticipantId: string, signal: PeerSignalPayload) => Promise<void>;
@@ -73,12 +75,21 @@ function controlCommand(value: unknown): RoomControlCommand | undefined {
   return undefined;
 }
 
+function controlPermission(value: unknown): RoomControlPermission | undefined {
+  if (!value || typeof value !== 'object') return undefined;
+  const permission = value as Partial<RoomControlPermission>;
+  if (permission.version !== 1 || permission.type !== 'control-permission' || typeof permission.allowed !== 'boolean') return undefined;
+  return permission as RoomControlPermission;
+}
+
 export class RoomPeerController {
   private peers = new Map<string, PeerEntry>();
   private listeners = new Set<Listener>();
   private latestRoom?: RoomSnapshot;
   private participantId?: string;
+  private sessionKey?: string;
   private acceptsCommands = false;
+  private remoteControlAllowed = false;
   private iceServers: RoomIceConfig['iceServers'] = [];
   private localStream?: MediaStream;
   private sequence = 0;
@@ -91,6 +102,7 @@ export class RoomPeerController {
     cameraEnabled: false,
     microphoneEnabled: false,
     isVideoStarting: false,
+    remoteControlAllowed: false,
   };
 
   constructor(
@@ -122,6 +134,12 @@ export class RoomPeerController {
     this.latestRoom = room;
     this.participantId = participantId;
     const me = room?.participants.find((participant) => participant.id === participantId);
+    const nextSessionKey = room && participantId ? `${room.code}:${participantId}` : undefined;
+    if (this.sessionKey !== nextSessionKey) {
+      this.sessionKey = nextSessionKey;
+      this.remoteControlAllowed = false;
+      this.update({ remoteControlAllowed: false });
+    }
     this.acceptsCommands = me?.role === 'host';
 
     if (!room || !participantId) {
@@ -208,6 +226,35 @@ export class RoomPeerController {
     this.intensityTimer = undefined;
     this.pendingIntensity = undefined;
     return this.send({ version: 1, sequence: ++this.sequence, sentAt: Date.now(), type: 'stop' });
+  }
+
+  async setRemoteControlAllowed(allowed: boolean): Promise<void> {
+    if (!this.acceptsCommands) return;
+    this.remoteControlAllowed = allowed;
+    this.update({ remoteControlAllowed: allowed });
+    this.broadcastPermission();
+    if (!allowed) await this.safeStop();
+  }
+
+  async emergencyStop(): Promise<void> {
+    this.remoteControlAllowed = false;
+    this.update({ remoteControlAllowed: false });
+    if (this.acceptsCommands) this.broadcastPermission();
+    await this.safeStop();
+  }
+
+  async suspendForSafety(): Promise<void> {
+    if (this.acceptsCommands) {
+      await this.setRemoteControlAllowed(false);
+    } else {
+      try {
+        await this.sendStop();
+      } catch {
+        // Si el canal ya cayó, el receptor también ejecuta Stop al detectar el cierre.
+      }
+    }
+    await this.safeStop();
+    await this.stopVideo();
   }
 
   async startVideo(): Promise<void> {
@@ -311,6 +358,13 @@ export class RoomPeerController {
     for (const channel of open) channel.send(payload);
   }
 
+  private broadcastPermission(): void {
+    const payload = JSON.stringify({ version: 1, type: 'control-permission', allowed: this.remoteControlAllowed } satisfies RoomControlPermission);
+    for (const entry of this.peers.values()) {
+      if (entry.channel?.readyState === 'open') entry.channel.send(payload);
+    }
+  }
+
   private ensurePeer(peerId: string): PeerEntry {
     const existing = this.peers.get(peerId);
     if (existing) return existing;
@@ -347,7 +401,7 @@ export class RoomPeerController {
       if (connection.connectionState === 'failed' || connection.connectionState === 'closed') {
         this.closePeer(peerId, true);
       }
-      if (connection.connectionState === 'disconnected') void this.safeStop();
+      if (connection.connectionState === 'disconnected') this.revokeForDisconnect();
       this.notify();
     });
     this.notify();
@@ -365,18 +419,30 @@ export class RoomPeerController {
     entry.channel = channel;
     channel.addEventListener('open', () => {
       this.update({ error: undefined });
+      if (this.acceptsCommands) this.broadcastPermission();
       this.notify();
     });
     channel.addEventListener('close', () => {
-      void this.safeStop();
+      this.revokeForDisconnect();
       this.notify();
     });
     channel.addEventListener('error', () => this.update({ error: 'El canal directo de control tuvo un error.' }));
     channel.addEventListener('message', (event) => {
-      if (!this.acceptsCommands || typeof event.data !== 'string' || event.data.length > MAX_COMMAND_BYTES) return;
+      if (typeof event.data !== 'string' || event.data.length > MAX_COMMAND_BYTES) return;
       try {
-        const command = controlCommand(JSON.parse(event.data));
+        const value: unknown = JSON.parse(event.data);
+        const permission = controlPermission(value);
+        if (permission) {
+          if (!this.acceptsCommands) {
+            this.remoteControlAllowed = permission.allowed;
+            this.update({ remoteControlAllowed: permission.allowed });
+          }
+          return;
+        }
+        if (!this.acceptsCommands) return;
+        const command = controlCommand(value);
         if (!command || command.sequence <= entry.lastSequence) return;
+        if (command.type !== 'stop' && !this.remoteControlAllowed) return;
         entry.lastSequence = command.sequence;
         void this.receiveCommand(command);
       } catch {
@@ -413,7 +479,7 @@ export class RoomPeerController {
     entry.remoteStream?.release();
     entry.connection.close();
     this.peers.delete(peerId);
-    if (stop) void this.safeStop();
+    if (stop) this.revokeForDisconnect();
     this.notify();
   }
 
@@ -424,6 +490,8 @@ export class RoomPeerController {
       entry.connection.close();
     }
     this.peers.clear();
+    this.remoteControlAllowed = false;
+    this.update({ remoteControlAllowed: false });
     if (stop) await this.safeStop();
     this.notify();
   }
@@ -434,5 +502,11 @@ export class RoomPeerController {
       connectedPeers: [...this.peers.values()].filter((entry) => entry.channel?.readyState === 'open').length,
       remoteStream: [...this.peers.values()].map((entry) => entry.remoteStream).find(Boolean),
     });
+  }
+
+  private revokeForDisconnect(): void {
+    this.remoteControlAllowed = false;
+    this.update({ remoteControlAllowed: false });
+    void this.safeStop();
   }
 }

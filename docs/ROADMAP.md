@@ -38,14 +38,24 @@ Fases incrementales. Cada una entrega algo verificable en el teléfono físico. 
 
 ## Fase 7 — Ruta de cierre a 1.0.0
 
-La versión no cambia a `1.0.0` hasta que todas las puertas 7.0–7.7 estén verdes. Durante el trabajo se usan versiones `0.3.x`; después se genera una candidata `1.0.0-rc.1` y solo la candidata aprobada se etiqueta como `1.0.0`.
+La versión no cambia a `1.0.0` hasta que todas las puertas 7.0–7.7 estén verdes. La candidata interna previa al lanzamiento es `0.9.0`; solo una candidata aprobada se etiqueta como `1.0.0`.
+
+**Decisiones cerradas para 1.0.0 (15 de julio de 2026):**
+
+- Android únicamente; iOS queda para una etapa posterior.
+- Distribución interna mediante APK; Play Store y AAB quedan fuera de esta entrega.
+- Intense, FlexiCurve, FlexRing y Whisper ya fueron probados físicamente.
+- Se pueden conectar dos juguetes, pero el control activo es individual. Este límite se acepta para 1.0.0.
+- Las salas siguen limitadas a dos participantes.
+- Nombre legal, correo de soporte y textos legales definitivos quedan pendientes del cliente antes de promover `0.9.0` a `1.0.0`.
+
+**Estado actual:** `0.9.0` compilada, firmada e instalada como actualización sobre 0.3.0. CI, Ajustes, consentimiento remoto, parada de emergencia y endurecimiento de la VM están implementados. Faltan la documentación del cliente y la regresión manual final de dos teléfonos para promoverla.
 
 ### 7.0 — Congelar alcance y línea base
 
 - Resolver los cambios locales de compatibilidad BLE: conservarlos y validarlos o descartarlos.
 - Dejar la rama de release limpia, documentada y reproducible desde un clon nuevo.
-- Decidir si 1.0.0 será Android primero o Android + iOS.
-- Confirmar el canal de distribución permitido: Play Store/App Store, distribución privada o ambos.
+- Registrar el alcance Android y el canal APK interno acordados.
 - **DoD:** alcance aprobado, árbol Git limpio, versión base instalada coincide con el repositorio y no hay código sin revisión.
 
 ### 7.1 — Plataforma, dependencias y build de producción
@@ -56,8 +66,8 @@ La versión no cambia a `1.0.0` hasta que todas las puertas 7.0–7.7 estén ver
 - Establecer una única estrategia de configuración nativa para que `app.json`, Android y EAS no diverjan.
 - Fijar `EXPO_PUBLIC_ROOM_SERVER_URL=https://app.camtoyz.com` en builds de producción.
 - Retirar Expo Dev Client y permisos que no sean indispensables (`SYSTEM_ALERT_WINDOW` y almacenamiento amplio, entre otros).
-- Configurar firma de producción y Play App Signing; generar AAB, no solo APK de pruebas.
-- **DoD:** typecheck, lint, pruebas, auditoría aceptada y `expo-doctor` sin fallos no justificados; AAB firmado abre sin Metro y apunta al servidor público.
+- Configurar una firma reproducible para APK internas; Play App Signing y AAB se difieren hasta decidir la publicación en Play Store.
+- **DoD:** typecheck, lint, pruebas, auditoría aceptada y `expo-doctor` sin fallos no justificados; APK firmada abre sin Metro y apunta al servidor público.
 
 ### 7.2 — Seguridad personal, consentimiento y privacidad
 
@@ -67,14 +77,14 @@ La versión no cambia a `1.0.0` hasta que todas las puertas 7.0–7.7 estén ver
 - Añadir pantalla de Ajustes con política de privacidad, términos, soporte, versión y controles de permisos.
 - Definir audiencia adulta, consentimiento para cámara/micrófono y textos de seguridad de uso.
 - Corregir la promesa “directo entre dispositivos”: TURN puede retransmitir tráfico cifrado aunque no pueda leer su contenido.
-- Preparar Data Safety de Google y App Privacy de Apple según el alcance aprobado.
+- Preparar el inventario de datos y permisos necesario para los textos internos; Data Safety de Google se completa cuando se reactive Play Store.
 - **DoD:** el receptor puede detener y revocar el control en todo momento; textos legales aprobados y accesibles dentro de la app.
 
 ### 7.3 — Matriz BLE y catálogo de productos
 
-- Probar detección, nombre, imagen, conexión, batería, capacidades, patrones, intensidad y Stop de Intense, FlexiCurve, FlexRing y Whisper.
+- Conservar el registro de las pruebas físicas ya superadas para detección, nombre, imagen, conexión y control de Intense, FlexiCurve, FlexRing y Whisper.
 - Mantener HyperBullet como dispositivo de regresión aunque todavía use imagen neutra.
-- Validar conexión simultánea con dos juguetes físicos y sincronización activada/desactivada.
+- Mantener como alcance aceptado la conexión simultánea de dos juguetes con control de uno a la vez; el control simultáneo queda para una versión posterior.
 - Probar recuperación BLE en Samsung y al menos dos fabricantes Android adicionales, cubriendo Android 10/11 y Android 12+ cuando haya equipos disponibles.
 - Documentar recuperación cuando Android necesite reiniciar Bluetooth o el teléfono.
 - **DoD:** cada modelo soportado tiene una ficha de resultados; multi-dispositivo funciona físicamente y ninguna desconexión deja un motor activo.
@@ -111,10 +121,9 @@ La versión no cambia a `1.0.0` hasta que todas las puertas 7.0–7.7 estén ver
 
 ### 7.7 — Candidata, distribución y lanzamiento
 
-- Generar `1.0.0-rc.1`: APK interna para QA y AAB de producción para Play; build EAS/TestFlight si iOS está dentro del alcance.
+- Generar `0.9.0`: APK interna para QA. AAB/Play y EAS/TestFlight quedan fuera del alcance actual.
 - Ejecutar regresión completa desde instalaciones limpias y actualización desde 0.3.0 en los teléfonos disponibles.
-- Preparar ficha de tienda, capturas, iconos, clasificación de contenido, privacidad, soporte y notas de versión.
-- Obtener revisión de política para una app que controla juguetes íntimos y definir un canal alternativo si una tienda no la admite.
+- Preparar notas de versión, inventario de permisos y paquete de documentación interna; la ficha de tienda se difiere.
 - Probar instalación desde el canal real de distribución, no mediante ADB.
 - Crear tag y release de GitHub solo después de aprobar la candidata.
 - **DoD:** checklist firmado, cero bloqueantes abiertos, rollback documentado y artefactos reproducibles archivados.
@@ -134,5 +143,7 @@ La versión no cambia a `1.0.0` hasta que todas las puertas 7.0–7.7 estén ver
 - Cuentas de usuario y bloqueos resistentes a reinstalaciones.
 - Escalado horizontal del servidor con estado/adapter compartido.
 - Salas de más de dos personas; quedan fuera de 1.0.0 por decisión de producto.
+- Control simultáneo de dos juguetes; 1.0.0 mantiene control individual.
+- Publicación en Play Store e iOS.
 - Telemetría opt-in avanzada; 1.0.0 solo necesita observabilidad técnica sin contenido sensible.
 - Confirmar con cada proveedor las capacidades y diferencias de firmware que no puedan inferirse mediante FFE4.

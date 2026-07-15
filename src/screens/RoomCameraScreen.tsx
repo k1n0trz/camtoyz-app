@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RTCView } from 'react-native-webrtc';
 
-import { PrimaryButton, PrivacyCard, RoomHeader, RoomStatus } from '@/components/RoomUi';
+import { PrimaryButton, PrivacyCard, RemoteControlSafetyCard, RoomHeader, RoomStatus } from '@/components/RoomUi';
 import { RoomVibrationControls } from '@/components/RoomVibrationControls';
 import type { RootStackParamList } from '@/navigation/routes';
 import { currentParticipant, useRoomStore } from '@/state/roomStore';
@@ -31,6 +31,9 @@ export default function RoomCameraScreen({ navigation }: Props) {
   const sendPattern = useRoomStore((state) => state.sendPattern);
   const sendIntensity = useRoomStore((state) => state.sendIntensity);
   const sendStop = useRoomStore((state) => state.sendStop);
+  const remoteControlAllowed = useRoomStore((state) => state.remoteControlAllowed);
+  const setRemoteControlAllowed = useRoomStore((state) => state.setRemoteControlAllowed);
+  const emergencyStop = useRoomStore((state) => state.emergencyStop);
   const startVideo = useRoomStore((state) => state.startVideo);
   const stopVideo = useRoomStore((state) => state.stopVideo);
   const toggleCamera = useRoomStore((state) => state.toggleCamera);
@@ -116,11 +119,21 @@ export default function RoomCameraScreen({ navigation }: Props) {
         )}
 
         {me?.role === 'member' ? (
-          <RoomVibrationControls
+          <>
+            {!remoteControlAllowed ? <Text style={s.permissionNotice}>La otra persona todavía no ha permitido el control remoto.</Text> : null}
+            <RoomVibrationControls
+              connected={connectedPeers > 0 && remoteControlAllowed}
+              onPattern={sendPattern}
+              onIntensity={sendIntensity}
+              onStop={sendStop}
+            />
+          </>
+        ) : me?.role === 'host' ? (
+          <RemoteControlSafetyCard
+            allowed={remoteControlAllowed}
             connected={connectedPeers > 0}
-            onPattern={sendPattern}
-            onIntensity={sendIntensity}
-            onStop={sendStop}
+            onChange={setRemoteControlAllowed}
+            onStop={emergencyStop}
           />
         ) : null}
         {mediaError ? <Text style={s.error}>{mediaError}</Text> : null}
@@ -173,6 +186,7 @@ const s = StyleSheet.create({
   controlIcon: { fontSize: 20, fontWeight: '800', color: palette.accent, lineHeight: 24 },
   controlLabel: { ...typography.small, color: palette.ink, textAlign: 'center', marginTop: 3, fontWeight: '700' },
   error: { ...typography.small, color: palette.danger, textAlign: 'center', lineHeight: 18 },
+  permissionNotice: { ...typography.body, color: palette.textSubtle, textAlign: 'center', lineHeight: 20, backgroundColor: palette.tint, borderRadius: radii.lg, padding: spacing.md },
   stopVideo: { minHeight: 48, alignItems: 'center', justifyContent: 'center' },
   stopVideoText: { ...typography.label, color: palette.textSecondary },
 });

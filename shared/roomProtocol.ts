@@ -105,6 +105,13 @@ export type RoomControlCommand =
   | { version: 1; sequence: number; sentAt: number; type: 'pattern'; value: number }
   | { version: 1; sequence: number; sentAt: number; type: 'intensity'; value: number };
 
+/** El receptor decide en todo momento si acepta comandos remotos. */
+export interface RoomControlPermission {
+  version: 1;
+  type: 'control-permission';
+  allowed: boolean;
+}
+
 export interface ClientToServerEvents {
   'room:create': (request: RoomIdentityRequest, ack: (response: RoomAck<RoomSessionData>) => void) => void;
   'room:join': (request: JoinRoomRequest, ack: (response: RoomAck<RoomSessionData>) => void) => void;

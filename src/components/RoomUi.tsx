@@ -40,7 +40,39 @@ export function PrivacyCard() {
   return (
     <View style={s.privacyCard}>
       <View style={s.lock}><View style={s.lockDot} /></View>
-      <Text style={s.privacyText}>Los comandos viajan directo entre dispositivos. El servidor solo gestiona quién puede unirse a la sala.</Text>
+      <Text style={s.privacyText}>Video y comandos usan un canal cifrado. Si la red lo requiere, TURN retransmite paquetes cifrados sin leer su contenido; el servidor de salas gestiona acceso y señalización.</Text>
+    </View>
+  );
+}
+
+export function RemoteControlSafetyCard({ allowed, connected, onChange, onStop }: {
+  allowed: boolean;
+  connected: boolean;
+  onChange: (allowed: boolean) => Promise<void>;
+  onStop: () => Promise<void>;
+}) {
+  return (
+    <View style={s.safetyCard}>
+      <Text style={s.safetyTitle}>Seguridad del control remoto</Text>
+      <Text style={s.safetyCopy}>
+        {allowed
+          ? 'Control permitido para la otra persona. Puedes revocarlo y detener la vibración en cualquier momento.'
+          : connected
+            ? 'La otra persona está conectada, pero no puede controlar el juguete hasta que tú lo permitas.'
+            : 'Cuando se conecte la otra persona, decide aquí si puede controlar el juguete.'}
+      </Text>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={allowed ? 'Revocar control remoto y detener' : 'Permitir control remoto'}
+        disabled={!connected && !allowed}
+        onPress={() => void onChange(!allowed)}
+        style={[s.permissionButton, allowed && s.permissionButtonActive, !connected && !allowed && s.disabled]}
+      >
+        <Text style={[s.permissionLabel, allowed && s.permissionLabelActive]}>{allowed ? 'Revocar control y detener' : 'Permitir control remoto'}</Text>
+      </Pressable>
+      <Pressable accessibilityRole="button" accessibilityLabel="Detener vibración ahora" onPress={() => void onStop()} style={s.emergencyButton}>
+        <Text style={s.emergencyLabel}>DETENER AHORA</Text>
+      </Pressable>
     </View>
   );
 }
@@ -68,4 +100,13 @@ const s = StyleSheet.create({
   status: { flexDirection: 'row', alignItems: 'center', alignSelf: 'center', gap: 8, backgroundColor: palette.card, borderWidth: 1, borderColor: palette.border, borderRadius: radii.pill, paddingVertical: 10, paddingHorizontal: 16 },
   statusDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: palette.accent },
   statusText: { ...typography.body, color: palette.ink, fontWeight: '600' },
+  safetyCard: { gap: spacing.md, backgroundColor: palette.card, borderWidth: 2, borderColor: palette.accent, borderRadius: radii.cardLg, padding: spacing.xl },
+  safetyTitle: { ...typography.section, color: palette.ink },
+  safetyCopy: { ...typography.body, color: palette.textSubtle, lineHeight: 20 },
+  permissionButton: { minHeight: 48, borderRadius: radii.lg, backgroundColor: palette.primary, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.md },
+  permissionButtonActive: { backgroundColor: palette.tint, borderWidth: 1.5, borderColor: palette.accent },
+  permissionLabel: { ...typography.label, color: palette.ink, fontWeight: '700', textAlign: 'center' },
+  permissionLabelActive: { color: palette.accent },
+  emergencyButton: { minHeight: 52, borderRadius: radii.lg, backgroundColor: palette.accent, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.md },
+  emergencyLabel: { ...typography.label, color: palette.white, fontWeight: '900', letterSpacing: 0.6 },
 });

@@ -21,6 +21,7 @@ import RoomHostPanelScreen from '@/screens/RoomHostPanelScreen';
 import RoomMemberSessionScreen from '@/screens/RoomMemberSessionScreen';
 import RoomKickedScreen from '@/screens/RoomKickedScreen';
 import RoomCameraScreen from '@/screens/RoomCameraScreen';
+import SettingsDeviceScreen from '@/screens/SettingsDeviceScreen';
 import { ConnectionStatusOverlay } from '@/components/ConnectionStatusOverlay';
 import { useBleStore } from '@/state/bleStore';
 
@@ -71,9 +72,10 @@ export default function App() {
             <Stack.Screen name="RoomMemberSession" component={RoomMemberSessionScreen} />
             <Stack.Screen name="RoomKicked" component={RoomKickedScreen} />
             <Stack.Screen name="RoomCamera" component={RoomCameraScreen} />
+            <Stack.Screen name="SettingsDevice" component={SettingsDeviceScreen} />
             {/* Codex: registrar aquí el resto de rutas de src/navigation/routes.ts
                 a medida que se construyen (Scan, PatternsAll, MultiDevice, GestureControl,
-                SoundControl, MusicControl, Room*, SettingsDevice). */}
+                SoundControl, MusicControl y Room*). */}
           </Stack.Navigator>
           <BluetoothRecoveryNavigation />
         </NavigationContainer>

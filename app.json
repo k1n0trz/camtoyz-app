@@ -2,7 +2,10 @@
   "expo": {
     "name": "Camtoyz App",
     "slug": "camtoyz-app",
-    "version": "0.3.0",
+    "version": "0.9.0",
+    "platforms": [
+      "android"
+    ],
     "orientation": "portrait",
     "scheme": "camtoyz-app",
     "icon": "./assets/icon/app-icon.png",
@@ -25,7 +28,7 @@
     },
     "android": {
       "package": "com.camtoyz.app",
-      "versionCode": 5,
+      "versionCode": 9,
       "adaptiveIcon": {
         "foregroundImage": "./assets/icon/adaptive-foreground.png",
         "backgroundColor": "#E8B4CB"
@@ -36,6 +39,11 @@
         "ACCESS_FINE_LOCATION",
         "RECORD_AUDIO",
         "CAMERA"
+      ],
+      "blockedPermissions": [
+        "android.permission.SYSTEM_ALERT_WINDOW",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE"
       ]
     },
     "plugins": [

@@ -25,9 +25,9 @@ export const palette = {
   borderStrong: '#EBD0DD', // borde de card/pill
 
   // Texto secundario
-  textSecondary: '#9D5E7C',
-  textMuted: '#BE87A2',
-  textFaint: '#A794BA',
+  textSecondary: '#8B4F6C',
+  textMuted: '#76506A',
+  textFaint: '#6F5B85',
   textSubtle: '#5F4B77',
   textLabel: '#6E5987',
 

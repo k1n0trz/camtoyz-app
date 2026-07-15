@@ -1,3 +1,4 @@
+import { AppState } from 'react-native';
 import { create } from 'zustand';
 
 import { roomClient, type RoomConnectionState } from '@/features/room/RoomClient';
@@ -22,6 +23,7 @@ interface RoomStore {
   microphoneEnabled: boolean;
   isVideoStarting: boolean;
   mediaError?: string;
+  remoteControlAllowed: boolean;
   createRoom: (displayName?: string) => Promise<boolean>;
   joinRoom: (roomCode: string, displayName?: string) => Promise<boolean>;
   restoreRoom: () => Promise<boolean>;
@@ -32,6 +34,8 @@ interface RoomStore {
   sendPattern: (pattern: number) => Promise<boolean>;
   sendIntensity: (value: number) => Promise<boolean>;
   sendStop: () => Promise<boolean>;
+  setRemoteControlAllowed: (allowed: boolean) => Promise<void>;
+  emergencyStop: () => Promise<void>;
   startVideo: () => Promise<void>;
   stopVideo: () => Promise<void>;
   toggleCamera: () => void;
@@ -80,6 +84,7 @@ export const useRoomStore = create<RoomStore>(() => ({
   microphoneEnabled: roomPeers.snapshot.microphoneEnabled,
   isVideoStarting: roomPeers.snapshot.isVideoStarting,
   mediaError: roomPeers.snapshot.mediaError,
+  remoteControlAllowed: roomPeers.snapshot.remoteControlAllowed,
   createRoom: (displayName) => safely(() => roomClient.create(displayName)),
   joinRoom: (roomCode, displayName) => safely(() => roomClient.join(roomCode, displayName)),
   restoreRoom: () => roomClient.restore(),
@@ -90,6 +95,8 @@ export const useRoomStore = create<RoomStore>(() => ({
   sendPattern: (pattern) => safely(() => roomPeers.sendPattern(pattern)),
   sendIntensity: (value) => safely(() => roomPeers.sendIntensity(value)),
   sendStop: () => safely(() => roomPeers.sendStop()),
+  setRemoteControlAllowed: (allowed) => roomPeers.setRemoteControlAllowed(allowed),
+  emergencyStop: () => roomPeers.emergencyStop(),
   startVideo: () => roomPeers.startVideo(),
   stopVideo: () => roomPeers.stopVideo(),
   toggleCamera: () => roomPeers.toggleCamera(),
@@ -115,7 +122,12 @@ roomPeers.subscribe((snapshot) => useRoomStore.setState({
   microphoneEnabled: snapshot.microphoneEnabled,
   isVideoStarting: snapshot.isVideoStarting,
   mediaError: snapshot.mediaError,
+  remoteControlAllowed: snapshot.remoteControlAllowed,
 }));
+
+AppState.addEventListener('change', (nextState) => {
+  if (nextState !== 'active' && roomClient.snapshot.room) void roomPeers.suspendForSafety();
+});
 
 export function currentParticipant(room?: RoomSnapshot, participantId?: string): RoomParticipant | undefined {
   return room?.participants.find((participant) => participant.id === participantId);

@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import * as Clipboard from 'expo-clipboard';
 
-import { PrimaryButton, PrivacyCard, RoomHeader } from '@/components/RoomUi';
+import { PrimaryButton, PrivacyCard, RemoteControlSafetyCard, RoomHeader } from '@/components/RoomUi';
 import type { RootStackParamList } from '@/navigation/routes';
 import { currentParticipant, useRoomStore } from '@/state/roomStore';
 import { palette, radii, spacing, typography } from '@/theme';
@@ -21,6 +21,10 @@ export default function RoomHostPanelScreen({ navigation }: Props) {
   const kick = useRoomStore((state) => state.kick);
   const block = useRoomStore((state) => state.block);
   const endRoom = useRoomStore((state) => state.endRoom);
+  const connectedPeers = useRoomStore((state) => state.connectedPeers);
+  const remoteControlAllowed = useRoomStore((state) => state.remoteControlAllowed);
+  const setRemoteControlAllowed = useRoomStore((state) => state.setRemoteControlAllowed);
+  const emergencyStop = useRoomStore((state) => state.emergencyStop);
   const me = currentParticipant(room, participantId);
 
   useEffect(() => {
@@ -30,6 +34,13 @@ export default function RoomHostPanelScreen({ navigation }: Props) {
   useEffect(() => {
     if (me && me.role !== 'host') navigation.replace('RoomMemberSession');
   }, [me, navigation]);
+
+  useEffect(
+    () => navigation.addListener('beforeRemove', () => {
+      void setRemoteControlAllowed(false);
+    }),
+    [navigation, setRemoteControlAllowed],
+  );
 
   const confirmBlock = (id: string, name: string) => Alert.alert(
     `¿Bloquear a ${name}?`,
@@ -88,6 +99,12 @@ export default function RoomHostPanelScreen({ navigation }: Props) {
             </View>
           );
         })}
+        <RemoteControlSafetyCard
+          allowed={remoteControlAllowed}
+          connected={connectedPeers > 0}
+          onChange={setRemoteControlAllowed}
+          onStop={emergencyStop}
+        />
         <PrivacyCard />
         {error ? <Text style={s.error}>{error}</Text> : null}
       </ScrollView>

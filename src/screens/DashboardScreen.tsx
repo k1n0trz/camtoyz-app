@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import Constants from 'expo-constants';
 
 import type { RootStackParamList } from '@/navigation/routes';
 import { palette, radii, spacing, typography, patternGrid } from '@/theme';
@@ -48,6 +49,7 @@ export default function DashboardScreen({ navigation }: Props) {
   const battery = device?.battery;
   const patternCount = device?.patternCount ?? 0;
   const batteryWidth: DimensionValue = `${Math.max(0, Math.min(100, battery ?? 0))}%`;
+  const appVersion = Constants.nativeAppVersion ?? Constants.expoConfig?.version ?? '0.9.0';
 
   useEffect(
     () =>
@@ -74,9 +76,9 @@ export default function DashboardScreen({ navigation }: Props) {
           <Text style={s.pillText}>{deviceName}</Text>
         </Pressable>
         <View style={{ flex: 1 }} />
-        <View style={s.langChip}>
-          <Text style={s.langText}>ES</Text>
-        </View>
+        <Pressable accessibilityRole="button" accessibilityLabel="Abrir ajustes" onPress={() => navigation.navigate('SettingsDevice')} style={s.settingsButton}>
+          <Text style={s.settingsText}>Ajustes</Text>
+        </Pressable>
       </View>
 
       <ScrollView contentContainerStyle={{ padding: spacing.xl, gap: spacing.xl }}>
@@ -160,6 +162,7 @@ export default function DashboardScreen({ navigation }: Props) {
             ))}
           </View>
         </View>
+        <Text style={s.version}>Camtoyz App · versión {appVersion}</Text>
       </ScrollView>
     </SafeAreaView>
   );
@@ -181,17 +184,17 @@ const s = StyleSheet.create({
   dot: { width: 7, height: 7, borderRadius: 4, backgroundColor: palette.accent },
   dotInactive: { backgroundColor: palette.textMuted },
   pillText: { fontSize: 13, fontWeight: '600', color: palette.ink },
-  langChip: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+  settingsButton: {
+    minHeight: 36,
     backgroundColor: palette.tint2,
     borderWidth: 1,
     borderColor: palette.borderStrong,
+    borderRadius: radii.pill,
+    paddingHorizontal: spacing.md,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  langText: { fontSize: 11, fontWeight: '700', color: palette.ink },
+  settingsText: { fontSize: 11, fontWeight: '700', color: palette.ink },
   deviceCard: {
     backgroundColor: palette.card,
     borderWidth: 1,
@@ -254,4 +257,5 @@ const s = StyleSheet.create({
   modeLabel: { fontSize: 14, fontWeight: '700', color: palette.ink },
   modeSub: { fontSize: 12, color: palette.textSecondary, marginTop: 1 },
   chevron: { color: palette.textMuted, fontSize: 18 },
+  version: { ...typography.small, color: palette.textSubtle, textAlign: 'center', marginBottom: spacing.lg },
 });
