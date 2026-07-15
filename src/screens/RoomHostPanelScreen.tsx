@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import * as Clipboard from 'expo-clipboard';
 
 import { PrimaryButton, PrivacyCard, RoomHeader } from '@/components/RoomUi';
 import type { RootStackParamList } from '@/navigation/routes';
@@ -44,6 +45,12 @@ export default function RoomHostPanelScreen({ navigation }: Props) {
     } }],
   );
 
+  const copyCode = async () => {
+    if (!room) return;
+    await Clipboard.setStringAsync(room.code);
+    Alert.alert('Código copiado', `Comparte ${room.code} con la persona que invitarás.`);
+  };
+
   if (!room) {
     return (
       <SafeAreaView style={s.root} edges={['top', 'bottom']}>
@@ -57,7 +64,12 @@ export default function RoomHostPanelScreen({ navigation }: Props) {
     <SafeAreaView style={s.root} edges={['top', 'bottom']}>
       <RoomHeader title={`Participantes · ${room.participants.length}`} badge="ANFITRIÓN" onBack={() => navigation.goBack()} />
       <ScrollView contentContainerStyle={s.content}>
-        <Text selectable style={s.roomCode}>SALA {room.code}</Text>
+        <View style={s.roomCodeWrap}>
+          <Text selectable style={s.roomCode}>SALA {room.code}</Text>
+          <Pressable accessibilityRole="button" accessibilityLabel="Copiar código de sala" onPress={() => void copyCode()} style={s.copyCode}>
+            <Text style={s.copyCodeText}>Copiar código</Text>
+          </Pressable>
+        </View>
         {room.participants.map((participant) => {
           const self = participant.id === participantId;
           return (
@@ -92,7 +104,10 @@ const s = StyleSheet.create({
   content: { padding: spacing.xl, gap: spacing.md },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   muted: { ...typography.body, color: palette.textSecondary },
-  roomCode: { ...typography.mono, color: palette.textSecondary, textAlign: 'center', marginBottom: spacing.sm },
+  roomCodeWrap: { alignItems: 'center', gap: spacing.sm, marginBottom: spacing.sm },
+  roomCode: { ...typography.mono, color: palette.textSecondary, textAlign: 'center' },
+  copyCode: { minHeight: 36, paddingHorizontal: spacing.lg, borderRadius: radii.pill, borderWidth: 1, borderColor: palette.accent, alignItems: 'center', justifyContent: 'center' },
+  copyCodeText: { ...typography.small, color: palette.accent, fontWeight: '700' },
   participant: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, backgroundColor: palette.card, borderWidth: 1, borderColor: palette.border, borderRadius: radii.card, padding: spacing.lg },
   offline: { opacity: 0.55 },
   avatar: { width: 38, height: 38, borderRadius: 19, backgroundColor: palette.tint, alignItems: 'center', justifyContent: 'center' },

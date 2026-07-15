@@ -73,7 +73,7 @@ export default function RoomCameraScreen({ navigation }: Props) {
         <RoomStatus>{status}</RoomStatus>
         <View style={s.stage}>
           {remoteStream ? (
-            <RTCView streamURL={remoteStream.toURL()} style={s.remoteVideo} objectFit="cover" />
+            <RTCView streamURL={remoteStream.toURL()} style={s.remoteVideo} objectFit="cover" zOrder={0} />
           ) : (
             <View style={s.waitingRemote}>
               <Text style={s.waitingTitle}>{totalPeers ? 'Esperando video' : 'Sala privada'}</Text>
@@ -86,7 +86,7 @@ export default function RoomCameraScreen({ navigation }: Props) {
           )}
           {localStream ? (
             <View style={s.localPreview}>
-              <RTCView streamURL={localStream.toURL()} style={s.localVideo} objectFit="cover" mirror />
+              <RTCView streamURL={localStream.toURL()} style={s.localVideo} objectFit="cover" mirror zOrder={1} />
               {!cameraEnabled ? <View style={s.cameraOff}><Text style={s.cameraOffText}>Cámara apagada</Text></View> : null}
             </View>
           ) : null}
@@ -158,6 +158,8 @@ const s = StyleSheet.create({
     overflow: 'hidden',
     borderWidth: 2,
     borderColor: palette.card,
+    zIndex: 2,
+    elevation: 2,
   },
   localVideo: { flex: 1 },
   cameraOff: { ...StyleSheet.absoluteFillObject, backgroundColor: palette.ink, alignItems: 'center', justifyContent: 'center' },
