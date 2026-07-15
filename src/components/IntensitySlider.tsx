@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 import { StyleSheet, View, type GestureResponderEvent } from 'react-native';
 
-import { palette } from '@/theme';
+import { palette } from '@/theme/index';
 
 interface Props {
   value: number;

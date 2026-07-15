@@ -5,7 +5,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
 import { useBleStore } from '@/state/bleStore';
 import { ProductImage } from '@/components/ProductImage';
-import { palette, radii, spacing, typography } from '@/theme';
+import { palette, radii, spacing, typography } from '@/theme/index';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'MultiDevice'>;
 

@@ -6,7 +6,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { PrimaryButton, PrivacyCard, RoomHeader, RoomStatus } from '@/components/RoomUi';
 import type { RootStackParamList } from '@/navigation/routes';
 import { currentParticipant, useRoomStore } from '@/state/roomStore';
-import { palette, radii, spacing, typography } from '@/theme';
+import { palette, radii, spacing, typography } from '@/theme/index';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'RoomCreate'>;
 

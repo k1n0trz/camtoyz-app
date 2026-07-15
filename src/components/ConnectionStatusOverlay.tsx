@@ -2,7 +2,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useBleStore } from '@/state/bleStore';
-import { palette, radii, spacing, typography } from '@/theme';
+import { palette, radii, spacing, typography } from '@/theme/index';
 
 export function ConnectionStatusOverlay() {
   const connectionState = useBleStore((state) => state.connectionState);

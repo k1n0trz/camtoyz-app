@@ -1,6 +1,6 @@
 import { Image, StyleSheet, View, type ImageSourcePropType } from 'react-native';
 
-import { palette, radii } from '@/theme';
+import { palette, radii } from '@/theme/index';
 
 interface Props {
   name?: string;

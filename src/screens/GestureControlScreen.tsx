@@ -8,7 +8,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { GESTURE_THROTTLE_MS, clampIntensity, intensityFromY } from '@/features/gesture/intensity';
 import type { RootStackParamList } from '@/navigation/routes';
 import { useBleStore } from '@/state/bleStore';
-import { palette, radii, spacing, typography } from '@/theme';
+import { palette, radii, spacing, typography } from '@/theme/index';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'GestureControl'>;
 

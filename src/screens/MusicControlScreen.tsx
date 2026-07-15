@@ -17,7 +17,7 @@ import {
 } from '@/features/audio/playbackCapture';
 import type { RootStackParamList } from '@/navigation/routes';
 import { useBleStore } from '@/state/bleStore';
-import { palette, radii, spacing, typography } from '@/theme';
+import { palette, radii, spacing, typography } from '@/theme/index';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'MusicControl'>;
 type AudioSource = 'app' | 'local';

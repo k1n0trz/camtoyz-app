@@ -6,7 +6,7 @@ import Constants from 'expo-constants';
 
 import { RoomHeader } from '@/components/RoomUi';
 import type { RootStackParamList } from '@/navigation/routes';
-import { palette, radii, spacing, typography } from '@/theme';
+import { palette, radii, spacing, typography } from '@/theme/index';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SettingsDevice'>;
 

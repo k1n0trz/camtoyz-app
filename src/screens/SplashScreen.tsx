@@ -8,7 +8,7 @@ import type { RootStackParamList } from '@/navigation/routes';
 import { Logo } from '@/components/Logo';
 import { loadRoomSession, type StoredRoomSession } from '@/features/room/roomIdentity';
 import { currentParticipant, useRoomStore } from '@/state/roomStore';
-import { palette, radii, spacing, typography } from '@/theme';
+import { palette, radii, spacing, typography } from '@/theme/index';
 
 /**
  * 01 Splash — patrón de referencia para el resto de pantallas.

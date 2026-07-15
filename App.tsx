@@ -6,7 +6,7 @@ import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import type { RootStackParamList } from '@/navigation/routes';
-import { lightTheme } from '@/theme';
+import { lightTheme } from '@/theme/index';
 import SplashScreen from '@/screens/SplashScreen';
 import DashboardScreen from '@/screens/DashboardScreen';
 import ScanScreen from '@/screens/ScanScreen';

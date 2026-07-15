@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { palette, radii, spacing, typography } from '@/theme';
+import { palette, radii, spacing, typography } from '@/theme/index';
 
 export function RoomHeader({ title, badge, onBack }: { title: string; badge?: 'ANFITRIÓN' | 'MIEMBRO'; onBack: () => void }) {
   return (

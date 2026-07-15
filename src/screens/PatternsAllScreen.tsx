@@ -7,7 +7,7 @@ import { PatternTile } from '@/components/PatternTile';
 import { patternCategories, isPatternSupported } from '@/features/patterns/catalog';
 import type { RootStackParamList } from '@/navigation/routes';
 import { useBleStore } from '@/state/bleStore';
-import { palette, radii, spacing, typography, patternGrid } from '@/theme';
+import { palette, radii, spacing, typography, patternGrid } from '@/theme/index';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PatternsAll'>;
 

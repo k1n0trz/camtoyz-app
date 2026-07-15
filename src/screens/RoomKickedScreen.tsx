@@ -5,7 +5,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { PrimaryButton } from '@/components/RoomUi';
 import type { RootStackParamList } from '@/navigation/routes';
 import { useRoomStore } from '@/state/roomStore';
-import { palette, spacing, typography } from '@/theme';
+import { palette, spacing, typography } from '@/theme/index';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'RoomKicked'>;
 

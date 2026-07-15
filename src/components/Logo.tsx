@@ -1,6 +1,6 @@
 import { SvgXml } from 'react-native-svg';
 import { CAMTOYZ_LOGO_XML } from './logoXml';
-import { palette } from '@/theme';
+import { palette } from '@/theme/index';
 
 const ASPECT = 804.79 / 115.55;
 

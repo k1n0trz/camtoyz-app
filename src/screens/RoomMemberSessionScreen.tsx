@@ -7,7 +7,7 @@ import { PrivacyCard, RoomHeader, RoomStatus } from '@/components/RoomUi';
 import { RoomVibrationControls } from '@/components/RoomVibrationControls';
 import type { RootStackParamList } from '@/navigation/routes';
 import { currentParticipant, useRoomStore } from '@/state/roomStore';
-import { palette, radii, spacing, typography } from '@/theme';
+import { palette, radii, spacing, typography } from '@/theme/index';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'RoomMemberSession'>;
 

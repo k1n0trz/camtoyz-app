@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { PatternDefinition } from '@/features/patterns/catalog';
-import { palette, patternGrid, radii, spacing } from '@/theme';
+import { palette, patternGrid, radii, spacing } from '@/theme/index';
 
 interface Props {
   pattern: PatternDefinition;

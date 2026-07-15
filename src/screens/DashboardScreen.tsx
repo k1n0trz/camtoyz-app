@@ -13,7 +13,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import Constants from 'expo-constants';
 
 import type { RootStackParamList } from '@/navigation/routes';
-import { palette, radii, spacing, typography, patternGrid } from '@/theme';
+import { palette, radii, spacing, typography, patternGrid } from '@/theme/index';
 import { useBleStore } from '@/state/bleStore';
 import { PatternTile } from '@/components/PatternTile';
 import { ProductImage } from '@/components/ProductImage';

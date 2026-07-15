@@ -4,7 +4,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import IntensitySlider from '@/components/IntensitySlider';
 import { PatternTile } from '@/components/PatternTile';
 import { featuredPatterns } from '@/features/patterns/catalog';
-import { palette, radii, spacing, typography } from '@/theme';
+import { palette, radii, spacing, typography } from '@/theme/index';
 
 interface Props {
   connected: boolean;

@@ -7,7 +7,7 @@ import { Audio } from 'expo-av';
 import { meteringToPercent, soundToIntensity } from '@/features/audio/metering';
 import type { RootStackParamList } from '@/navigation/routes';
 import { useBleStore } from '@/state/bleStore';
-import { palette, radii, spacing, typography } from '@/theme';
+import { palette, radii, spacing, typography } from '@/theme/index';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SoundControl'>;
 

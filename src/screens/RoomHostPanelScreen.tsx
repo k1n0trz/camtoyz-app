@@ -7,7 +7,7 @@ import * as Clipboard from 'expo-clipboard';
 import { PrimaryButton, PrivacyCard, RemoteControlSafetyCard, RoomHeader } from '@/components/RoomUi';
 import type { RootStackParamList } from '@/navigation/routes';
 import { currentParticipant, useRoomStore } from '@/state/roomStore';
-import { palette, radii, spacing, typography } from '@/theme';
+import { palette, radii, spacing, typography } from '@/theme/index';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'RoomHostPanel'>;
 
