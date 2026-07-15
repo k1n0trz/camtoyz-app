@@ -1,7 +1,10 @@
+import { PermissionsAndroid, Platform } from 'react-native';
 import {
+  MediaStream,
   RTCIceCandidate,
   RTCPeerConnection,
   RTCSessionDescription,
+  mediaDevices,
 } from 'react-native-webrtc';
 
 import type {
@@ -17,8 +20,13 @@ type DataChannel = ReturnType<RTCPeerConnection['createDataChannel']>;
 interface PeerEntry {
   connection: RTCPeerConnection;
   channel?: DataChannel;
+  remoteStream?: MediaStream;
   pendingCandidates: unknown[];
   offerStarted: boolean;
+  initialNegotiationComplete: boolean;
+  isInitiator: boolean;
+  makingOffer: boolean;
+  ignoreOffer: boolean;
   lastSequence: number;
 }
 
@@ -26,6 +34,12 @@ export interface RoomPeerSnapshot {
   connectedPeers: number;
   totalPeers: number;
   error?: string;
+  localStream?: MediaStream;
+  remoteStream?: MediaStream;
+  cameraEnabled: boolean;
+  microphoneEnabled: boolean;
+  isVideoStarting: boolean;
+  mediaError?: string;
 }
 
 type SignalSender = (targetParticipantId: string, signal: PeerSignalPayload) => Promise<void>;
@@ -35,6 +49,18 @@ type Listener = (snapshot: RoomPeerSnapshot) => void;
 const CHANNEL_LABEL = 'camtoyz-app-v1';
 const MAX_COMMAND_BYTES = 512;
 const MAX_COMMAND_AGE_MS = 10_000;
+
+async function requestVideoPermissions(): Promise<void> {
+  if (Platform.OS !== 'android') return;
+
+  const result = await PermissionsAndroid.requestMultiple([
+    PermissionsAndroid.PERMISSIONS.CAMERA,
+    PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
+  ]);
+  const granted = [PermissionsAndroid.PERMISSIONS.CAMERA, PermissionsAndroid.PERMISSIONS.RECORD_AUDIO]
+    .every((permission) => result[permission] === PermissionsAndroid.RESULTS.GRANTED);
+  if (!granted) throw new Error('Se necesitan permisos de cámara y micrófono para iniciar el video.');
+}
 
 function controlCommand(value: unknown): RoomControlCommand | undefined {
   if (!value || typeof value !== 'object') return undefined;
@@ -54,11 +80,18 @@ export class RoomPeerController {
   private participantId?: string;
   private acceptsCommands = false;
   private iceServers: RoomIceConfig['iceServers'] = [];
+  private localStream?: MediaStream;
   private sequence = 0;
   private lastIntensityAt = 0;
   private pendingIntensity?: number;
   private intensityTimer?: ReturnType<typeof setTimeout>;
-  private state: RoomPeerSnapshot = { connectedPeers: 0, totalPeers: 0 };
+  private state: RoomPeerSnapshot = {
+    connectedPeers: 0,
+    totalPeers: 0,
+    cameraEnabled: false,
+    microphoneEnabled: false,
+    isVideoStarting: false,
+  };
 
   constructor(
     private readonly sendSignal: SignalSender,
@@ -93,6 +126,7 @@ export class RoomPeerController {
 
     if (!room || !participantId) {
       await this.closeAll(true);
+      await this.stopVideo();
       return;
     }
 
@@ -103,10 +137,13 @@ export class RoomPeerController {
     }
     for (const participant of desired) {
       const entry = this.ensurePeer(participant.id);
-      if (participantId.localeCompare(participant.id) < 0 && !entry.offerStarted) {
+      if (entry.isInitiator && !entry.offerStarted) {
         entry.offerStarted = true;
         this.attachChannel(participant.id, entry, entry.connection.createDataChannel(CHANNEL_LABEL, { ordered: true }));
+        this.attachLocalTracks(entry);
         void this.createOffer(participant.id, entry);
+      } else {
+        this.attachLocalTracks(entry);
       }
     }
     this.notify();
@@ -119,18 +156,25 @@ export class RoomPeerController {
       if (event.signal.type === 'offer') {
         const description = event.signal.data as { type?: string; sdp?: string };
         if (description.type !== 'offer' || typeof description.sdp !== 'string') return;
+        const offerCollision = entry.makingOffer || entry.connection.signalingState !== 'stable';
+        entry.ignoreOffer = entry.isInitiator && offerCollision;
+        if (entry.ignoreOffer) return;
+        if (offerCollision) await entry.connection.setLocalDescription(new RTCSessionDescription({ type: 'rollback', sdp: '' }));
         await entry.connection.setRemoteDescription(new RTCSessionDescription({ type: 'offer', sdp: description.sdp }));
         await this.flushCandidates(entry);
         const answer = await entry.connection.createAnswer();
         await entry.connection.setLocalDescription(answer);
+        entry.initialNegotiationComplete = true;
         await this.sendSignal(event.fromParticipantId, { type: 'answer', data: entry.connection.localDescription?.toJSON() ?? answer });
       } else if (event.signal.type === 'answer') {
         const description = event.signal.data as { type?: string; sdp?: string };
         if (description.type !== 'answer' || typeof description.sdp !== 'string') return;
         await entry.connection.setRemoteDescription(new RTCSessionDescription({ type: 'answer', sdp: description.sdp }));
         await this.flushCandidates(entry);
+        entry.initialNegotiationComplete = true;
       } else {
         if (!event.signal.data || typeof event.signal.data !== 'object') return;
+        if (entry.ignoreOffer) return;
         if (!entry.connection.remoteDescription) entry.pendingCandidates.push(event.signal.data);
         else await entry.connection.addIceCandidate(new RTCIceCandidate(event.signal.data as never));
       }
@@ -166,6 +210,95 @@ export class RoomPeerController {
     return this.send({ version: 1, sequence: ++this.sequence, sentAt: Date.now(), type: 'stop' });
   }
 
+  async startVideo(): Promise<void> {
+    if (this.localStream || this.state.isVideoStarting) return;
+    this.update({ isVideoStarting: true, mediaError: undefined });
+    try {
+      await requestVideoPermissions();
+      const stream = await mediaDevices.getUserMedia({
+        audio: true,
+        video: {
+          facingMode: 'user',
+          frameRate: 24,
+          width: 640,
+          height: 480,
+        },
+      });
+      this.localStream = stream;
+      for (const entry of this.peers.values()) this.attachLocalTracks(entry);
+      this.update({
+        localStream: stream,
+        cameraEnabled: true,
+        microphoneEnabled: true,
+        isVideoStarting: false,
+        mediaError: undefined,
+      });
+      this.notify();
+    } catch (error) {
+      this.update({
+        isVideoStarting: false,
+        mediaError: error instanceof Error ? error.message : 'No fue posible iniciar la cámara.',
+      });
+    }
+  }
+
+  async stopVideo(): Promise<void> {
+    const stream = this.localStream;
+    if (!stream) return;
+    this.localStream = undefined;
+    const trackIds = new Set(stream.getTracks().map((track) => track.id));
+    for (const entry of this.peers.values()) {
+      for (const sender of entry.connection.getSenders()) {
+        if (sender.track && trackIds.has(sender.track.id)) entry.connection.removeTrack(sender);
+      }
+    }
+    for (const track of stream.getTracks()) track.stop();
+    stream.release();
+    this.update({
+      localStream: undefined,
+      cameraEnabled: false,
+      microphoneEnabled: false,
+      isVideoStarting: false,
+      mediaError: undefined,
+    });
+  }
+
+  toggleCamera(): void {
+    const tracks = this.localStream?.getVideoTracks() ?? [];
+    if (!tracks.length) {
+      this.update({ mediaError: 'Activa la cámara antes de cambiar el video.' });
+      return;
+    }
+    const enabled = !tracks.every((track) => track.enabled);
+    for (const track of tracks) track.enabled = enabled;
+    this.update({ cameraEnabled: enabled, mediaError: undefined });
+  }
+
+  toggleMicrophone(): void {
+    const tracks = this.localStream?.getAudioTracks() ?? [];
+    if (!tracks.length) {
+      this.update({ mediaError: 'Activa la cámara antes de cambiar el micrófono.' });
+      return;
+    }
+    const enabled = !tracks.every((track) => track.enabled);
+    for (const track of tracks) track.enabled = enabled;
+    this.update({ microphoneEnabled: enabled, mediaError: undefined });
+  }
+
+  switchCamera(): void {
+    const track = this.localStream?.getVideoTracks()[0];
+    if (!track) {
+      this.update({ mediaError: 'Activa la cámara antes de cambiarla.' });
+      return;
+    }
+    try {
+      track._switchCamera();
+      this.update({ mediaError: undefined });
+    } catch {
+      this.update({ mediaError: 'No fue posible cambiar de cámara en este dispositivo.' });
+    }
+  }
+
   private async sendIntensityNow(value: number): Promise<void> {
     this.lastIntensityAt = Date.now();
     return this.send({ version: 1, sequence: ++this.sequence, sentAt: Date.now(), type: 'intensity', value });
@@ -183,12 +316,33 @@ export class RoomPeerController {
     if (existing) return existing;
 
     const connection = new RTCPeerConnection({ iceServers: this.iceServers });
-    const entry: PeerEntry = { connection, pendingCandidates: [], offerStarted: false, lastSequence: -1 };
+    const isInitiator = Boolean(this.participantId && this.participantId.localeCompare(peerId) < 0);
+    const entry: PeerEntry = {
+      connection,
+      pendingCandidates: [],
+      offerStarted: false,
+      initialNegotiationComplete: false,
+      isInitiator,
+      makingOffer: false,
+      ignoreOffer: false,
+      lastSequence: -1,
+    };
     this.peers.set(peerId, entry);
     connection.addEventListener('icecandidate', (event) => {
       if (event.candidate) void this.sendSignal(peerId, { type: 'ice', data: event.candidate.toJSON() });
     });
     connection.addEventListener('datachannel', (event) => this.attachChannel(peerId, entry, event.channel));
+    connection.addEventListener('track', (event) => {
+      if (event.streams[0]) entry.remoteStream = event.streams[0];
+      else if (event.track) {
+        entry.remoteStream ??= new MediaStream();
+        entry.remoteStream.addTrack(event.track);
+      }
+      this.notify();
+    });
+    connection.addEventListener('negotiationneeded', () => {
+      if (entry.initialNegotiationComplete) void this.createOffer(peerId, entry);
+    });
     connection.addEventListener('connectionstatechange', () => {
       if (connection.connectionState === 'failed' || connection.connectionState === 'closed') {
         this.closePeer(peerId, true);
@@ -198,6 +352,13 @@ export class RoomPeerController {
     });
     this.notify();
     return entry;
+  }
+
+  private attachLocalTracks(entry: PeerEntry): void {
+    if (!this.localStream) return;
+    for (const track of this.localStream.getTracks()) {
+      if (!entry.connection._trackExists(track)) entry.connection.addTrack(track, this.localStream);
+    }
   }
 
   private attachChannel(peerId: string, entry: PeerEntry, channel: DataChannel): void {
@@ -225,13 +386,17 @@ export class RoomPeerController {
   }
 
   private async createOffer(peerId: string, entry: PeerEntry): Promise<void> {
+    if (entry.makingOffer || entry.connection.signalingState !== 'stable') return;
     try {
+      entry.makingOffer = true;
       const offer = await entry.connection.createOffer({});
       await entry.connection.setLocalDescription(offer);
       await this.sendSignal(peerId, { type: 'offer', data: entry.connection.localDescription?.toJSON() ?? offer });
     } catch {
       this.update({ error: 'No fue posible iniciar el canal directo de control.' });
       this.closePeer(peerId, true);
+    } finally {
+      entry.makingOffer = false;
     }
   }
 
@@ -245,6 +410,7 @@ export class RoomPeerController {
     const entry = this.peers.get(peerId);
     if (!entry) return;
     entry.channel?.close();
+    entry.remoteStream?.release();
     entry.connection.close();
     this.peers.delete(peerId);
     if (stop) void this.safeStop();
@@ -254,6 +420,7 @@ export class RoomPeerController {
   private async closeAll(stop: boolean): Promise<void> {
     for (const entry of this.peers.values()) {
       entry.channel?.close();
+      entry.remoteStream?.release();
       entry.connection.close();
     }
     this.peers.clear();
@@ -265,6 +432,7 @@ export class RoomPeerController {
     this.update({
       totalPeers: this.peers.size,
       connectedPeers: [...this.peers.values()].filter((entry) => entry.channel?.readyState === 'open').length,
+      remoteStream: [...this.peers.values()].map((entry) => entry.remoteStream).find(Boolean),
     });
   }
 }

@@ -2,7 +2,7 @@
   "expo": {
     "name": "Camtoyz App",
     "slug": "camtoyz-app",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "orientation": "portrait",
     "scheme": "camtoyz-app",
     "icon": "./assets/icon/app-icon.png",
@@ -25,6 +25,7 @@
     },
     "android": {
       "package": "com.camtoyz.app",
+      "versionCode": 2,
       "adaptiveIcon": {
         "foregroundImage": "./assets/icon/adaptive-foreground.png",
         "backgroundColor": "#E8B4CB"

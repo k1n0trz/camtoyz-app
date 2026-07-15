@@ -85,6 +85,9 @@ export default function RoomMemberSessionScreen({ navigation }: Props) {
               <View style={s.intensityHead}><Text style={s.intensityLabel}>Intensidad</Text><Text style={s.intensityValue}>{intensity}%</Text></View>
               <IntensitySlider value={intensity} onChange={changeIntensity} />
               <Pressable disabled={connectedPeers === 0} onPress={() => { void sendStop(); setActivePattern(undefined); }} style={s.stop}><Text style={s.stopText}>Detener vibración</Text></Pressable>
+              <Pressable accessibilityRole="button" onPress={() => navigation.navigate('RoomCamera')} style={s.camera}>
+                <Text style={s.cameraText}>Abrir cámara de la sala</Text>
+              </Pressable>
             </View>
             <PrivacyCard />
             {peerError ? <Text style={s.error}>{peerError}</Text> : null}
@@ -109,6 +112,8 @@ const s = StyleSheet.create({
   intensityValue: { ...typography.label, color: palette.accent, fontWeight: '800' },
   stop: { height: 44, borderWidth: 1.5, borderColor: palette.accent, borderRadius: radii.lg, alignItems: 'center', justifyContent: 'center', marginTop: spacing.md },
   stopText: { ...typography.label, color: palette.accent, fontWeight: '700' },
+  camera: { height: 44, borderRadius: radii.lg, alignItems: 'center', justifyContent: 'center', marginTop: spacing.sm, backgroundColor: palette.secondary },
+  cameraText: { ...typography.label, color: palette.ink, fontWeight: '700' },
   error: { ...typography.small, color: palette.danger, textAlign: 'center' },
   muted: { ...typography.body, color: palette.textSecondary, textAlign: 'center', marginTop: 80 },
   leave: { minHeight: 50, alignItems: 'center', justifyContent: 'center' },

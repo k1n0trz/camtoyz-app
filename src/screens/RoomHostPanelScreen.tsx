@@ -79,7 +79,10 @@ export default function RoomHostPanelScreen({ navigation }: Props) {
         <PrivacyCard />
         {error ? <Text style={s.error}>{error}</Text> : null}
       </ScrollView>
-      <View style={s.footer}><PrimaryButton label="Terminar sesión para todos" outline onPress={confirmEnd} /></View>
+      <View style={s.footer}>
+        <PrimaryButton label="Abrir cámara de la sala" onPress={() => navigation.navigate('RoomCamera')} />
+        <PrimaryButton label="Terminar sesión para todos" outline onPress={confirmEnd} />
+      </View>
     </SafeAreaView>
   );
 }
@@ -104,5 +107,5 @@ const s = StyleSheet.create({
   actionText: { fontSize: 11, color: palette.ink, fontWeight: '600' },
   blockText: { fontSize: 11, color: palette.accent, fontWeight: '700' },
   error: { ...typography.small, color: palette.danger, textAlign: 'center' },
-  footer: { padding: spacing.xl },
+  footer: { padding: spacing.xl, gap: spacing.sm },
 });
