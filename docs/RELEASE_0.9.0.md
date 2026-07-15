@@ -24,7 +24,7 @@
 
 - Archivo: `releases/Camtoyz-App-0.9.0-internal.apk` (ignorado por Git).
 - Tamaño: 139.361.509 bytes.
-- SHA-256: `D6F6D6B880FABE2659A0E2FC010A1A8B7E7C40194208C643E3A8655ABC3FF649`.
+- SHA-256: `210D6F3DA2C3F0B7ABF6B90631C46FB233CC2C1D64A3A6ACA6D4711AB9337A2F`.
 - Paquete: `com.camtoyz.app`.
 - Versión: `0.9.0` / `versionCode 9`.
 - Firma: certificado interno de pruebas, idéntico al usado en la instalación 0.3.0 del Galaxy.
