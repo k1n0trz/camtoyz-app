@@ -17,6 +17,7 @@ import {
   type PatternChannelState,
   type ProtocolCapabilities,
 } from './protocol';
+import { resolveCatalogDeviceName } from './deviceCatalog';
 import { requestBlePermissions } from './permissions';
 
 export type BleConnectionState =
@@ -152,18 +153,16 @@ function suffixForDevice(id: string): string {
 function identifyDevice(device: Device): DeviceIdentity {
   const rawName = device.localName ?? device.name ?? undefined;
   const normalizedName = rawName?.toLowerCase() ?? '';
-  const alias = Object.entries(BLE.nameAliases).find(
-    ([advertisedName]) => normalizedName === advertisedName.toLowerCase(),
-  )?.[1];
-  const knownName = Boolean(alias) || BLE.nameHints.some((hint) => normalizedName.includes(hint.toLowerCase()));
+  const catalogName = resolveCatalogDeviceName(rawName);
+  const knownName = Boolean(catalogName) || BLE.nameHints.some((hint) => normalizedName.includes(hint.toLowerCase()));
   const knownService = device.serviceUUIDs?.some((uuid) => BLE.serviceHints.some((hint) => uuid.toUpperCase().includes(hint)));
   const hasLhdSignature =
     containsBytes(base64ToBytes(device.rawScanRecord), LHD_SIGNATURE) ||
     containsBytes(base64ToBytes(device.manufacturerData), LHD_SIGNATURE);
 
-  let name = alias ?? rawName ?? 'Dispositivo Camtoyz';
-  if (!alias && normalizedName.includes('duo egg')) name = 'Duo Egg';
-  else if (!alias && (normalizedName.includes('hyperbullet') || hasLhdSignature)) name = 'HyperBullet';
+  let name = catalogName ?? rawName ?? 'Dispositivo Camtoyz';
+  if (!catalogName && normalizedName.includes('duo egg')) name = 'Duo Egg';
+  else if (!catalogName && normalizedName.includes('hyperbullet')) name = 'HyperBullet';
 
   return { matched: Boolean(knownName || knownService || hasLhdSignature), name, rawName };
 }
