@@ -69,7 +69,6 @@ export default function SettingsDeviceScreen({ navigation }: Props) {
   );
 
   const themeOptions: readonly { value: ThemePreference; label: string }[] = [
-    { value: 'system', label: t('settings.theme.system') },
     { value: 'light', label: t('settings.theme.light') },
     { value: 'dark', label: t('settings.theme.dark') },
   ];

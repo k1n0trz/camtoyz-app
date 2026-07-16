@@ -9,12 +9,11 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { useColorScheme } from 'react-native';
 
 import { darkTheme, lightTheme, type AppTheme } from '@/theme/index';
 
 export type LanguagePreference = 'system' | 'es' | 'en';
-export type ThemePreference = 'system' | 'light' | 'dark';
+export type ThemePreference = 'light' | 'dark';
 export type AppLanguage = 'es' | 'en';
 
 interface AppPreferencesValue {
@@ -36,7 +35,7 @@ function isLanguagePreference(value: string | null): value is LanguagePreference
 }
 
 function isThemePreference(value: string | null): value is ThemePreference {
-  return value === 'system' || value === 'light' || value === 'dark';
+  return value === 'light' || value === 'dark';
 }
 
 function systemLanguage(): AppLanguage {
@@ -44,9 +43,8 @@ function systemLanguage(): AppLanguage {
 }
 
 export function AppPreferencesProvider({ children }: { children: ReactNode }) {
-  const systemTheme = useColorScheme();
   const [languagePreference, setLanguageState] = useState<LanguagePreference>('system');
-  const [themePreference, setThemeState] = useState<ThemePreference>('system');
+  const [themePreference, setThemeState] = useState<ThemePreference>('light');
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -78,10 +76,7 @@ export function AppPreferencesProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const language = languagePreference === 'system' ? systemLanguage() : languagePreference;
-  const resolvedTheme = themePreference === 'system'
-    ? (systemTheme === 'dark' ? 'dark' : 'light')
-    : themePreference;
-  const theme = resolvedTheme === 'dark' ? darkTheme : lightTheme;
+  const theme = themePreference === 'dark' ? darkTheme : lightTheme;
 
   const value = useMemo<AppPreferencesValue>(() => ({
     languagePreference,

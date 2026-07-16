@@ -24,7 +24,10 @@ export default function SplashScreen({ navigation }: Props) {
   const s = useAdaptiveStyles(baseStyles);
   const theme = useAppTheme();
   const { language, pick } = useTranslation();
-  const { setLanguagePreference } = useAppPreferences();
+  const {
+    setLanguagePreference,
+    setThemePreference,
+  } = useAppPreferences();
   const restoreRoom = useRoomStore((state) => state.restoreRoom);
   const [savedSession, setSavedSession] = useState<StoredRoomSession>();
   const [resumingRoom, setResumingRoom] = useState(false);
@@ -73,6 +76,20 @@ export default function SplashScreen({ navigation }: Props) {
 
   return (
     <SafeAreaView style={s.root}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={theme.mode === 'light'
+          ? pick('Activar modo oscuro', 'Enable dark mode')
+          : pick('Activar modo claro', 'Enable light mode')}
+        accessibilityHint={pick('Cambia la apariencia de toda la aplicación', 'Changes the appearance of the whole app')}
+        onPress={() => void setThemePreference(theme.mode === 'light' ? 'dark' : 'light')}
+        style={s.themeButton}
+      >
+        <Text style={s.themeIcon}>{theme.mode === 'light' ? '☀' : '☾'}</Text>
+        <Text style={s.themeLabel}>
+          {theme.mode === 'light' ? pick('Claro', 'Light') : pick('Oscuro', 'Dark')}
+        </Text>
+      </Pressable>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={pick('Cambiar idioma a inglés', 'Change language to Spanish')}
@@ -129,6 +146,24 @@ export default function SplashScreen({ navigation }: Props) {
 
 const baseStyles = StyleSheet.create({
   root: { flex: 1, backgroundColor: palette.bg, paddingHorizontal: spacing.xxl },
+  themeButton: {
+    position: 'absolute',
+    zIndex: 2,
+    top: spacing.lg,
+    left: spacing.xxl,
+    minHeight: 40,
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: palette.borderStrong,
+    backgroundColor: palette.card,
+    paddingHorizontal: spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+  },
+  themeIcon: { fontSize: 17, lineHeight: 20, color: palette.ink },
+  themeLabel: { ...typography.small, color: palette.ink, fontWeight: '700' },
   languageButton: {
     position: 'absolute',
     zIndex: 2,

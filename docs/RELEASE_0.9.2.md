@@ -6,7 +6,8 @@
 - FlexiCurve validado con dos canales físicos independientes.
 - Menor latencia entre los golpes musicales y los pulsos Bluetooth.
 - Sala de cámara vertical con cámara local simultánea y controles de vibración superpuestos.
-- Tema claro, oscuro o automático, persistente.
+- Tema claro como experiencia principal y modo oscuro opcional, ambos persistentes.
+- Selector rápido de tema disponible desde la pantalla inicial.
 - Interfaz seleccionable en español o inglés.
 - Flechas de retorno con área táctil amplia y destino seguro.
 - El identificador Bluetooth del juguete ya no se muestra al usuario.
@@ -20,7 +21,7 @@
 - Servidor: `https://app.camtoyz.com`
 - APK: `releases/Camtoyz-App-0.9.2-internal.apk` (ignorado por Git)
 - Tamaño: `139.377.893` bytes
-- SHA-256: `02928CC85780BD22DA5439D378A0ACBB3A68B5B025D31348C1BD9538F3F8E7DF`
+- SHA-256: `1349CE3CD126BF912978B0BBABCD85B7EA983A92EA9351102595C82CB5CE6C13`
 - Firma: mismo certificado interno usado por 0.9.0 y 0.9.1
 
 ## Validación pendiente
