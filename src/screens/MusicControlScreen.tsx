@@ -44,7 +44,6 @@ export default function MusicControlScreen({ navigation }: Props) {
   const [motorLevels, setMotorLevels] = useState<number[]>(() => Array(channelCount).fill(80));
   const [active, setActive] = useState(false);
   const [beatStrength, setBeatStrength] = useState(0);
-  const [beatCount, setBeatCount] = useState(0);
   const [error, setError] = useState<string>();
 
   const activeRef = useRef(false);
@@ -119,7 +118,6 @@ export default function MusicControlScreen({ navigation }: Props) {
       if (!beat || beat.intensity <= 0) return;
       writeInFlight.current = true;
       setBeatStrength(beat.strength);
-      setBeatCount((count) => count + 1);
       const outputs = motorLevelsRef.current.map(
         (maximum) => Math.round((beat.intensity * maximum) / 100),
       );
@@ -146,7 +144,6 @@ export default function MusicControlScreen({ navigation }: Props) {
         detector.current.reset();
         silenceFrames.current = 0;
         silenceStopSent.current = false;
-        setBeatCount(0);
         activeRef.current = true;
         setActive(true);
       }
@@ -177,7 +174,6 @@ export default function MusicControlScreen({ navigation }: Props) {
     setSource(next);
     setError(undefined);
     setLevel(0);
-    setBeatCount(0);
   };
 
   const toggle = () => {
@@ -245,11 +241,6 @@ export default function MusicControlScreen({ navigation }: Props) {
             opacity: beatStrength > 0 ? 1 : 0.45,
           }]}
         />)}</View>
-        <Text style={s.sub}>
-          {active
-            ? pick(`Ritmo: ${beatCount} golpes · pulso ${beatStrength}%`, `Rhythm: ${beatCount} beats · pulse ${beatStrength}%`)
-            : pick('Cada golpe tendrá encendido y pausa separados', 'Each beat has a separate pulse and pause')}
-        </Text>
       </View>
 
       <View>
@@ -301,7 +292,7 @@ const baseStyles = StyleSheet.create({
   chevron: { fontSize: 28, color: palette.textMuted },
   label: { ...typography.label, color: palette.ink },
   sub: { ...typography.small, color: palette.textSecondary, marginTop: 2 },
-  visual: { height: 210, alignItems: 'center', justifyContent: 'center', gap: spacing.md, padding: spacing.xl, backgroundColor: palette.card, borderColor: palette.border, borderWidth: 1, borderRadius: radii.cardLg },
+  visual: { height: 180, alignItems: 'center', justifyContent: 'center', padding: spacing.xl, backgroundColor: palette.card, borderColor: palette.border, borderWidth: 1, borderRadius: radii.cardLg },
   bars: { width: '100%', height: 115, alignItems: 'flex-end', justifyContent: 'center', flexDirection: 'row', gap: 5 },
   bar: { width: 9, borderRadius: 4, backgroundColor: palette.accent },
   row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
