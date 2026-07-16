@@ -20,8 +20,8 @@ function InfoCard({ title, children }: { title: string; children: ReactNode }) {
 }
 
 export default function SettingsDeviceScreen({ navigation }: Props) {
-  const version = Constants.nativeAppVersion ?? Constants.expoConfig?.version ?? '0.9.0';
-  const build = Constants.nativeBuildVersion ?? '9';
+  const version = Constants.nativeAppVersion ?? Constants.expoConfig?.version ?? '0.9.1';
+  const build = Constants.nativeBuildVersion ?? '10';
 
   return (
     <SafeAreaView style={s.root} edges={['top', 'bottom']}>
@@ -36,7 +36,7 @@ export default function SettingsDeviceScreen({ navigation }: Props) {
         <InfoCard title="Servidor de salas">Conexión cifrada mediante app.camtoyz.com. Las salas admiten como máximo dos participantes.</InfoCard>
         <View style={s.pendingCard}>
           <Text style={s.pendingTitle}>Documentación pendiente para 1.0.0</Text>
-          <Text style={s.pendingCopy}>La política de privacidad, los términos y el correo de soporte se añadirán cuando sean aprobados. Esta 0.9.0 es exclusivamente para pruebas internas.</Text>
+          <Text style={s.pendingCopy}>La política de privacidad, los términos y el correo de soporte se añadirán cuando sean aprobados. Esta 0.9.1 es exclusivamente para pruebas internas.</Text>
         </View>
       </ScrollView>
     </SafeAreaView>

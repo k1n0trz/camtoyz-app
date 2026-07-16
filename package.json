@@ -1,6 +1,6 @@
 {
   "name": "camtoyz-app",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "private": true,
   "workspaces": [
     "server"
@@ -16,7 +16,8 @@
     "typecheck": "tsc --noEmit",
     "server:build": "npm run build --workspace @camtoyz/room-server",
     "server:start": "npm run start --workspace @camtoyz/room-server",
-    "server:test": "npm run test --workspace @camtoyz/room-server"
+    "server:test": "npm run test --workspace @camtoyz/room-server",
+    "release:verify-config": "node scripts/verify-release-config.mjs"
   },
   "dependencies": {
     "@config-plugins/react-native-webrtc": "^10.0.0",

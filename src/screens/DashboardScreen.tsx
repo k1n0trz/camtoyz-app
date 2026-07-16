@@ -49,7 +49,7 @@ export default function DashboardScreen({ navigation }: Props) {
   const battery = device?.battery;
   const patternCount = device?.patternCount ?? 0;
   const batteryWidth: DimensionValue = `${Math.max(0, Math.min(100, battery ?? 0))}%`;
-  const appVersion = Constants.nativeAppVersion ?? Constants.expoConfig?.version ?? '0.9.0';
+  const appVersion = Constants.nativeAppVersion ?? Constants.expoConfig?.version ?? '0.9.1';
 
   useEffect(
     () =>

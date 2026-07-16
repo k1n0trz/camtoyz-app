@@ -23,6 +23,7 @@ jobs:
       - run: npm run lint
       - run: npm run server:test
       - run: npx expo install --check
+      - run: npm run release:verify-config
 
   android-release-compile:
     needs: checks

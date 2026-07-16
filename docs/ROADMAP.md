@@ -38,7 +38,7 @@ Fases incrementales. Cada una entrega algo verificable en el teléfono físico. 
 
 ## Fase 7 — Ruta de cierre a 1.0.0
 
-La versión no cambia a `1.0.0` hasta que todas las puertas 7.0–7.7 estén verdes. La candidata interna previa al lanzamiento es `0.9.0`; solo una candidata aprobada se etiqueta como `1.0.0`.
+La versión no cambia a `1.0.0` hasta que todas las puertas 7.0–7.7 estén verdes. La candidata interna previa al lanzamiento es `0.9.1`; solo una candidata aprobada se etiqueta como `1.0.0`.
 
 **Decisiones cerradas para 1.0.0 (15 de julio de 2026):**
 
@@ -47,9 +47,9 @@ La versión no cambia a `1.0.0` hasta que todas las puertas 7.0–7.7 estén ver
 - Intense, FlexiCurve, FlexRing y Whisper ya fueron probados físicamente.
 - Se pueden conectar dos juguetes, pero el control activo es individual. Este límite se acepta para 1.0.0.
 - Las salas siguen limitadas a dos participantes.
-- Nombre legal, correo de soporte y textos legales definitivos quedan pendientes del cliente antes de promover `0.9.0` a `1.0.0`.
+- Nombre legal, correo de soporte y textos legales definitivos quedan pendientes del cliente antes de promover `0.9.1` a `1.0.0`.
 
-**Estado actual:** `0.9.0` compilada, firmada e instalada como actualización sobre 0.3.0. CI, Ajustes, consentimiento remoto, parada de emergencia y endurecimiento de la VM están implementados. Faltan la documentación del cliente y la regresión manual final de dos teléfonos para promoverla.
+**Estado actual:** `0.9.1` corrige la resolución del servidor público de salas de la 0.9.0. Está compilada y firmada como actualización compatible. CI, Ajustes, consentimiento remoto, parada de emergencia y endurecimiento de la VM están implementados. Faltan la documentación del cliente y la regresión manual final de dos teléfonos para promoverla.
 
 ### 7.0 — Congelar alcance y línea base
 
@@ -121,7 +121,7 @@ La versión no cambia a `1.0.0` hasta que todas las puertas 7.0–7.7 estén ver
 
 ### 7.7 — Candidata, distribución y lanzamiento
 
-- Generar `0.9.0`: APK interna para QA. AAB/Play y EAS/TestFlight quedan fuera del alcance actual.
+- Generar `0.9.1`: APK interna corregida para QA. AAB/Play y EAS/TestFlight quedan fuera del alcance actual.
 - Ejecutar regresión completa desde instalaciones limpias y actualización desde 0.3.0 en los teléfonos disponibles.
 - Preparar notas de versión, inventario de permisos y paquete de documentación interna; la ficha de tienda se difiere.
 - Probar instalación desde el canal real de distribución, no mediante ADB.
