@@ -104,9 +104,6 @@ export class RoomPeerController {
   private iceServers: RoomIceConfig['iceServers'] = [];
   private localStream?: MediaStream;
   private sequence = 0;
-  private lastIntensityAt = 0;
-  private pendingIntensity?: { value: number; target?: 'all' | number };
-  private intensityTimer?: ReturnType<typeof setTimeout>;
   private state: RoomPeerSnapshot = {
     connectedPeers: 0,
     totalPeers: 0,
@@ -220,24 +217,10 @@ export class RoomPeerController {
   }
 
   async sendIntensity(value: number, target?: 'all' | number): Promise<void> {
-    const now = Date.now();
-    const rounded = Math.round(value);
-    if (now - this.lastIntensityAt >= 40) return this.sendIntensityNow(rounded, target);
-    this.pendingIntensity = { value: rounded, target };
-    if (!this.intensityTimer) {
-      this.intensityTimer = setTimeout(() => {
-        this.intensityTimer = undefined;
-        const pending = this.pendingIntensity;
-        this.pendingIntensity = undefined;
-        if (pending !== undefined) void this.sendIntensityNow(pending.value, pending.target);
-      }, 40 - (now - this.lastIntensityAt));
-    }
+    return this.sendIntensityNow(Math.round(value), target);
   }
 
   async sendStop(): Promise<void> {
-    if (this.intensityTimer) clearTimeout(this.intensityTimer);
-    this.intensityTimer = undefined;
-    this.pendingIntensity = undefined;
     return this.send({ version: 1, sequence: ++this.sequence, sentAt: Date.now(), type: 'stop' });
   }
 
@@ -364,7 +347,6 @@ export class RoomPeerController {
   }
 
   private async sendIntensityNow(value: number, target?: 'all' | number): Promise<void> {
-    this.lastIntensityAt = Date.now();
     return this.send({ version: 1, sequence: ++this.sequence, sentAt: Date.now(), type: 'intensity', value, target });
   }
 

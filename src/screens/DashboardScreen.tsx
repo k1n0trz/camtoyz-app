@@ -17,7 +17,7 @@ import { palette, radii, spacing, typography, patternGrid } from '@/theme/index'
 import { useBleStore } from '@/state/bleStore';
 import { PatternTile } from '@/components/PatternTile';
 import { ProductImage } from '@/components/ProductImage';
-import { MotorSelector } from '@/components/MotorSelector';
+import { MotorIntensityMixer } from '@/components/MotorIntensityMixer';
 import { featuredPatterns, isPatternSupported } from '@/features/patterns/catalog';
 import { useAdaptiveStyles } from '@/theme/useAdaptiveStyles';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -49,8 +49,8 @@ export default function DashboardScreen({ navigation }: Props) {
   const commandError = useBleStore((state) => state.error);
   const setPattern = useBleStore((state) => state.setPattern);
   const stop = useBleStore((state) => state.stop);
-  const motorTarget = useBleStore((state) => state.motorTarget);
-  const setMotorTarget = useBleStore((state) => state.setMotorTarget);
+  const motorIntensities = useBleStore((state) => state.motorIntensities);
+  const setIntensities = useBleStore((state) => state.setIntensities);
   const connected = connectionState === 'connected';
   const deviceName = device?.name ?? pick('Sin dispositivo', 'No device');
   const battery = device?.battery;
@@ -70,7 +70,7 @@ export default function DashboardScreen({ navigation }: Props) {
     if (activePattern === pattern) {
       await stop();
     } else {
-      await setPattern(pattern);
+      await setPattern(pattern, 'all');
     }
   };
 
@@ -118,10 +118,13 @@ export default function DashboardScreen({ navigation }: Props) {
               <Text style={s.link}>{pick('Ver todos', 'View all')}</Text>
             </Pressable>
           </View>
-          <MotorSelector
+          <MotorIntensityMixer
             channelCount={device?.channelCount ?? 1}
-            target={motorTarget}
-            onChange={setMotorTarget}
+            values={motorIntensities}
+            disabled={!connected}
+            onChange={(_channel, _value, values) => {
+              void setIntensities(values);
+            }}
           />
           <View style={s.grid}>
             {featuredPatterns.map((pattern) => (

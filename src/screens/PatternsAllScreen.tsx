@@ -5,7 +5,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { PatternTile } from '@/components/PatternTile';
 import { BackButton } from '@/components/BackButton';
-import { MotorSelector } from '@/components/MotorSelector';
+import { MotorIntensityMixer } from '@/components/MotorIntensityMixer';
 import { goBackOr } from '@/navigation/back';
 import { patternCategories, isPatternSupported } from '@/features/patterns/catalog';
 import type { RootStackParamList } from '@/navigation/routes';
@@ -27,8 +27,8 @@ export default function PatternsAllScreen({ navigation }: Props) {
   const setPattern = useBleStore((state) => state.setPattern);
   const stop = useBleStore((state) => state.stop);
   const channelCount = useBleStore((state) => state.device?.channelCount ?? 1);
-  const motorTarget = useBleStore((state) => state.motorTarget);
-  const setMotorTarget = useBleStore((state) => state.setMotorTarget);
+  const motorIntensities = useBleStore((state) => state.motorIntensities);
+  const setIntensities = useBleStore((state) => state.setIntensities);
   const connected = connectionState === 'connected';
   const patternCount = device?.patternCount;
 
@@ -44,7 +44,7 @@ export default function PatternsAllScreen({ navigation }: Props) {
     if (activePattern === pattern) {
       await stop();
     } else {
-      await setPattern(pattern);
+      await setPattern(pattern, 'all');
     }
   };
 
@@ -61,7 +61,14 @@ export default function PatternsAllScreen({ navigation }: Props) {
       </View>
 
       <ScrollView contentContainerStyle={s.content}>
-        <MotorSelector channelCount={channelCount} target={motorTarget} onChange={setMotorTarget} />
+        <MotorIntensityMixer
+          channelCount={channelCount}
+          values={motorIntensities}
+          disabled={!connected}
+          onChange={(_channel, _value, values) => {
+            void setIntensities(values);
+          }}
+        />
         {patternCategories.map((category) => (
           <View key={category.id}>
             <Text style={s.category}>

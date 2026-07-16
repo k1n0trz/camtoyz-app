@@ -13,6 +13,7 @@ import {
   buildPatternStopCommand,
   parseBatteryNotification,
   parseCapabilitiesNotification,
+  patternIntensityFromPercent,
   stopCommand,
   type PatternChannelState,
   type MotorTarget,
@@ -48,6 +49,7 @@ export interface BleSnapshot {
   devices: BleDevice[];
   activeDeviceId?: string;
   activePattern?: number;
+  motorIntensities: number[];
   motorTarget: MotorTarget;
   syncEnabled: boolean;
   isScanning: boolean;
@@ -65,6 +67,7 @@ interface ConnectedDevice {
   capabilities?: ProtocolCapabilities;
   patternChannels: PatternChannelState[];
   continuousChannels: number[];
+  writeChain: Promise<void>;
   activePattern?: number;
   capabilityResolvers: Set<() => void>;
 }
@@ -226,6 +229,7 @@ export class BleManager {
       devices: [...this.connections.values()].map((connection) => connection.device),
       activeDeviceId: this.activeDeviceId,
       activePattern: active?.activePattern,
+      motorIntensities: [...(active?.continuousChannels ?? [])],
       motorTarget: this.motorTarget,
       syncEnabled: this.syncEnabled,
       isScanning: this.isScanning,
@@ -413,6 +417,7 @@ export class BleManager {
       writeCharacteristic,
       patternChannels: [],
       continuousChannels: [],
+      writeChain: Promise.resolve(),
       capabilityResolvers: new Set(),
     };
     this.connections.set(connection.id, connection);
@@ -556,10 +561,35 @@ export class BleManager {
         (_, index) => connection.continuousChannels[index] ?? 0,
       );
       for (const index of indexes) nextChannels[index] = Math.max(0, Math.min(100, percent));
-      await this.write(connection, buildIntensityChannelsCommand(nextChannels));
       connection.continuousChannels = nextChannels;
+      connection.patternChannels = capabilities.channels.map((_, channelIndex) => {
+        const current = connection.patternChannels[channelIndex] ?? { intensity: 1, pattern: 0 };
+        return indexes.includes(channelIndex)
+          ? { ...current, intensity: patternIntensityFromPercent(percent) }
+          : current;
+      });
       connection.activePattern = undefined;
+      await this.write(connection, buildIntensityChannelsCommand(nextChannels));
     });
+    this.emit();
+  }
+
+  async setIntensities(values: readonly number[]): Promise<void> {
+    const connection = this.activeConnection();
+    if (!connection) throw new Error('No hay un dispositivo BLE conectado.');
+    const capabilities = this.requireCapabilities(connection);
+    if (values.length !== capabilities.channels.length) {
+      throw new RangeError('Debes indicar una intensidad para cada motor disponible.');
+    }
+    const nextChannels = values.map((value) => Math.max(0, Math.min(100, value)));
+    this.syncEnabled = false;
+    connection.continuousChannels = nextChannels;
+    connection.patternChannels = capabilities.channels.map((_, channel) => {
+      const current = connection.patternChannels[channel] ?? { intensity: 1, pattern: 0 };
+      return { ...current, intensity: patternIntensityFromPercent(nextChannels[channel]) };
+    });
+    connection.activePattern = undefined;
+    await this.write(connection, buildIntensityChannelsCommand(nextChannels));
     this.emit();
   }
 
@@ -582,9 +612,9 @@ export class BleManager {
         const current = connection.patternChannels[channelIndex] ?? { intensity: 1, pattern: 0 };
         return indexes.includes(channelIndex) ? { ...current, pattern: index } : current;
       });
-      await this.write(connection, buildPatternCommand(nextChannels));
       connection.patternChannels = nextChannels;
       connection.activePattern = this.activePatternFor(connection, target);
+      await this.write(connection, buildPatternCommand(nextChannels));
     });
     this.emit();
   }
@@ -599,16 +629,16 @@ export class BleManager {
         (_, index) => connection.continuousChannels[index] ?? 0,
       );
       for (const index of indexes) continuous[index] = 0;
-      await this.write(connection, buildIntensityChannelsCommand(continuous));
       connection.continuousChannels = continuous;
+      await this.write(connection, buildIntensityChannelsCommand(continuous));
 
       const patterns = capabilities.channels.map((_, channelIndex) => {
         const current = connection.patternChannels[channelIndex] ?? { intensity: 1, pattern: 0 };
-        return indexes.includes(channelIndex) ? { intensity: 1, pattern: 0 } : current;
+        return indexes.includes(channelIndex) ? { ...current, pattern: 0 } : current;
       });
-      await this.write(connection, buildPatternCommand(patterns));
       connection.patternChannels = patterns;
       connection.activePattern = this.activePatternFor(connection, target);
+      await this.write(connection, buildPatternCommand(patterns));
     });
     this.emit();
   }
@@ -635,7 +665,10 @@ export class BleManager {
     } catch (error) {
       firstError ??= error;
     }
-    connection.patternChannels = capabilities.channels.map(() => ({ intensity: 1, pattern: 0 }));
+    connection.patternChannels = capabilities.channels.map((_, channel) => ({
+      intensity: connection.patternChannels[channel]?.intensity ?? 1,
+      pattern: 0,
+    }));
     connection.continuousChannels = capabilities.channels.map(() => 0);
     if (firstError) throw firstError;
   }
@@ -673,21 +706,26 @@ export class BleManager {
   }
 
   private async write(connection: ConnectedDevice, bytes: Uint8Array): Promise<void> {
-    if (!this.connections.has(connection.id)) throw new Error('No hay un dispositivo BLE conectado.');
-    try {
-      const value = bytesToBase64(bytes);
-      if (__DEV__) {
-        console.info('[Camtoyz BLE] FFE2', connection.id, Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join(' '));
+    const operation = async () => {
+      if (!this.connections.has(connection.id)) throw new Error('No hay un dispositivo BLE conectado.');
+      try {
+        const value = bytesToBase64(bytes);
+        if (__DEV__) {
+          console.info('[Camtoyz BLE] FFE2', connection.id, Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join(' '));
+        }
+        if (connection.writeCharacteristic.isWritableWithoutResponse) {
+          await connection.writeCharacteristic.writeWithoutResponse(value);
+        } else {
+          await connection.writeCharacteristic.writeWithResponse(value);
+        }
+      } catch (error) {
+        this.handleDisconnected(connection.id, errorMessage(error));
+        throw error;
       }
-      if (connection.writeCharacteristic.isWritableWithoutResponse) {
-        await connection.writeCharacteristic.writeWithoutResponse(value);
-      } else {
-        await connection.writeCharacteristic.writeWithResponse(value);
-      }
-    } catch (error) {
-      this.handleDisconnected(connection.id, errorMessage(error));
-      throw error;
-    }
+    };
+    const queued = connection.writeChain.then(operation, operation);
+    connection.writeChain = queued.catch(() => undefined);
+    await queued;
   }
 
   private isCamtoyzDevice(device: Device): boolean {

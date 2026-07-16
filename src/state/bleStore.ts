@@ -12,6 +12,7 @@ interface BleStore {
   isScanning: boolean;
   devices: BleDevice[];
   activePattern?: number;
+  motorIntensities: number[];
   motorTarget: MotorTarget;
   commandBusy: boolean;
   error?: string;
@@ -25,6 +26,7 @@ interface BleStore {
   setMotorTarget: (target: MotorTarget) => void;
   setPattern: (index: number, target?: MotorTarget) => Promise<boolean>;
   setIntensity: (percent: number, target?: MotorTarget) => Promise<boolean>;
+  setIntensities: (values: readonly number[]) => Promise<boolean>;
   stopSelected: (target?: MotorTarget) => Promise<boolean>;
   stop: () => Promise<boolean>;
   clearError: () => void;
@@ -45,6 +47,7 @@ export const useBleStore = create<BleStore>((set) => ({
   isScanning: ble.snapshot.isScanning,
   devices: [],
   activePattern: ble.snapshot.activePattern,
+  motorIntensities: ble.snapshot.motorIntensities,
   motorTarget: ble.snapshot.motorTarget,
   commandBusy: false,
   error: ble.snapshot.error,
@@ -127,6 +130,21 @@ export const useBleStore = create<BleStore>((set) => ({
     }
   },
 
+  setIntensities: async (values) => {
+    set({ commandBusy: true, error: undefined });
+    try {
+      await ble.setIntensities(values);
+      return true;
+    } catch (error) {
+      set({
+        error: error instanceof Error ? error.message : 'No fue posible cambiar las intensidades.',
+      });
+      return false;
+    } finally {
+      set({ commandBusy: false });
+    }
+  },
+
   stopSelected: async (target) => {
     set({ commandBusy: true, error: undefined });
     try {
@@ -165,6 +183,7 @@ ble.subscribe((snapshot) => {
     syncEnabled: snapshot.syncEnabled,
     isScanning: snapshot.isScanning,
     activePattern: snapshot.activePattern,
+    motorIntensities: snapshot.motorIntensities,
     motorTarget: snapshot.motorTarget,
     error: snapshot.error,
   });

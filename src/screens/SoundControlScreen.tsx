@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -6,7 +6,7 @@ import { Audio } from 'expo-av';
 
 import { meteringToPercent, soundToIntensity } from '@/features/audio/metering';
 import { BackButton } from '@/components/BackButton';
-import { MotorSelector } from '@/components/MotorSelector';
+import { MotorIntensityMixer } from '@/components/MotorIntensityMixer';
 import { goBackOr } from '@/navigation/back';
 import type { RootStackParamList } from '@/navigation/routes';
 import { useBleStore } from '@/state/bleStore';
@@ -27,13 +27,12 @@ export default function SoundControlScreen({ navigation }: Props) {
   const s = useAdaptiveStyles(baseStyles);
   const { pick, error: translateError } = useTranslation();
   const connectionState = useBleStore((state) => state.connectionState);
-  const setIntensity = useBleStore((state) => state.setIntensity);
+  const setIntensities = useBleStore((state) => state.setIntensities);
   const stop = useBleStore((state) => state.stop);
   const channelCount = useBleStore((state) => state.device?.channelCount ?? 1);
-  const motorTarget = useBleStore((state) => state.motorTarget);
-  const setMotorTarget = useBleStore((state) => state.setMotorTarget);
   const connected = connectionState === 'connected';
   const [sensitivity, setSensitivity] = useState(65);
+  const [motorLevels, setMotorLevels] = useState<number[]>(() => Array(channelCount).fill(80));
   const [listening, setListening] = useState(false);
   const [responding, setResponding] = useState(false);
   const [metering, setMetering] = useState<number>();
@@ -41,7 +40,7 @@ export default function SoundControlScreen({ navigation }: Props) {
   const recordingRef = useRef<Audio.Recording | null>(null);
   const respondingRef = useRef(false);
   const lastSentAt = useRef(0);
-  const lastIntensity = useRef(0);
+  const lastIntensities = useRef<number[]>(Array(channelCount).fill(0));
   const sending = useRef(false);
   const releaseTimer = useRef<ReturnType<typeof setTimeout>>();
 
@@ -50,34 +49,41 @@ export default function SoundControlScreen({ navigation }: Props) {
     releaseTimer.current = undefined;
   }, []);
 
+  useEffect(() => {
+    setMotorLevels((current) =>
+      Array.from({ length: channelCount }, (_, channel) => current[channel] ?? 80),
+    );
+    lastIntensities.current = Array(channelCount).fill(0);
+  }, [channelCount]);
+
   const scheduleRelease = useCallback(() => {
     clearReleaseTimer();
     const release = () => {
-      if (!respondingRef.current || lastIntensity.current === 0) return;
+      if (!respondingRef.current || !lastIntensities.current.some((value) => value > 0)) return;
       if (sending.current) {
         releaseTimer.current = setTimeout(release, 50);
         return;
       }
-      lastIntensity.current = 0;
+      lastIntensities.current = Array(channelCount).fill(0);
       sending.current = true;
       void stop().finally(() => {
         sending.current = false;
       });
     };
     releaseTimer.current = setTimeout(release, RELEASE_DELAY_MS);
-  }, [clearReleaseTimer, stop]);
+  }, [channelCount, clearReleaseTimer, stop]);
 
   const stopAudio = useCallback(async () => {
     respondingRef.current = false;
     setResponding(false);
-    lastIntensity.current = 0;
+    lastIntensities.current = Array(channelCount).fill(0);
     clearReleaseTimer();
     const recording = recordingRef.current;
     recordingRef.current = null;
     if (recording) await recording.stopAndUnloadAsync().catch(() => undefined);
     setMetering(undefined);
     setListening(false);
-  }, [clearReleaseTimer]);
+  }, [channelCount, clearReleaseTimer]);
 
   const stopEverything = useCallback(async () => {
     await stopAudio();
@@ -124,6 +130,10 @@ export default function SoundControlScreen({ navigation }: Props) {
 
   const level = meteringToPercent(metering);
   const targetIntensity = soundToIntensity(level, sensitivity);
+  const targetIntensities = useMemo(
+    () => motorLevels.map((maximum) => Math.round((targetIntensity * maximum) / 100)),
+    [motorLevels, targetIntensity],
+  );
 
   useEffect(() => {
     if (!responding || !respondingRef.current || !connected || sending.current) return;
@@ -131,14 +141,16 @@ export default function SoundControlScreen({ navigation }: Props) {
     scheduleRelease();
     const now = Date.now();
     if (now - lastSentAt.current < 100) return;
-    if (Math.abs(targetIntensity - lastIntensity.current) < 2) return;
+    if (targetIntensities.every(
+      (value, channel) => Math.abs(value - (lastIntensities.current[channel] ?? 0)) < 2,
+    )) return;
     sending.current = true;
     lastSentAt.current = now;
-    lastIntensity.current = targetIntensity;
-    void setIntensity(targetIntensity).finally(() => {
+    lastIntensities.current = targetIntensities;
+    void setIntensities(targetIntensities).finally(() => {
       sending.current = false;
     });
-  }, [connected, responding, scheduleRelease, setIntensity, targetIntensity]);
+  }, [connected, responding, scheduleRelease, setIntensities, targetIntensities, targetIntensity]);
 
   const toggleResponse = async () => {
     if (responding) {
@@ -181,9 +193,21 @@ export default function SoundControlScreen({ navigation }: Props) {
         </View>
         <View style={s.previewCard}>
           <Text style={s.previewTitle}>{pick('Respuesta prevista', 'Expected response')}</Text>
-          <Text style={s.previewValue}>{targetIntensity}%</Text>
+          <Text style={s.previewValue}>
+            {targetIntensities.map((value, channel) => `M${channel + 1} ${value}%`).join(' · ')}
+          </Text>
         </View>
-        <MotorSelector channelCount={channelCount} target={motorTarget} onChange={setMotorTarget} />
+        <View style={s.section}>
+          <Text style={s.sectionTitle}>{pick('Fuerza máxima por motor', 'Maximum strength per motor')}</Text>
+          <Text style={s.sectionText}>{pick('Cada motor reaccionará al mismo sonido con su propio nivel.', 'Each motor reacts to the same sound at its own level.')}</Text>
+          <MotorIntensityMixer
+            channelCount={channelCount}
+            values={motorLevels}
+            onChange={(channel, value) => {
+              setMotorLevels((current) => current.map((level, index) => index === channel ? value : level));
+            }}
+          />
+        </View>
         <Text style={s.privacy}>{pick('El nivel se procesa localmente. El audio no se envía a ningún servidor.', 'The level is processed locally. Audio is never sent to a server.')}</Text>
         {error ? <Text style={s.error}>{translateError(error)}</Text> : null}
       </View>

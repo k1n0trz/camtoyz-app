@@ -55,6 +55,15 @@ const COMMAND_CONTINUOUS = 0x04;
 const COMMAND_PATTERN = 0x05;
 const PATTERN_INTENSITY_MAX = 10;
 
+/** Convierte el porcentaje visible a la escala discreta 0..10 del modo patrón. */
+export function patternIntensityFromPercent(percent: number): number {
+  if (!Number.isFinite(percent)) {
+    throw new RangeError('La intensidad del patrón debe ser un número finito.');
+  }
+  const clamped = Math.max(0, Math.min(100, percent));
+  return clamped === 0 ? 0 : Math.max(1, Math.round(clamped / 10));
+}
+
 /** FFE4 `66 01 LL ...`: LL bytes, organizados en pares por canal. */
 export function parseCapabilitiesNotification(
   bytes: Uint8Array,

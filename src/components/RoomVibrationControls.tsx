@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
-import IntensitySlider from '@/components/IntensitySlider';
-import { MotorSelector } from '@/components/MotorSelector';
+import { MotorIntensityMixer } from '@/components/MotorIntensityMixer';
 import { PatternTile } from '@/components/PatternTile';
 import type { MotorTarget } from '@/ble/protocol';
 import { featuredPatterns } from '@/features/patterns/catalog';
@@ -31,27 +30,24 @@ export function RoomVibrationControls({
   const { t } = useTranslation();
   const overlay = variant === 'overlay';
   const [activePattern, setActivePattern] = useState<number>();
-  const [intensity, setIntensity] = useState(45);
-  const [target, setTarget] = useState<MotorTarget>('all');
+  const [intensities, setIntensities] = useState<number[]>(() => Array(channelCount).fill(45));
 
   useEffect(() => {
-    if (typeof target === 'number' && target >= channelCount) setTarget('all');
-  }, [channelCount, target]);
+    setIntensities((current) =>
+      Array.from({ length: channelCount }, (_, channel) => current[channel] ?? 45),
+    );
+  }, [channelCount]);
 
-  const changeTarget = (next: MotorTarget) => {
-    setTarget(next);
+  const changeIntensity = useCallback((channel: number, value: number) => {
+    setIntensities((current) => current.map((level, index) => index === channel ? value : level));
     setActivePattern(undefined);
-  };
-
-  const changeIntensity = useCallback((value: number) => {
-    setIntensity(value);
-    void onIntensity(value, target);
-  }, [onIntensity, target]);
+    void onIntensity(value, channelCount > 1 ? channel : 'all');
+  }, [channelCount, onIntensity]);
 
   const togglePattern = async (pattern: number) => {
     if (activePattern === pattern) {
       if (await onStop()) setActivePattern(undefined);
-    } else if (await onPattern(pattern, target)) {
+    } else if (await onPattern(pattern, 'all')) {
       setActivePattern(pattern);
     }
   };
@@ -66,15 +62,10 @@ export function RoomVibrationControls({
     <View style={[s.card, overlay && s.overlayCard]}>
       <View style={s.titleRow}>
         <Text style={[s.title, overlay && s.invertedText]}>{t('room.vibration')}</Text>
-        <Text style={[s.intensityValue, overlay && s.invertedMuted]}>{intensity}%</Text>
+        {channelCount > 1 ? (
+          <Text style={[s.independentHint, overlay && s.invertedMuted]}>{t('motors.independentHint')}</Text>
+        ) : null}
       </View>
-      <MotorSelector
-        channelCount={channelCount}
-        target={target}
-        onChange={changeTarget}
-        compact={overlay}
-        inverted={overlay}
-      />
       <View style={[s.patterns, overlay && s.overlayPatterns]}>
         {featuredPatterns.map((pattern) => (
           <PatternTile
@@ -93,7 +84,14 @@ export function RoomVibrationControls({
           <Text style={s.intensityLabel}>{t('room.intensity')}</Text>
         </View>
       ) : null}
-      <IntensitySlider value={intensity} onChange={changeIntensity} inverted={overlay} />
+      <MotorIntensityMixer
+        channelCount={channelCount}
+        values={intensities}
+        onChange={changeIntensity}
+        disabled={!connected}
+        compact={overlay}
+        inverted={overlay}
+      />
       <Pressable
         accessibilityRole="button"
         disabled={!connected}
@@ -135,7 +133,12 @@ const createStyles = (theme: AppTheme) => ({
     alignItems: 'center' as const,
   },
   intensityLabel: { ...theme.typography.label, color: theme.colors.ink },
-  intensityValue: { ...theme.typography.label, color: theme.colors.accent, fontWeight: '800' as const },
+  independentHint: {
+    ...theme.typography.small,
+    color: theme.colors.textSecondary,
+    flexShrink: 1,
+    textAlign: 'right' as const,
+  },
   stop: {
     height: 44,
     borderWidth: 1.5,

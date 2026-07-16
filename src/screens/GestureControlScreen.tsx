@@ -7,7 +7,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { GESTURE_THROTTLE_MS, clampIntensity, intensityFromY } from '@/features/gesture/intensity';
 import { BackButton } from '@/components/BackButton';
-import { MotorSelector } from '@/components/MotorSelector';
+import { MotorIntensityMixer } from '@/components/MotorIntensityMixer';
 import { goBackOr } from '@/navigation/back';
 import type { RootStackParamList } from '@/navigation/routes';
 import { useBleStore } from '@/state/bleStore';
@@ -23,13 +23,12 @@ export default function GestureControlScreen({ navigation }: Props) {
   const connectionState = useBleStore((state) => state.connectionState);
   const commandBusy = useBleStore((state) => state.commandBusy);
   const commandError = useBleStore((state) => state.error);
-  const setIntensity = useBleStore((state) => state.setIntensity);
+  const setIntensities = useBleStore((state) => state.setIntensities);
   const stop = useBleStore((state) => state.stop);
   const channelCount = useBleStore((state) => state.device?.channelCount ?? 1);
-  const motorTarget = useBleStore((state) => state.motorTarget);
-  const setMotorTarget = useBleStore((state) => state.setMotorTarget);
   const connected = connectionState === 'connected';
   const [intensity, setIntensityLabel] = useState(0);
+  const [motorLevels, setMotorLevels] = useState<number[]>(() => Array(channelCount).fill(100));
   const [frozen, setFrozen] = useState(false);
   const padHeight = useSharedValue(1);
   const cursorX = useSharedValue(0);
@@ -40,6 +39,16 @@ export default function GestureControlScreen({ navigation }: Props) {
   const throttleTimer = useRef<ReturnType<typeof setTimeout>>();
   const gestureEnabled = useRef(false);
   const commandGeneration = useRef(0);
+  const motorLevelsRef = useRef(motorLevels);
+
+  useEffect(() => {
+    setMotorLevels((current) =>
+      Array.from({ length: channelCount }, (_, channel) => current[channel] ?? 100),
+    );
+  }, [channelCount]);
+  useEffect(() => {
+    motorLevelsRef.current = motorLevels;
+  }, [motorLevels]);
 
   const clearThrottle = useCallback(() => {
     commandGeneration.current += 1;
@@ -65,7 +74,9 @@ export default function GestureControlScreen({ navigation }: Props) {
     pending.current = undefined;
     inFlight.current = true;
     lastSentAt.current = Date.now();
-    await setIntensity(next);
+    await setIntensities(
+      motorLevelsRef.current.map((maximum) => Math.round((next * maximum) / 100)),
+    );
     inFlight.current = false;
 
     if (generation !== commandGeneration.current || !gestureEnabled.current) return;
@@ -74,7 +85,7 @@ export default function GestureControlScreen({ navigation }: Props) {
       const wait = Math.max(0, GESTURE_THROTTLE_MS - (Date.now() - lastSentAt.current));
       throttleTimer.current = setTimeout(() => void flushIntensity(), wait);
     }
-  }, [connected, frozen, setIntensity]);
+  }, [connected, frozen, setIntensities]);
 
   const queueIntensity = useCallback(
     (value: number) => {
@@ -193,8 +204,17 @@ export default function GestureControlScreen({ navigation }: Props) {
       </GestureDetector>
 
       {commandError ? <Text style={s.error}>{translateError(commandError)}</Text> : null}
-      <View style={{ paddingHorizontal: spacing.xl }}>
-        <MotorSelector channelCount={channelCount} target={motorTarget} onChange={setMotorTarget} />
+      <View style={s.motorMixer}>
+        <Text style={s.motorHint}>
+          {pick('Fuerza máxima independiente', 'Independent maximum strength')}
+        </Text>
+        <MotorIntensityMixer
+          channelCount={channelCount}
+          values={motorLevels}
+          onChange={(channel, value) => {
+            setMotorLevels((current) => current.map((level, index) => index === channel ? value : level));
+          }}
+        />
       </View>
 
       <View style={s.footer}>
@@ -237,6 +257,8 @@ const baseStyles = StyleSheet.create({
   scaleTrack: { flex: 1, height: 6, borderRadius: 3, overflow: 'hidden', backgroundColor: palette.tint },
   scaleFill: { height: '100%', borderRadius: 3, backgroundColor: palette.accent },
   error: { ...typography.small, color: palette.danger, paddingHorizontal: spacing.xl },
+  motorMixer: { paddingHorizontal: spacing.xl, gap: spacing.xs },
+  motorHint: { ...typography.small, color: palette.textSecondary, fontWeight: '700' },
   footer: { flexDirection: 'row', gap: spacing.md, paddingHorizontal: spacing.xl, paddingTop: spacing.md, paddingBottom: spacing.xxl },
   freezeButton: { flex: 1, minHeight: 54, borderRadius: radii.lg, borderWidth: 1, borderColor: palette.borderStrong, alignItems: 'center', justifyContent: 'center' },
   freezeLabel: { ...typography.label, color: palette.ink, fontWeight: '600' },

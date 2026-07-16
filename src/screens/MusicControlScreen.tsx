@@ -3,11 +3,9 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
-import IntensitySlider from '@/components/IntensitySlider';
 import { BackButton } from '@/components/BackButton';
-import { MotorSelector } from '@/components/MotorSelector';
+import { MotorIntensityMixer } from '@/components/MotorIntensityMixer';
 import { ble } from '@/ble/BleManager';
-import type { MotorTarget } from '@/ble/protocol';
 import { AdaptiveBeatDetector } from '@/features/audio/beatDetector';
 import { meteringToPercent } from '@/features/audio/metering';
 import {
@@ -40,22 +38,20 @@ export default function MusicControlScreen({ navigation }: Props) {
   const connected = useBleStore((state) => state.connectionState === 'connected');
   const stop = useBleStore((state) => state.stop);
   const channelCount = useBleStore((state) => state.device?.channelCount ?? 1);
-  const motorTarget = useBleStore((state) => state.motorTarget);
-  const setMotorTarget = useBleStore((state) => state.setMotorTarget);
   const [source, setSource] = useState<AudioSource>('app');
   const [localTrack, setLocalTrack] = useState<LocalTrack>();
   const [level, setLevel] = useState(0);
-  const [maximum, setMaximum] = useState(80);
+  const [motorLevels, setMotorLevels] = useState<number[]>(() => Array(channelCount).fill(80));
   const [active, setActive] = useState(false);
   const [beatStrength, setBeatStrength] = useState(0);
   const [beatCount, setBeatCount] = useState(0);
   const [error, setError] = useState<string>();
 
   const activeRef = useRef(false);
-  const maximumRef = useRef(maximum);
+  const motorLevelsRef = useRef(motorLevels);
+  const channelCountRef = useRef(channelCount);
   const connectedRef = useRef(connected);
   const detector = useRef(new AdaptiveBeatDetector());
-  const motorTargetRef = useRef<MotorTarget>(motorTarget);
   const writeInFlight = useRef(false);
   const pulseTimer = useRef<ReturnType<typeof setTimeout>>();
   const motorOn = useRef(false);
@@ -63,9 +59,14 @@ export default function MusicControlScreen({ navigation }: Props) {
   const silenceFrames = useRef(0);
   const silenceStopSent = useRef(false);
 
-  useEffect(() => { maximumRef.current = maximum; }, [maximum]);
+  useEffect(() => {
+    setMotorLevels((current) =>
+      Array.from({ length: channelCount }, (_, channel) => current[channel] ?? 80),
+    );
+    channelCountRef.current = channelCount;
+  }, [channelCount]);
+  useEffect(() => { motorLevelsRef.current = motorLevels; }, [motorLevels]);
   useEffect(() => { connectedRef.current = connected; }, [connected]);
-  useEffect(() => { motorTargetRef.current = motorTarget; }, [motorTarget]);
 
   const resetPulseState = useCallback(() => {
     motorOn.current = false;
@@ -78,7 +79,7 @@ export default function MusicControlScreen({ navigation }: Props) {
     pulseTimer.current = undefined;
     try {
       if (global) await stop();
-      else await ble.setIntensity(0, motorTargetRef.current);
+      else await ble.setIntensities(Array(channelCountRef.current).fill(0));
     } finally {
       writeInFlight.current = false;
       resetPulseState();
@@ -100,7 +101,7 @@ export default function MusicControlScreen({ navigation }: Props) {
       const now = Date.now();
       setLevel(meteringToPercent(sample.db));
       if (!activeRef.current || !connectedRef.current) return;
-      const beat = detector.current.process(sample, maximumRef.current, now);
+      const beat = detector.current.process(sample, 100, now);
 
       if (sample.db < SILENCE_DB) {
         silenceFrames.current += 1;
@@ -119,7 +120,10 @@ export default function MusicControlScreen({ navigation }: Props) {
       writeInFlight.current = true;
       setBeatStrength(beat.strength);
       setBeatCount((count) => count + 1);
-      void ble.setIntensity(beat.intensity, motorTargetRef.current).then(() => {
+      const outputs = motorLevelsRef.current.map(
+        (maximum) => Math.round((beat.intensity * maximum) / 100),
+      );
+      void ble.setIntensities(outputs).then(() => {
         if (!activeRef.current) return requestMotorStop(true);
         motorOn.current = true;
         pulseTimer.current = setTimeout(() => {
@@ -164,11 +168,6 @@ export default function MusicControlScreen({ navigation }: Props) {
     });
     return () => { levels.remove(); states.remove(); void stopEverything(); };
   }, [pick, requestMotorStop, stopEverything]);
-
-  useEffect(() => {
-    if (!activeRef.current) return;
-    void requestMotorStop(true);
-  }, [motorTarget, requestMotorStop]);
 
   useEffect(() => navigation.addListener('blur', () => void stopEverything()), [navigation, stopEverything]);
 
@@ -254,13 +253,19 @@ export default function MusicControlScreen({ navigation }: Props) {
       </View>
 
       <View>
-        <View style={s.row}><Text style={s.label}>{pick('Nivel de vibración', 'Vibration level')}</Text><Text style={s.max}>{maximum}%</Text></View>
-        <MotorSelector
+        <View style={s.row}>
+          <View>
+            <Text style={s.label}>{pick('Fuerza por motor', 'Strength per motor')}</Text>
+            <Text style={s.sub}>{pick('Cada motor conserva su propio nivel.', 'Each motor keeps its own level.')}</Text>
+          </View>
+        </View>
+        <MotorIntensityMixer
           channelCount={channelCount}
-          target={motorTarget}
-          onChange={setMotorTarget}
+          values={motorLevels}
+          onChange={(channel, value) => {
+            setMotorLevels((current) => current.map((level, index) => index === channel ? value : level));
+          }}
         />
-        <IntensitySlider value={maximum} onChange={setMaximum} />
         <View style={s.scale}><Text style={s.scaleText}>{pick('Suave', 'Low')}</Text><Text style={s.scaleText}>{pick('Intenso', 'High')}</Text></View>
       </View>
 

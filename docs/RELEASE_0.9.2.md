@@ -2,7 +2,8 @@
 
 ## Cambios principales
 
-- Control independiente de juguetes con múltiples motores, detectado desde las capacidades BLE.
+- Control simultáneo de juguetes con múltiples motores, detectado desde las capacidades BLE.
+- Cada motor muestra su propio deslizador y conserva una intensidad diferente; se eliminó el selector «Ambos / Motor 1 / Motor 2».
 - FlexiCurve validado con dos canales físicos independientes.
 - Menor latencia entre los golpes musicales y los pulsos Bluetooth.
 - Sala de cámara vertical con cámara local simultánea y controles de vibración superpuestos.
@@ -20,8 +21,8 @@
 - Paquete: `com.camtoyz.app`
 - Servidor: `https://app.camtoyz.com`
 - APK: `releases/Camtoyz-App-0.9.2-internal.apk` (ignorado por Git)
-- Tamaño: `139.377.893` bytes
-- SHA-256: `1349CE3CD126BF912978B0BBABCD85B7EA983A92EA9351102595C82CB5CE6C13`
+- Tamaño: `139.381.989` bytes
+- SHA-256: `4E8964209C2A38A782FD0020D1CBEE373D54264FC60D8C43EA74AC9BB96F03F6`
 - Firma: mismo certificado interno usado por 0.9.0 y 0.9.1
 
 ## Validación pendiente
