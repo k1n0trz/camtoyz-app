@@ -8,13 +8,14 @@ import {
 
 import {
   BLE,
-  buildIntensityCommand,
+  buildIntensityChannelsCommand,
   buildPatternCommand,
   buildPatternStopCommand,
   parseBatteryNotification,
   parseCapabilitiesNotification,
   stopCommand,
   type PatternChannelState,
+  type MotorTarget,
   type ProtocolCapabilities,
 } from './protocol';
 import { resolveCatalogDeviceName } from './deviceCatalog';
@@ -31,7 +32,7 @@ export type BleConnectionState =
 
 export interface BleDevice {
   id: string;
-  /** Nombre visible, único dentro de la instalación por su sufijo BLE. */
+  /** Nombre comercial visible; el identificador BLE permanece interno. */
   name: string;
   rawName?: string;
   rssi?: number;
@@ -47,6 +48,7 @@ export interface BleSnapshot {
   devices: BleDevice[];
   activeDeviceId?: string;
   activePattern?: number;
+  motorTarget: MotorTarget;
   syncEnabled: boolean;
   isScanning: boolean;
   error?: string;
@@ -62,6 +64,7 @@ interface ConnectedDevice {
   protocolSubscription?: Subscription;
   capabilities?: ProtocolCapabilities;
   patternChannels: PatternChannelState[];
+  continuousChannels: number[];
   activePattern?: number;
   capabilityResolvers: Set<() => void>;
 }
@@ -151,12 +154,7 @@ function connectionErrorMessage(error: unknown): string {
   if (normalized.includes('gatt') || normalized.includes('already connected') || normalized.includes('not connected') || normalized.includes('status 133')) {
     return 'No fue posible conectar. Si el dispositivo está conectado a otro celular, desconéctalo allí; después apágalo, enciéndelo y pulsa “Buscar de nuevo”.';
   }
-  return `No fue posible conectar el dispositivo. ${detail}`;
-}
-
-function suffixForDevice(id: string): string {
-  const compact = id.replace(/[^a-z0-9]/gi, '').toUpperCase();
-  return compact.slice(-4) || 'BLE';
+  return 'No fue posible conectar el dispositivo. Apágalo, enciéndelo y vuelve a buscarlo.';
 }
 
 function identifyDevice(device: Device): DeviceIdentity {
@@ -180,7 +178,7 @@ function toPublicDevice(device: Device, battery?: number): BleDevice {
   const identity = identifyDevice(device);
   return {
     id: device.id,
-    name: `${identity.name} · ${suffixForDevice(device.id)}`,
+    name: identity.name,
     rawName: identity.rawName,
     rssi: device.rssi ?? undefined,
     battery,
@@ -201,6 +199,7 @@ export class BleManager {
   private activeDeviceId?: string;
   private lastSelectedDeviceId?: string;
   private syncEnabled = false;
+  private motorTarget: MotorTarget = 'all';
   private isScanning = false;
   private scanTimer?: ReturnType<typeof setTimeout>;
   private lastError?: string;
@@ -227,6 +226,7 @@ export class BleManager {
       devices: [...this.connections.values()].map((connection) => connection.device),
       activeDeviceId: this.activeDeviceId,
       activePattern: active?.activePattern,
+      motorTarget: this.motorTarget,
       syncEnabled: this.syncEnabled,
       isScanning: this.isScanning,
       error: this.lastError,
@@ -260,6 +260,12 @@ export class BleManager {
     connection.patternChannels = capabilities.channels.map(
       (_, index) => connection.patternChannels[index] ?? { intensity: 1, pattern: 0 },
     );
+    connection.continuousChannels = capabilities.channels.map(
+      (_, index) => connection.continuousChannels[index] ?? 0,
+    );
+    if (typeof this.motorTarget === 'number' && this.motorTarget >= capabilities.channels.length) {
+      this.motorTarget = 'all';
+    }
     this.updateDevice(connection, {
       channelCount: capabilities.channels.length,
       patternCount: capabilities.channels[0]?.patternCount,
@@ -406,6 +412,7 @@ export class BleManager {
       nativeDevice: device,
       writeCharacteristic,
       patternChannels: [],
+      continuousChannels: [],
       capabilityResolvers: new Set(),
     };
     this.connections.set(connection.id, connection);
@@ -515,6 +522,10 @@ export class BleManager {
   setActiveDevice(deviceId: string): void {
     if (!this.connections.has(deviceId)) return;
     this.activeDeviceId = deviceId;
+    const channelCount = this.connections.get(deviceId)?.capabilities?.channels.length ?? 1;
+    if (typeof this.motorTarget === 'number' && this.motorTarget >= channelCount) {
+      this.motorTarget = 'all';
+    }
     this.lastError = undefined;
     this.emit();
   }
@@ -524,37 +535,80 @@ export class BleManager {
     this.emit();
   }
 
-  async setIntensity(percent: number): Promise<void> {
-    if (percent <= 0) {
-      await this.stop();
-      return;
-    }
+  setMotorTarget(target: MotorTarget): void {
+    if (target !== 'all' && (!Number.isInteger(target) || target < 0)) return;
+    const active = this.activeConnection();
+    const channelCount = active?.capabilities?.channels.length ?? 1;
+    if (typeof target === 'number' && target >= channelCount) return;
+    this.motorTarget = target;
+    if (typeof target === 'number') this.syncEnabled = false;
+    if (active) active.activePattern = this.activePatternFor(active, target);
+    this.emit();
+  }
+
+  async setIntensity(percent: number, target: MotorTarget = this.motorTarget): Promise<void> {
     const targets = this.commandTargets();
     if (!targets.length) throw new Error('No hay un dispositivo BLE conectado.');
     await this.forEachTarget(targets, async (connection) => {
       const capabilities = this.requireCapabilities(connection);
-      await this.write(connection, buildIntensityCommand(percent, capabilities.channels.length));
+      const indexes = this.channelIndexes(capabilities.channels.length, target);
+      const nextChannels = capabilities.channels.map(
+        (_, index) => connection.continuousChannels[index] ?? 0,
+      );
+      for (const index of indexes) nextChannels[index] = Math.max(0, Math.min(100, percent));
+      await this.write(connection, buildIntensityChannelsCommand(nextChannels));
+      connection.continuousChannels = nextChannels;
       connection.activePattern = undefined;
     });
     this.emit();
   }
 
-  async setPattern(index: number): Promise<void> {
+  async setPattern(index: number, target: MotorTarget = this.motorTarget): Promise<void> {
     const targets = this.commandTargets();
     if (!targets.length) throw new Error('No hay un dispositivo BLE conectado.');
     await this.forEachTarget(targets, async (connection) => {
       const capabilities = this.requireCapabilities(connection);
-      const patternCount = capabilities.channels[0]?.patternCount ?? 0;
-      if (!Number.isInteger(index) || index < 1 || index > patternCount) {
+      const indexes = this.channelIndexes(capabilities.channels.length, target);
+      const invalidChannel = indexes.find(
+        (channelIndex) => index > (capabilities.channels[channelIndex]?.patternCount ?? 0),
+      );
+      if (!Number.isInteger(index) || index < 1 || invalidChannel !== undefined) {
+        const patternCount = Math.min(...indexes.map(
+          (channelIndex) => capabilities.channels[channelIndex]?.patternCount ?? 0,
+        ));
         throw new RangeError(`${connection.device.name} admite patrones entre P1 y P${patternCount}.`);
       }
       const nextChannels = capabilities.channels.map((_, channelIndex) => {
         const current = connection.patternChannels[channelIndex] ?? { intensity: 1, pattern: 0 };
-        return channelIndex === 0 ? { ...current, pattern: index } : current;
+        return indexes.includes(channelIndex) ? { ...current, pattern: index } : current;
       });
       await this.write(connection, buildPatternCommand(nextChannels));
       connection.patternChannels = nextChannels;
-      connection.activePattern = index;
+      connection.activePattern = this.activePatternFor(connection, target);
+    });
+    this.emit();
+  }
+
+  async stopSelected(target: MotorTarget = this.motorTarget): Promise<void> {
+    const targets = this.commandTargets();
+    if (!targets.length) return;
+    await this.forEachTarget(targets, async (connection) => {
+      const capabilities = this.requireCapabilities(connection);
+      const indexes = this.channelIndexes(capabilities.channels.length, target);
+      const continuous = capabilities.channels.map(
+        (_, index) => connection.continuousChannels[index] ?? 0,
+      );
+      for (const index of indexes) continuous[index] = 0;
+      await this.write(connection, buildIntensityChannelsCommand(continuous));
+      connection.continuousChannels = continuous;
+
+      const patterns = capabilities.channels.map((_, channelIndex) => {
+        const current = connection.patternChannels[channelIndex] ?? { intensity: 1, pattern: 0 };
+        return indexes.includes(channelIndex) ? { intensity: 1, pattern: 0 } : current;
+      });
+      await this.write(connection, buildPatternCommand(patterns));
+      connection.patternChannels = patterns;
+      connection.activePattern = this.activePatternFor(connection, target);
     });
     this.emit();
   }
@@ -582,7 +636,25 @@ export class BleManager {
       firstError ??= error;
     }
     connection.patternChannels = capabilities.channels.map(() => ({ intensity: 1, pattern: 0 }));
+    connection.continuousChannels = capabilities.channels.map(() => 0);
     if (firstError) throw firstError;
+  }
+
+  private channelIndexes(channelCount: number, target: MotorTarget): number[] {
+    if (target === 'all') return Array.from({ length: channelCount }, (_, index) => index);
+    if (!Number.isInteger(target) || target < 0 || target >= channelCount) {
+      throw new RangeError('El motor seleccionado no está disponible en este dispositivo.');
+    }
+    return [target];
+  }
+
+  private activePatternFor(connection: ConnectedDevice, target: MotorTarget): number | undefined {
+    const channelCount = connection.capabilities?.channels.length ?? 0;
+    if (!channelCount) return undefined;
+    const patterns = this.channelIndexes(channelCount, target)
+      .map((index) => connection.patternChannels[index]?.pattern ?? 0);
+    const first = patterns[0];
+    return first > 0 && patterns.every((pattern) => pattern === first) ? first : undefined;
   }
 
   private async forEachTarget(

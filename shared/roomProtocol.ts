@@ -102,14 +102,15 @@ export interface ReceivedPeerSignal {
 /** Contrato del DataChannel P2P. El servidor nunca recibe estos mensajes. */
 export type RoomControlCommand =
   | { version: 1; sequence: number; sentAt: number; type: 'stop' }
-  | { version: 1; sequence: number; sentAt: number; type: 'pattern'; value: number }
-  | { version: 1; sequence: number; sentAt: number; type: 'intensity'; value: number };
+  | { version: 1; sequence: number; sentAt: number; type: 'pattern'; value: number; target?: 'all' | number }
+  | { version: 1; sequence: number; sentAt: number; type: 'intensity'; value: number; target?: 'all' | number };
 
 /** El receptor decide en todo momento si acepta comandos remotos. */
 export interface RoomControlPermission {
   version: 1;
   type: 'control-permission';
   allowed: boolean;
+  channelCount?: number;
 }
 
 export interface ClientToServerEvents {

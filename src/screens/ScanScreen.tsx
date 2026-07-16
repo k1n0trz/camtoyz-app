@@ -15,10 +15,14 @@ import type { RootStackParamList } from '@/navigation/routes';
 import { palette, radii, spacing, typography } from '@/theme/index';
 import { useBleStore } from '@/state/bleStore';
 import { ProductImage } from '@/components/ProductImage';
+import { useAdaptiveStyles } from '@/theme/useAdaptiveStyles';
+import { useTranslation } from '@/i18n/useTranslation';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Scan'>;
 
 export default function ScanScreen({ navigation }: Props) {
+  const s = useAdaptiveStyles(baseStyles);
+  const { pick, error: translateError } = useTranslation();
   const devices = useBleStore((state) => state.devices);
   const connectionState = useBleStore((state) => state.connectionState);
   const connectedDevices = useBleStore((state) => state.connectedDevices);
@@ -79,9 +83,9 @@ export default function ScanScreen({ navigation }: Props) {
       <View style={s.sheet}>
         <View style={s.handle} />
         <View style={s.header}>
-          <Text style={s.title}>Buscar dispositivos</Text>
+          <Text style={s.title}>{pick('Buscar dispositivos', 'Find devices')}</Text>
           <Pressable accessibilityRole="button" onPress={close} hitSlop={12}>
-            <Text style={s.cancel}>Cancelar</Text>
+            <Text style={s.cancel}>{pick('Cancelar', 'Cancel')}</Text>
           </Pressable>
         </View>
 
@@ -91,18 +95,21 @@ export default function ScanScreen({ navigation }: Props) {
               <Text style={s.errorBang}>!</Text>
             </View>
             <View>
-              <Text style={s.errorTitle}>No se encontró el dispositivo</Text>
+              <Text style={s.errorTitle}>{pick('No se encontró el dispositivo', 'Device not found')}</Text>
               <Text style={s.errorText}>
-                {error ??
-                  'Comprueba que esté encendido y con carga. Mantén pulsado su botón 3 segundos hasta que parpadee.'}
+                {translateError(error) ??
+                  pick(
+                    'Comprueba que esté encendido y con carga. Mantén pulsado su botón 3 segundos hasta que parpadee.',
+                    'Check that it is powered on and charged. Hold its button for 3 seconds until it flashes.',
+                  )}
               </Text>
             </View>
             <View style={s.errorActions}>
               <Pressable style={s.primaryButton} onPress={() => void scan()}>
-                <Text style={s.primaryLabel}>Reintentar búsqueda</Text>
+                <Text style={s.primaryLabel}>{pick('Reintentar búsqueda', 'Search again')}</Text>
               </Pressable>
               <Pressable style={s.secondaryButton} onPress={close}>
-                <Text style={s.secondaryLabel}>Volver</Text>
+                <Text style={s.secondaryLabel}>{pick('Volver', 'Back')}</Text>
               </Pressable>
             </View>
           </View>
@@ -126,15 +133,21 @@ export default function ScanScreen({ navigation }: Props) {
               </View>
             </View>
             <View style={s.centerText}>
-              <Text style={s.searchingTitle}>Buscando dispositivos…</Text>
+              <Text style={s.searchingTitle}>{pick('Buscando dispositivos…', 'Searching for devices…')}</Text>
               <Text style={s.searchingText}>
-                Ningún dispositivo aún.{`\n`}Asegúrate de que esté encendido y cerca.
+                {pick(
+                  'Ningún dispositivo aún.\nAsegúrate de que esté encendido y cerca.',
+                  'No devices yet.\nMake sure it is on and nearby.',
+                )}
               </Text>
             </View>
             <View style={s.scanNote}>
               <View style={s.noteDot} />
               <Text style={s.noteText}>
-                Bluetooth activo · el escaneo se detiene automáticamente a los 30 s
+                {pick(
+                  'Bluetooth activo · el escaneo se detiene automáticamente a los 30 s',
+                  'Bluetooth active · scanning stops automatically after 30 s',
+                )}
               </Text>
             </View>
           </View>
@@ -144,14 +157,17 @@ export default function ScanScreen({ navigation }: Props) {
               <View style={s.foundState}>
                 {searching && <ActivityIndicator color={palette.accent} />}
                 <Text style={s.foundStatusText}>
-                  {searching ? 'Buscando…' : 'Búsqueda pausada'} <Text style={s.foundCount}>{devices.length} detectado(s)</Text>
+                  {searching ? pick('Buscando…', 'Searching…') : pick('Búsqueda pausada', 'Search paused')}{' '}
+                  <Text style={s.foundCount}>
+                    {pick(`${devices.length} detectado(s)`, `${devices.length} found`)}
+                  </Text>
                 </Text>
               </View>
-              <Pressable accessibilityRole="button" accessibilityLabel="Reiniciar búsqueda de dispositivos" onPress={restartSearch} style={s.restartButton}>
-                <Text style={s.restartLabel}>{searching ? 'Reiniciar' : 'Buscar de nuevo'}</Text>
+              <Pressable accessibilityRole="button" accessibilityLabel={pick('Reiniciar búsqueda de dispositivos', 'Restart device search')} onPress={restartSearch} style={s.restartButton}>
+                <Text style={s.restartLabel}>{searching ? pick('Reiniciar', 'Restart') : pick('Buscar de nuevo', 'Search again')}</Text>
               </Pressable>
             </View>
-            {connectionError ? <Text style={s.connectionError}>{connectionError}</Text> : null}
+            {connectionError ? <Text style={s.connectionError}>{translateError(connectionError)}</Text> : null}
             <ScrollView contentContainerStyle={s.deviceList}>
               {devices.map((device) => {
                 const isConnected = connectedDevices.some((connectedDevice) => connectedDevice.id === device.id);
@@ -162,10 +178,10 @@ export default function ScanScreen({ navigation }: Props) {
                       <Text style={s.deviceName}>{device.name}</Text>
                       <Text style={isConnected ? s.deviceConnected : s.deviceMeta}>
                         {isConnected
-                          ? 'Conectado · BLE'
+                          ? pick('Conectado · BLE', 'Connected · BLE')
                           : device.rssi !== undefined
                             ? `Señal ${device.rssi} dBm`
-                            : 'Toca para conectar'}
+                            : pick('Toca para conectar', 'Tap to connect')}
                       </Text>
                     </View>
                     <Pressable
@@ -179,7 +195,7 @@ export default function ScanScreen({ navigation }: Props) {
                         <ActivityIndicator color={palette.white} />
                       ) : (
                         <Text style={isConnected ? s.disconnectLabel : s.connectLabel}>
-                          {isConnected ? 'Desconectar' : 'Conectar'}
+                          {isConnected ? pick('Desconectar', 'Disconnect') : pick('Conectar', 'Connect')}
                         </Text>
                       )}
                     </Pressable>
@@ -187,7 +203,12 @@ export default function ScanScreen({ navigation }: Props) {
                 );
               })}
             </ScrollView>
-            <Text style={s.guide}>¿No aparece tu dispositivo? Comprueba que esté encendido y pulsa “Buscar de nuevo”.</Text>
+            <Text style={s.guide}>
+              {pick(
+                '¿No aparece tu dispositivo? Comprueba que esté encendido y pulsa “Buscar de nuevo”.',
+                'Can’t see your device? Check that it is on and tap “Search again”.',
+              )}
+            </Text>
           </View>
         )}
       </View>
@@ -195,7 +216,7 @@ export default function ScanScreen({ navigation }: Props) {
   );
 }
 
-const s = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   root: { flex: 1, backgroundColor: palette.bgAlt },
   scrim: { ...StyleSheet.absoluteFillObject, backgroundColor: palette.overlay },
   sheet: {

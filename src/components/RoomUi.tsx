@@ -1,28 +1,55 @@
 import type { ReactNode } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 
-import { palette, radii, spacing, typography } from '@/theme/index';
+import { BackButton } from '@/components/BackButton';
+import { useTranslation } from '@/i18n/useTranslation';
+import { useAppTheme } from '@/preferences/AppPreferences';
+import type { AppTheme } from '@/theme/index';
+import { useThemedStyles } from '@/theme/useThemedStyles';
 
-export function RoomHeader({ title, badge, onBack }: { title: string; badge?: 'ANFITRIÓN' | 'MIEMBRO'; onBack: () => void }) {
+export function RoomHeader({
+  title,
+  badge,
+  onBack,
+}: {
+  title: string;
+  badge?: 'ANFITRIÓN' | 'MIEMBRO';
+  onBack: () => void;
+}) {
+  const s = useThemedStyles(createStyles);
+  const { t } = useTranslation();
+  const badgeLabel = badge === 'ANFITRIÓN'
+    ? t('common.host')
+    : badge === 'MIEMBRO'
+      ? t('common.member')
+      : undefined;
   return (
     <View style={s.header}>
-      <Pressable accessibilityRole="button" accessibilityLabel="Volver" onPress={onBack} style={s.back}>
-        <Text style={s.backText}>‹</Text>
-      </Pressable>
-      <Text style={s.title}>{title}</Text>
+      <BackButton onPress={onBack} />
+      <Text numberOfLines={1} style={s.title}>{title}</Text>
       <View style={{ flex: 1 }} />
-      {badge ? <Text style={[s.badge, badge === 'MIEMBRO' && s.memberBadge]}>{badge}</Text> : null}
+      {badgeLabel ? (
+        <Text style={[s.badge, badge === 'MIEMBRO' && s.memberBadge]}>{badgeLabel}</Text>
+      ) : null}
     </View>
   );
 }
 
-export function PrimaryButton({ label, onPress, disabled, loading, outline = false }: {
+export function PrimaryButton({
+  label,
+  onPress,
+  disabled,
+  loading,
+  outline = false,
+}: {
   label: string;
   onPress: () => void;
   disabled?: boolean;
   loading?: boolean;
   outline?: boolean;
 }) {
+  const s = useThemedStyles(createStyles);
+  const theme = useAppTheme();
   return (
     <Pressable
       accessibilityRole="button"
@@ -31,82 +58,230 @@ export function PrimaryButton({ label, onPress, disabled, loading, outline = fal
       onPress={onPress}
       style={[s.button, outline && s.outlineButton, (disabled || loading) && s.disabled]}
     >
-      {loading ? <ActivityIndicator color={palette.ink} /> : <Text style={[s.buttonLabel, outline && s.outlineLabel]}>{label}</Text>}
+      {loading
+        ? <ActivityIndicator color={theme.colors.ink} />
+        : <Text style={[s.buttonLabel, outline && s.outlineLabel]}>{label}</Text>}
     </Pressable>
   );
 }
 
-export function PrivacyCard() {
+export function PrivacyCard({ compact = false }: { compact?: boolean }) {
+  const s = useThemedStyles(createStyles);
+  const { t } = useTranslation();
   return (
-    <View style={s.privacyCard}>
+    <View style={[s.privacyCard, compact && s.compactPrivacyCard]}>
       <View style={s.lock}><View style={s.lockDot} /></View>
-      <Text style={s.privacyText}>Video y comandos usan un canal cifrado. Si la red lo requiere, TURN retransmite paquetes cifrados sin leer su contenido; el servidor de salas gestiona acceso y señalización.</Text>
+      <Text numberOfLines={compact ? 2 : undefined} style={s.privacyText}>{t('room.privacy')}</Text>
     </View>
   );
 }
 
-export function RemoteControlSafetyCard({ allowed, connected, onChange, onStop }: {
+export function RemoteControlSafetyCard({
+  allowed,
+  connected,
+  onChange,
+  onStop,
+  compact = false,
+  inverted = false,
+}: {
   allowed: boolean;
   connected: boolean;
   onChange: (allowed: boolean) => Promise<void>;
   onStop: () => Promise<void>;
+  compact?: boolean;
+  inverted?: boolean;
 }) {
+  const s = useThemedStyles(createStyles);
+  const { t } = useTranslation();
+  const foreground = inverted ? '#FFFFFF' : undefined;
   return (
-    <View style={s.safetyCard}>
-      <Text style={s.safetyTitle}>Seguridad del control remoto</Text>
-      <Text style={s.safetyCopy}>
-        {allowed
-          ? 'Control permitido para la otra persona. Puedes revocarlo y detener la vibración en cualquier momento.'
-          : connected
-            ? 'La otra persona está conectada, pero no puede controlar el juguete hasta que tú lo permitas.'
-            : 'Cuando se conecte la otra persona, decide aquí si puede controlar el juguete.'}
+    <View style={[s.safetyCard, compact && s.compactSafetyCard, inverted && s.invertedCard]}>
+      <Text style={[s.safetyTitle, foreground ? { color: foreground } : undefined]}>
+        {t('room.safetyTitle')}
       </Text>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={allowed ? 'Revocar control remoto y detener' : 'Permitir control remoto'}
-        disabled={!connected && !allowed}
-        onPress={() => void onChange(!allowed)}
-        style={[s.permissionButton, allowed && s.permissionButtonActive, !connected && !allowed && s.disabled]}
-      >
-        <Text style={[s.permissionLabel, allowed && s.permissionLabelActive]}>{allowed ? 'Revocar control y detener' : 'Permitir control remoto'}</Text>
-      </Pressable>
-      <Pressable accessibilityRole="button" accessibilityLabel="Detener vibración ahora" onPress={() => void onStop()} style={s.emergencyButton}>
-        <Text style={s.emergencyLabel}>DETENER AHORA</Text>
-      </Pressable>
+      {!compact ? (
+        <Text style={s.safetyCopy}>
+          {allowed
+            ? t('room.allowedCopy')
+            : connected
+              ? t('room.connectedCopy')
+              : t('room.waitingCopy')}
+        </Text>
+      ) : null}
+      <View style={compact ? s.compactSafetyActions : undefined}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={allowed ? t('room.revokeControl') : t('room.allowControl')}
+          disabled={!connected && !allowed}
+          onPress={() => void onChange(!allowed)}
+          style={[
+            s.permissionButton,
+            compact && s.compactSafetyButton,
+            allowed && s.permissionButtonActive,
+            !connected && !allowed && s.disabled,
+          ]}
+        >
+          <Text style={[s.permissionLabel, allowed && s.permissionLabelActive]}>
+            {allowed ? t('room.revokeControl') : t('room.allowControl')}
+          </Text>
+        </Pressable>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t('room.stopNow')}
+          onPress={() => void onStop()}
+          style={[s.emergencyButton, compact && s.compactSafetyButton]}
+        >
+          <Text style={s.emergencyLabel}>{t('room.stopNow')}</Text>
+        </Pressable>
+      </View>
     </View>
   );
 }
 
-export function RoomStatus({ children }: { children: ReactNode }) {
-  return <View style={s.status}><View style={s.statusDot} /><Text style={s.statusText}>{children}</Text></View>;
+export function RoomStatus({ children, inverted = false }: { children: ReactNode; inverted?: boolean }) {
+  const s = useThemedStyles(createStyles);
+  return (
+    <View style={[s.status, inverted && s.invertedStatus]}>
+      <View style={s.statusDot} />
+      <Text style={[s.statusText, inverted && { color: '#FFFFFF' }]}>{children}</Text>
+    </View>
+  );
 }
 
-const s = StyleSheet.create({
-  header: { height: 56, flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.xl, gap: spacing.md },
-  back: { width: 28, height: 40, justifyContent: 'center' },
-  backText: { fontSize: 28, color: palette.ink, marginTop: -4 },
-  title: { ...typography.section, color: palette.ink },
-  badge: { backgroundColor: palette.accent, color: palette.white, fontSize: 10, fontWeight: '800', letterSpacing: 1, paddingVertical: 5, paddingHorizontal: 10, borderRadius: radii.pill },
-  memberBadge: { backgroundColor: palette.secondary, color: palette.ink },
-  button: { minHeight: 54, backgroundColor: palette.primary, borderRadius: radii.lg, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.xl },
-  outlineButton: { backgroundColor: 'transparent', borderWidth: 1.5, borderColor: palette.accent },
-  buttonLabel: { fontSize: 16, fontWeight: '700', color: palette.ink },
-  outlineLabel: { color: palette.accent },
+const createStyles = (theme: AppTheme) => ({
+  header: {
+    height: 64,
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    paddingHorizontal: theme.spacing.md,
+    gap: theme.spacing.sm,
+  },
+  title: { ...theme.typography.section, color: theme.colors.ink, maxWidth: '64%' as const },
+  badge: {
+    backgroundColor: theme.colors.accent,
+    color: theme.colors.white,
+    fontSize: 10,
+    fontWeight: '800' as const,
+    letterSpacing: 1,
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: theme.radii.pill,
+  },
+  memberBadge: { backgroundColor: theme.colors.secondary, color: theme.colors.ink },
+  button: {
+    minHeight: 54,
+    backgroundColor: theme.colors.primary,
+    borderRadius: theme.radii.lg,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    paddingHorizontal: theme.spacing.xl,
+  },
+  outlineButton: {
+    backgroundColor: 'transparent',
+    borderWidth: 1.5,
+    borderColor: theme.colors.accent,
+  },
+  buttonLabel: { fontSize: 16, fontWeight: '700' as const, color: theme.colors.ink },
+  outlineLabel: { color: theme.colors.accent },
   disabled: { opacity: 0.4 },
-  privacyCard: { flexDirection: 'row', gap: spacing.md, alignItems: 'flex-start', backgroundColor: palette.card, borderWidth: 1, borderColor: palette.border, borderRadius: radii.lg, padding: spacing.lg },
-  lock: { width: 16, height: 18, borderWidth: 1.5, borderColor: palette.textSecondary, borderRadius: 5, alignItems: 'center', justifyContent: 'center', marginTop: 1 },
-  lockDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: palette.textSecondary },
-  privacyText: { ...typography.small, color: palette.textSecondary, lineHeight: 18, flex: 1 },
-  status: { flexDirection: 'row', alignItems: 'center', alignSelf: 'center', gap: 8, backgroundColor: palette.card, borderWidth: 1, borderColor: palette.border, borderRadius: radii.pill, paddingVertical: 10, paddingHorizontal: 16 },
-  statusDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: palette.accent },
-  statusText: { ...typography.body, color: palette.ink, fontWeight: '600' },
-  safetyCard: { gap: spacing.md, backgroundColor: palette.card, borderWidth: 2, borderColor: palette.accent, borderRadius: radii.cardLg, padding: spacing.xl },
-  safetyTitle: { ...typography.section, color: palette.ink },
-  safetyCopy: { ...typography.body, color: palette.textSubtle, lineHeight: 20 },
-  permissionButton: { minHeight: 48, borderRadius: radii.lg, backgroundColor: palette.primary, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.md },
-  permissionButtonActive: { backgroundColor: palette.tint, borderWidth: 1.5, borderColor: palette.accent },
-  permissionLabel: { ...typography.label, color: palette.ink, fontWeight: '700', textAlign: 'center' },
-  permissionLabelActive: { color: palette.accent },
-  emergencyButton: { minHeight: 52, borderRadius: radii.lg, backgroundColor: palette.accent, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.md },
-  emergencyLabel: { ...typography.label, color: palette.white, fontWeight: '900', letterSpacing: 0.6 },
+  privacyCard: {
+    flexDirection: 'row' as const,
+    gap: theme.spacing.md,
+    alignItems: 'flex-start' as const,
+    backgroundColor: theme.colors.card,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: theme.radii.lg,
+    padding: theme.spacing.lg,
+  },
+  compactPrivacyCard: { padding: theme.spacing.sm, backgroundColor: 'rgba(20,10,30,.7)' },
+  lock: {
+    width: 16,
+    height: 18,
+    borderWidth: 1.5,
+    borderColor: theme.colors.textSecondary,
+    borderRadius: 5,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    marginTop: 1,
+  },
+  lockDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: theme.colors.textSecondary,
+  },
+  privacyText: {
+    ...theme.typography.small,
+    color: theme.colors.textSecondary,
+    lineHeight: 18,
+    flex: 1,
+  },
+  status: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    alignSelf: 'center' as const,
+    gap: 8,
+    backgroundColor: theme.colors.card,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: theme.radii.pill,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+  },
+  invertedStatus: {
+    backgroundColor: 'rgba(20,10,30,.72)',
+    borderColor: 'rgba(255,255,255,.24)',
+  },
+  statusDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: theme.colors.accent },
+  statusText: { ...theme.typography.body, color: theme.colors.ink, fontWeight: '600' as const },
+  safetyCard: {
+    gap: theme.spacing.md,
+    backgroundColor: theme.colors.card,
+    borderWidth: 2,
+    borderColor: theme.colors.accent,
+    borderRadius: theme.radii.cardLg,
+    padding: theme.spacing.xl,
+  },
+  compactSafetyCard: { gap: theme.spacing.sm, padding: theme.spacing.md },
+  invertedCard: { backgroundColor: 'rgba(20,10,30,.78)', borderColor: 'rgba(255,255,255,.3)' },
+  safetyTitle: { ...theme.typography.section, color: theme.colors.ink },
+  safetyCopy: { ...theme.typography.body, color: theme.colors.textSubtle, lineHeight: 20 },
+  compactSafetyActions: { flexDirection: 'row' as const, gap: theme.spacing.sm },
+  permissionButton: {
+    minHeight: 48,
+    borderRadius: theme.radii.lg,
+    backgroundColor: theme.colors.primary,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    paddingHorizontal: theme.spacing.md,
+  },
+  compactSafetyButton: { minHeight: 40, flex: 1, paddingHorizontal: theme.spacing.sm },
+  permissionButtonActive: {
+    backgroundColor: theme.colors.tint,
+    borderWidth: 1.5,
+    borderColor: theme.colors.accent,
+  },
+  permissionLabel: {
+    ...theme.typography.label,
+    color: theme.colors.ink,
+    fontWeight: '700' as const,
+    textAlign: 'center' as const,
+  },
+  permissionLabelActive: { color: theme.colors.accent },
+  emergencyButton: {
+    minHeight: 52,
+    borderRadius: theme.radii.lg,
+    backgroundColor: theme.colors.accent,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    paddingHorizontal: theme.spacing.md,
+  },
+  emergencyLabel: {
+    ...theme.typography.label,
+    color: theme.colors.white,
+    fontWeight: '900' as const,
+    letterSpacing: 0.6,
+    textAlign: 'center' as const,
+  },
 });

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 
 import { ble, type BleConnectionState, type BleDevice } from '@/ble/BleManager';
+import type { MotorTarget } from '@/ble/protocol';
 
 interface BleStore {
   connectionState: BleConnectionState;
@@ -11,6 +12,7 @@ interface BleStore {
   isScanning: boolean;
   devices: BleDevice[];
   activePattern?: number;
+  motorTarget: MotorTarget;
   commandBusy: boolean;
   error?: string;
   scan: () => Promise<void>;
@@ -20,8 +22,10 @@ interface BleStore {
   retryConnection: () => Promise<void>;
   setActiveDevice: (deviceId: string) => void;
   setSyncEnabled: (enabled: boolean) => void;
-  setPattern: (index: number) => Promise<boolean>;
-  setIntensity: (percent: number) => Promise<boolean>;
+  setMotorTarget: (target: MotorTarget) => void;
+  setPattern: (index: number, target?: MotorTarget) => Promise<boolean>;
+  setIntensity: (percent: number, target?: MotorTarget) => Promise<boolean>;
+  stopSelected: (target?: MotorTarget) => Promise<boolean>;
   stop: () => Promise<boolean>;
   clearError: () => void;
 }
@@ -41,6 +45,7 @@ export const useBleStore = create<BleStore>((set) => ({
   isScanning: ble.snapshot.isScanning,
   devices: [],
   activePattern: ble.snapshot.activePattern,
+  motorTarget: ble.snapshot.motorTarget,
   commandBusy: false,
   error: ble.snapshot.error,
 
@@ -90,10 +95,12 @@ export const useBleStore = create<BleStore>((set) => ({
 
   setSyncEnabled: (enabled) => ble.setSyncEnabled(enabled),
 
-  setPattern: async (index) => {
+  setMotorTarget: (target) => ble.setMotorTarget(target),
+
+  setPattern: async (index, target) => {
     set({ commandBusy: true, error: undefined });
     try {
-      await ble.setPattern(index);
+      await ble.setPattern(index, target);
       return true;
     } catch (error) {
       set({
@@ -105,15 +112,28 @@ export const useBleStore = create<BleStore>((set) => ({
     }
   },
 
-  setIntensity: async (percent) => {
+  setIntensity: async (percent, target) => {
     set({ commandBusy: true, error: undefined });
     try {
-      await ble.setIntensity(percent);
+      await ble.setIntensity(percent, target);
       return true;
     } catch (error) {
       set({
         error: error instanceof Error ? error.message : 'No fue posible cambiar la intensidad.',
       });
+      return false;
+    } finally {
+      set({ commandBusy: false });
+    }
+  },
+
+  stopSelected: async (target) => {
+    set({ commandBusy: true, error: undefined });
+    try {
+      await ble.stopSelected(target);
+      return true;
+    } catch (error) {
+      set({ error: error instanceof Error ? error.message : 'No fue posible detener el motor.' });
       return false;
     } finally {
       set({ commandBusy: false });
@@ -145,6 +165,7 @@ ble.subscribe((snapshot) => {
     syncEnabled: snapshot.syncEnabled,
     isScanning: snapshot.isScanning,
     activePattern: snapshot.activePattern,
+    motorTarget: snapshot.motorTarget,
     error: snapshot.error,
   });
 });

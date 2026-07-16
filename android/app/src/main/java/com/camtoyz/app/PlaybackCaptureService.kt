@@ -51,6 +51,7 @@ class PlaybackCaptureService : Service() {
     private const val NOTIFICATION_ID = 9042
     private const val CHANNEL_ID = "playback_capture"
     private const val SAMPLE_RATE = 44100
+    private const val ANALYSIS_SAMPLE_COUNT = 1024
     private const val TAG = "CamtoyzAudio"
 
     @Volatile var listener: Listener? = null
@@ -158,7 +159,7 @@ class PlaybackCaptureService : Service() {
       val generation = captureGeneration
       frameNumber = 0
       listener?.onStatus("active")
-      worker.execute { captureLoop(bufferSize / 2, generation) }
+      worker.execute { captureLoop(ANALYSIS_SAMPLE_COUNT, generation) }
     } catch (error: Throwable) {
       Log.e(TAG, "Playback capture failed", error)
       fail(error.message ?: "No fue posible iniciar la captura interna.")

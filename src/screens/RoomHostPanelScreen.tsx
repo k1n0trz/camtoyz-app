@@ -5,15 +5,20 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import * as Clipboard from 'expo-clipboard';
 
 import { PrimaryButton, PrivacyCard, RemoteControlSafetyCard, RoomHeader } from '@/components/RoomUi';
+import { goBackOr } from '@/navigation/back';
 import type { RootStackParamList } from '@/navigation/routes';
 import { currentParticipant, useRoomStore } from '@/state/roomStore';
 import { palette, radii, spacing, typography } from '@/theme/index';
+import { useAdaptiveStyles } from '@/theme/useAdaptiveStyles';
+import { useTranslation } from '@/i18n/useTranslation';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'RoomHostPanel'>;
 
 const initials = (name: string) => name.split(/\s+/).slice(0, 2).map((part) => part[0]?.toUpperCase()).join('');
 
 export default function RoomHostPanelScreen({ navigation }: Props) {
+  const s = useAdaptiveStyles(baseStyles);
+  const { pick, error: translateError } = useTranslation();
   const room = useRoomStore((state) => state.room);
   const participantId = useRoomStore((state) => state.participantId);
   const error = useRoomStore((state) => state.error);
@@ -43,15 +48,15 @@ export default function RoomHostPanelScreen({ navigation }: Props) {
   );
 
   const confirmBlock = (id: string, name: string) => Alert.alert(
-    `¿Bloquear a ${name}?`,
-    'Se le expulsará y no podrá volver a unirse con este código desde esta instalación.',
-    [{ text: 'Cancelar', style: 'cancel' }, { text: 'Bloquear', style: 'destructive', onPress: () => void block(id) }],
+    pick(`¿Bloquear a ${name}?`, `Block ${name}?`),
+    pick('Se le expulsará y no podrá volver a unirse con este código desde esta instalación.', 'They will be removed and this installation will not be able to rejoin with the same code.'),
+    [{ text: pick('Cancelar', 'Cancel'), style: 'cancel' }, { text: pick('Bloquear', 'Block'), style: 'destructive', onPress: () => void block(id) }],
   );
 
   const confirmEnd = () => Alert.alert(
-    '¿Terminar la sesión para todos?',
-    'El código dejará de funcionar. Esta acción no se puede deshacer.',
-    [{ text: 'Cancelar', style: 'cancel' }, { text: 'Terminar', style: 'destructive', onPress: async () => {
+    pick('¿Terminar la sesión para todos?', 'End the session for everyone?'),
+    pick('El código dejará de funcionar. Esta acción no se puede deshacer.', 'The code will stop working. This cannot be undone.'),
+    [{ text: pick('Cancelar', 'Cancel'), style: 'cancel' }, { text: pick('Terminar', 'End'), style: 'destructive', onPress: async () => {
       if (await endRoom()) navigation.popToTop();
     } }],
   );
@@ -59,26 +64,26 @@ export default function RoomHostPanelScreen({ navigation }: Props) {
   const copyCode = async () => {
     if (!room) return;
     await Clipboard.setStringAsync(room.code);
-    Alert.alert('Código copiado', `Comparte ${room.code} con la persona que invitarás.`);
+    Alert.alert(pick('Código copiado', 'Code copied'), pick(`Comparte ${room.code} con la persona que invitarás.`, `Share ${room.code} with the person you are inviting.`));
   };
 
   if (!room) {
     return (
       <SafeAreaView style={s.root} edges={['top', 'bottom']}>
-        <RoomHeader title="Participantes" badge="ANFITRIÓN" onBack={() => navigation.goBack()} />
-        <View style={s.center}><Text style={s.muted}>{error ?? 'Recuperando la sala…'}</Text></View>
+        <RoomHeader title={pick('Participantes', 'Participants')} badge="ANFITRIÓN" onBack={() => goBackOr(navigation, 'Splash')} />
+        <View style={s.center}><Text style={s.muted}>{translateError(error) ?? pick('Recuperando la sala…', 'Restoring room…')}</Text></View>
       </SafeAreaView>
     );
   }
 
   return (
     <SafeAreaView style={s.root} edges={['top', 'bottom']}>
-      <RoomHeader title={`Participantes · ${room.participants.length}`} badge="ANFITRIÓN" onBack={() => navigation.goBack()} />
+      <RoomHeader title={`${pick('Participantes', 'Participants')} · ${room.participants.length}`} badge="ANFITRIÓN" onBack={() => goBackOr(navigation, 'Splash')} />
       <ScrollView contentContainerStyle={s.content}>
         <View style={s.roomCodeWrap}>
-          <Text selectable style={s.roomCode}>SALA {room.code}</Text>
+          <Text selectable style={s.roomCode}>{pick('SALA', 'ROOM')} {room.code}</Text>
           <Pressable accessibilityRole="button" accessibilityLabel="Copiar código de sala" onPress={() => void copyCode()} style={s.copyCode}>
-            <Text style={s.copyCodeText}>Copiar código</Text>
+            <Text style={s.copyCodeText}>{pick('Copiar código', 'Copy code')}</Text>
           </Pressable>
         </View>
         {room.participants.map((participant) => {
@@ -87,13 +92,13 @@ export default function RoomHostPanelScreen({ navigation }: Props) {
             <View key={participant.id} style={[s.participant, !participant.connected && s.offline]}>
               <View style={[s.avatar, participant.role === 'host' && s.hostAvatar]}><Text style={s.avatarText}>{initials(participant.displayName)}</Text></View>
               <View style={{ flex: 1 }}>
-                <Text style={s.name}>{self ? 'Tú' : participant.displayName}</Text>
-                <Text style={s.meta}>{participant.connected ? 'Conectado' : 'Reconectando…'}</Text>
+                <Text style={s.name}>{self ? pick('Tú', 'You') : participant.displayName}</Text>
+                <Text style={s.meta}>{participant.connected ? pick('Conectado', 'Connected') : pick('Reconectando…', 'Reconnecting…')}</Text>
               </View>
-              {participant.role === 'host' ? <Text style={s.hostBadge}>ANFITRIÓN</Text> : (
+              {participant.role === 'host' ? <Text style={s.hostBadge}>{pick('ANFITRIÓN', 'HOST')}</Text> : (
                 <View style={s.actions}>
-                  <Pressable onPress={() => void kick(participant.id)} style={s.action}><Text style={s.actionText}>Expulsar</Text></Pressable>
-                  <Pressable onPress={() => confirmBlock(participant.id, participant.displayName)} style={[s.action, s.block]}><Text style={s.blockText}>Bloquear</Text></Pressable>
+                  <Pressable onPress={() => void kick(participant.id)} style={s.action}><Text style={s.actionText}>{pick('Expulsar', 'Remove')}</Text></Pressable>
+                  <Pressable onPress={() => confirmBlock(participant.id, participant.displayName)} style={[s.action, s.block]}><Text style={s.blockText}>{pick('Bloquear', 'Block')}</Text></Pressable>
                 </View>
               )}
             </View>
@@ -106,17 +111,17 @@ export default function RoomHostPanelScreen({ navigation }: Props) {
           onStop={emergencyStop}
         />
         <PrivacyCard />
-        {error ? <Text style={s.error}>{error}</Text> : null}
+        {error ? <Text style={s.error}>{translateError(error)}</Text> : null}
       </ScrollView>
       <View style={s.footer}>
-        <PrimaryButton label="Abrir cámara de la sala" onPress={() => navigation.navigate('RoomCamera')} />
-        <PrimaryButton label="Terminar sesión para todos" outline onPress={confirmEnd} />
+        <PrimaryButton label={pick('Abrir cámara de la sala', 'Open room camera')} onPress={() => navigation.navigate('RoomCamera')} />
+        <PrimaryButton label={pick('Terminar sesión para todos', 'End session for everyone')} outline onPress={confirmEnd} />
       </View>
     </SafeAreaView>
   );
 }
 
-const s = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   root: { flex: 1, backgroundColor: palette.bg },
   content: { padding: spacing.xl, gap: spacing.md },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },

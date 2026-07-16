@@ -45,11 +45,18 @@ export const paletteDark = {
   bg: '#241833',
   bgAlt: '#2C1E40',
   card: '#3D2A57',
+  tint: '#4A335F',
+  tint2: '#432E57',
   ink: '#F6ECF3',
-  border: 'rgba(233,179,203,.14)',
-  borderStrong: 'rgba(233,179,203,.22)',
-  textSecondary: '#C7A9BC',
-  textMuted: '#A98BA0',
+  border: '#4A365F',
+  borderStrong: '#5A426F',
+  textSecondary: '#DFC6E5',
+  textMuted: '#C7A9BC',
+  textFaint: '#BDA7CF',
+  textSubtle: '#D1BADB',
+  textLabel: '#CFB8DD',
+  overlay: 'rgba(8,4,16,.72)',
+  white: '#FFFFFF',
 } as const;
 
 export const typography = {
@@ -107,4 +114,4 @@ export const shadow = {
   },
 } as const;
 
-export type Palette = typeof palette;
+export type Palette = { [Key in keyof typeof palette]: string };

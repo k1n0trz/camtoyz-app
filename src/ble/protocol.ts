@@ -47,6 +47,9 @@ export interface PatternChannelState {
   pattern: number;
 }
 
+/** `all` aplica el comando a todos los motores; un número apunta al canal base cero. */
+export type MotorTarget = 'all' | number;
+
 const COMMAND_HEADER = 0x89;
 const COMMAND_CONTINUOUS = 0x04;
 const COMMAND_PATTERN = 0x05;
@@ -86,16 +89,26 @@ export function buildIntensityCommand(
   channelCount: number,
 ): Uint8Array {
   assertChannelCount(channelCount, 1);
-  if (!Number.isFinite(intensity0to100)) {
-    throw new RangeError('La intensidad continua debe ser un número finito.');
-  }
-  const clamped = Math.max(0, Math.min(100, intensity0to100));
-  const value = Math.round((clamped / 100) * 0xff);
+  return buildIntensityChannelsCommand(Array(channelCount).fill(intensity0to100));
+}
+
+/** Modo continuo por canal: permite controlar motores independientes. */
+export function buildIntensityChannelsCommand(
+  intensities0to100: readonly number[],
+): Uint8Array {
+  assertChannelCount(intensities0to100.length, 1);
+  const values = intensities0to100.map((intensity) => {
+    if (!Number.isFinite(intensity)) {
+      throw new RangeError('La intensidad continua debe ser un número finito.');
+    }
+    const clamped = Math.max(0, Math.min(100, intensity));
+    return Math.round((clamped / 100) * 0xff);
+  });
   return new Uint8Array([
     COMMAND_HEADER,
     COMMAND_CONTINUOUS,
-    channelCount,
-    ...Array(channelCount).fill(value),
+    values.length,
+    ...values,
   ]);
 }
 

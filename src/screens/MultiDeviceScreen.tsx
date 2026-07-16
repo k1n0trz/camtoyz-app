@@ -5,11 +5,17 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/routes';
 import { useBleStore } from '@/state/bleStore';
 import { ProductImage } from '@/components/ProductImage';
+import { BackButton } from '@/components/BackButton';
+import { goBackOr } from '@/navigation/back';
 import { palette, radii, spacing, typography } from '@/theme/index';
+import { useAdaptiveStyles } from '@/theme/useAdaptiveStyles';
+import { useTranslation } from '@/i18n/useTranslation';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'MultiDevice'>;
 
 export default function MultiDeviceScreen({ navigation }: Props) {
+  const s = useAdaptiveStyles(baseStyles);
+  const { pick } = useTranslation();
   const connectedDevices = useBleStore((state) => state.connectedDevices);
   const activeDeviceId = useBleStore((state) => state.activeDeviceId);
   const syncEnabled = useBleStore((state) => state.syncEnabled);
@@ -22,21 +28,21 @@ export default function MultiDeviceScreen({ navigation }: Props) {
   return (
     <SafeAreaView style={s.root} edges={['top']}>
       <View style={s.header}>
-        <Pressable accessibilityRole="button" accessibilityLabel="Volver" onPress={() => navigation.goBack()}>
-          <Text style={s.back}>‹</Text>
-        </Pressable>
-        <Text style={s.title}>Mis dispositivos</Text>
+        <BackButton onPress={() => goBackOr(navigation, 'Dashboard')} />
+        <Text style={s.title}>{pick('Mis dispositivos', 'My devices')}</Text>
         <View style={{ flex: 1 }} />
         <Text style={s.count}>
-          {connectedDevices.length === 1 ? '1 conectado' : `${connectedDevices.length} conectados`}
+          {connectedDevices.length === 1
+            ? pick('1 conectado', '1 connected')
+            : pick(`${connectedDevices.length} conectados`, `${connectedDevices.length} connected`)}
         </Text>
       </View>
 
       <ScrollView contentContainerStyle={s.content}>
         {connectedDevices.length === 0 ? (
           <View style={s.emptyCard}>
-            <Text style={s.emptyTitle}>Aún no hay un dispositivo activo</Text>
-            <Text style={s.emptyText}>Conecta uno para empezar a administrar tus controles.</Text>
+            <Text style={s.emptyTitle}>{pick('Aún no hay un dispositivo activo', 'There is no active device yet')}</Text>
+            <Text style={s.emptyText}>{pick('Conecta uno para empezar a administrar tus controles.', 'Connect one to start managing your controls.')}</Text>
           </View>
         ) : (
           connectedDevices.map((device) => {
@@ -47,7 +53,7 @@ export default function MultiDeviceScreen({ navigation }: Props) {
                   <ProductImage name={device.name} size={42} />
                   <View style={{ flex: 1 }}>
                     <Text style={s.deviceName}>{device.name}</Text>
-                    <Text style={s.deviceStatus}>{active ? 'Activo · recibe los controles' : 'Conectado · listo'}</Text>
+                    <Text style={s.deviceStatus}>{active ? pick('Activo · recibe los controles', 'Active · receiving controls') : pick('Conectado · listo', 'Connected · ready')}</Text>
                   </View>
                   <Text style={s.battery}>{device.battery === undefined ? '—' : `${device.battery}%`}</Text>
                 </View>
@@ -59,7 +65,7 @@ export default function MultiDeviceScreen({ navigation }: Props) {
                     onPress={() => setActiveDevice(device.id)}
                     style={[s.selectButton, active && s.selectButtonActive]}
                   >
-                    <Text style={[s.selectLabel, active && s.selectLabelActive]}>{active ? 'Activo' : 'Usar este'}</Text>
+                    <Text style={[s.selectLabel, active && s.selectLabelActive]}>{active ? pick('Activo', 'Active') : pick('Usar este', 'Use this')}</Text>
                   </Pressable>
                   <Pressable
                     accessibilityRole="button"
@@ -67,7 +73,7 @@ export default function MultiDeviceScreen({ navigation }: Props) {
                     onPress={() => void disconnect(device.id)}
                     style={s.disconnectButton}
                   >
-                    <Text style={s.disconnectLabel}>Desconectar</Text>
+                    <Text style={s.disconnectLabel}>{pick('Desconectar', 'Disconnect')}</Text>
                   </Pressable>
                 </View>
               </View>
@@ -77,12 +83,12 @@ export default function MultiDeviceScreen({ navigation }: Props) {
 
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Conectar otro dispositivo"
+          accessibilityLabel={pick('Conectar otro dispositivo', 'Connect another device')}
           onPress={() => navigation.navigate('Scan')}
           style={s.addCard}
         >
           <Text style={s.addPlus}>+</Text>
-          <Text style={s.addLabel}>Conectar otro dispositivo</Text>
+          <Text style={s.addLabel}>{pick('Conectar otro dispositivo', 'Connect another device')}</Text>
         </Pressable>
 
         <Pressable
@@ -93,13 +99,13 @@ export default function MultiDeviceScreen({ navigation }: Props) {
           style={[s.syncCard, !canSync && s.syncDisabled]}
         >
           <View style={{ flex: 1 }}>
-            <Text style={s.syncTitle}>Sincronizar dispositivos</Text>
+            <Text style={s.syncTitle}>{pick('Sincronizar dispositivos', 'Sync devices')}</Text>
             <Text style={s.syncText}>
               {canSync
                 ? syncEnabled
-                  ? 'Patrones e intensidad se aplicarán a todos.'
-                  : 'Solo responde el dispositivo activo.'
-                : 'Conecta otro dispositivo para habilitarlo.'}
+                  ? pick('Patrones e intensidad se aplicarán a todos.', 'Patterns and intensity will apply to all devices.')
+                  : pick('Solo responde el dispositivo activo.', 'Only the active device responds.')
+                : pick('Conecta otro dispositivo para habilitarlo.', 'Connect another device to enable this option.')}
             </Text>
           </View>
           <View style={[s.switchTrack, syncEnabled && s.switchTrackOn]}>
@@ -110,7 +116,10 @@ export default function MultiDeviceScreen({ navigation }: Props) {
         <View style={s.infoCard}>
           <View style={s.infoDot} />
           <Text style={s.infoText}>
-            Detener siempre detiene todos los dispositivos conectados, incluso si la sincronización está apagada.
+            {pick(
+              'Detener siempre detiene todos los dispositivos conectados, incluso si la sincronización está apagada.',
+              'Stop always stops every connected device, even when synchronization is off.',
+            )}
           </Text>
         </View>
       </ScrollView>
@@ -118,22 +127,22 @@ export default function MultiDeviceScreen({ navigation }: Props) {
       <View style={s.footer}>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Detener todos los dispositivos"
+          accessibilityLabel={pick('Detener todos los dispositivos', 'Stop all devices')}
           disabled={connectedDevices.length === 0}
           onPress={() => void stop()}
           style={[s.stopButton, connectedDevices.length === 0 && s.disabled]}
         >
-          <Text style={s.stopLabel}>Detener todos</Text>
+          <Text style={s.stopLabel}>{pick('Detener todos', 'Stop all')}</Text>
         </Pressable>
-        <Pressable accessibilityRole="button" accessibilityLabel="Abrir control" onPress={() => navigation.goBack()} style={s.openButton}>
-          <Text style={s.openLabel}>Abrir control</Text>
+        <Pressable accessibilityRole="button" accessibilityLabel={pick('Abrir control', 'Open controls')} onPress={() => goBackOr(navigation, 'Dashboard')} style={s.openButton}>
+          <Text style={s.openLabel}>{pick('Abrir control', 'Open controls')}</Text>
         </Pressable>
       </View>
     </SafeAreaView>
   );
 }
 
-const s = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   root: { flex: 1, backgroundColor: palette.bg },
   header: { height: 56, flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingHorizontal: spacing.xl },
   back: { color: palette.ink, fontSize: 28, lineHeight: 28 },

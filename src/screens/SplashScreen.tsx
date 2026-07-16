@@ -9,6 +9,9 @@ import { Logo } from '@/components/Logo';
 import { loadRoomSession, type StoredRoomSession } from '@/features/room/roomIdentity';
 import { currentParticipant, useRoomStore } from '@/state/roomStore';
 import { palette, radii, spacing, typography } from '@/theme/index';
+import { useAdaptiveStyles } from '@/theme/useAdaptiveStyles';
+import { useAppPreferences, useAppTheme } from '@/preferences/AppPreferences';
+import { useTranslation } from '@/i18n/useTranslation';
 
 /**
  * 01 Splash — patrón de referencia para el resto de pantallas.
@@ -18,6 +21,10 @@ import { palette, radii, spacing, typography } from '@/theme/index';
 type Props = NativeStackScreenProps<RootStackParamList, 'Splash'>;
 
 export default function SplashScreen({ navigation }: Props) {
+  const s = useAdaptiveStyles(baseStyles);
+  const theme = useAppTheme();
+  const { language, pick } = useTranslation();
+  const { setLanguagePreference } = useAppPreferences();
   const restoreRoom = useRoomStore((state) => state.restoreRoom);
   const [savedSession, setSavedSession] = useState<StoredRoomSession>();
   const [resumingRoom, setResumingRoom] = useState(false);
@@ -45,8 +52,11 @@ export default function SplashScreen({ navigation }: Props) {
       setSavedSession(remainingSession);
       setResumeError(
         remainingSession
-          ? 'No fue posible volver a la sala. Inténtalo de nuevo en unos segundos.'
-          : 'Esta sala ya no está disponible.',
+          ? pick(
+              'No fue posible volver a la sala. Inténtalo de nuevo en unos segundos.',
+              'The room could not be restored. Try again in a few seconds.',
+            )
+          : pick('Esta sala ya no está disponible.', 'This room is no longer available.'),
       );
       return;
     }
@@ -54,7 +64,7 @@ export default function SplashScreen({ navigation }: Props) {
     const { room, participantId } = useRoomStore.getState();
     const participant = currentParticipant(room, participantId);
     if (!participant) {
-      setResumeError('No fue posible recuperar tu acceso a la sala.');
+      setResumeError(pick('No fue posible recuperar tu acceso a la sala.', 'Your room access could not be restored.'));
       return;
     }
 
@@ -63,12 +73,23 @@ export default function SplashScreen({ navigation }: Props) {
 
   return (
     <SafeAreaView style={s.root}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={pick('Cambiar idioma a inglés', 'Change language to Spanish')}
+        onPress={() => void setLanguagePreference(language === 'es' ? 'en' : 'es')}
+        style={s.languageButton}
+      >
+        <Text style={s.languageLabel}>{language === 'es' ? 'EN' : 'ES'}</Text>
+      </Pressable>
       <View style={s.center}>
-        <Logo width={230} color={palette.accent} />
+        <Logo width={230} color={theme.colors.accent} />
         <View style={s.status}>
-          <Text style={s.statusTitle}>Todo listo para conectar</Text>
+          <Text style={s.statusTitle}>{pick('Todo listo para conectar', 'Ready to connect')}</Text>
           <Text style={s.statusSub}>
-            Mantén pulsado el botón{'\n'}del dispositivo para encenderlo
+            {pick(
+              'Mantén pulsado el botón\ndel dispositivo para encenderlo',
+              'Press and hold the toy button\nto turn it on',
+            )}
           </Text>
         </View>
       </View>
@@ -76,34 +97,53 @@ export default function SplashScreen({ navigation }: Props) {
         {savedSession ? (
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={`Volver a la sala ${savedSession.roomCode}`}
+            accessibilityLabel={pick(`Volver a la sala ${savedSession.roomCode}`, `Return to room ${savedSession.roomCode}`)}
             disabled={resumingRoom}
             style={[s.resume, resumingRoom && s.resumeDisabled]}
             onPress={() => void resumeRoom()}
           >
-            <Text style={s.resumeLabel}>{resumingRoom ? 'Volviendo a tu sala…' : `Volver a la sala ${savedSession.roomCode}`}</Text>
+            <Text style={s.resumeLabel}>
+              {resumingRoom
+                ? pick('Volviendo a tu sala…', 'Returning to your room…')
+                : pick(`Volver a la sala ${savedSession.roomCode}`, `Return to room ${savedSession.roomCode}`)}
+            </Text>
           </Pressable>
         ) : null}
         <Pressable style={s.primary} onPress={() => navigation.navigate('Scan')}>
-          <Text style={s.primaryLabel}>Comenzar juego</Text>
+          <Text style={s.primaryLabel}>{pick('Comenzar juego', 'Start playing')}</Text>
         </Pressable>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Continuar sin juguete y unirse a una sala"
+          accessibilityLabel={pick('Continuar sin juguete y unirse a una sala', 'Continue without a toy and join a room')}
           style={s.secondary}
           onPress={() => navigation.navigate('RoomJoin')}
         >
-          <Text style={s.secondaryLabel}>Continuar sin juguete</Text>
+          <Text style={s.secondaryLabel}>{pick('Continuar sin juguete', 'Continue without a toy')}</Text>
         </Pressable>
         {resumeError ? <Text style={s.resumeError}>{resumeError}</Text> : null}
-        <Text style={s.version}>Versión {appVersion}</Text>
+        <Text style={s.version}>{pick('Versión', 'Version')} {appVersion}</Text>
       </View>
     </SafeAreaView>
   );
 }
 
-const s = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   root: { flex: 1, backgroundColor: palette.bg, paddingHorizontal: spacing.xxl },
+  languageButton: {
+    position: 'absolute',
+    zIndex: 2,
+    top: spacing.lg,
+    right: spacing.xxl,
+    minWidth: 48,
+    minHeight: 40,
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: palette.borderStrong,
+    backgroundColor: palette.card,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  languageLabel: { ...typography.label, color: palette.ink, fontWeight: '800' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 56 },
   status: { alignItems: 'center', gap: 10 },
   statusTitle: { ...typography.label, fontSize: 15, fontWeight: '700', color: palette.ink },

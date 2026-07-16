@@ -5,9 +5,14 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Audio } from 'expo-av';
 
 import { meteringToPercent, soundToIntensity } from '@/features/audio/metering';
+import { BackButton } from '@/components/BackButton';
+import { MotorSelector } from '@/components/MotorSelector';
+import { goBackOr } from '@/navigation/back';
 import type { RootStackParamList } from '@/navigation/routes';
 import { useBleStore } from '@/state/bleStore';
 import { palette, radii, spacing, typography } from '@/theme/index';
+import { useAdaptiveStyles } from '@/theme/useAdaptiveStyles';
+import { useTranslation } from '@/i18n/useTranslation';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SoundControl'>;
 
@@ -19,9 +24,14 @@ const RECORDER_OPTIONS = {
 const RELEASE_DELAY_MS = 700;
 
 export default function SoundControlScreen({ navigation }: Props) {
+  const s = useAdaptiveStyles(baseStyles);
+  const { pick, error: translateError } = useTranslation();
   const connectionState = useBleStore((state) => state.connectionState);
   const setIntensity = useBleStore((state) => state.setIntensity);
   const stop = useBleStore((state) => state.stop);
+  const channelCount = useBleStore((state) => state.device?.channelCount ?? 1);
+  const motorTarget = useBleStore((state) => state.motorTarget);
+  const setMotorTarget = useBleStore((state) => state.setMotorTarget);
   const connected = connectionState === 'connected';
   const [sensitivity, setSensitivity] = useState(65);
   const [listening, setListening] = useState(false);
@@ -88,7 +98,7 @@ export default function SoundControlScreen({ navigation }: Props) {
     setError(undefined);
     const permission = await Audio.requestPermissionsAsync();
     if (!permission.granted) {
-      setError('Necesitamos permiso de micrófono para medir el sonido.');
+      setError(pick('Necesitamos permiso de micrófono para medir el sonido.', 'Microphone permission is required to measure sound.'));
       return false;
     }
     try {
@@ -107,7 +117,7 @@ export default function SoundControlScreen({ navigation }: Props) {
       setListening(true);
       return true;
     } catch {
-      setError('No fue posible iniciar el medidor de sonido.');
+      setError(pick('No fue posible iniciar el medidor de sonido.', 'The sound meter could not be started.'));
       return false;
     }
   };
@@ -136,7 +146,7 @@ export default function SoundControlScreen({ navigation }: Props) {
       return;
     }
     if (!connected) {
-      setError('Conecta un dispositivo antes de activar la respuesta.');
+      setError(pick('Conecta un dispositivo antes de activar la respuesta.', 'Connect a device before enabling sound response.'));
       return;
     }
     if (!listening && !(await startListening())) return;
@@ -147,44 +157,45 @@ export default function SoundControlScreen({ navigation }: Props) {
   return (
     <SafeAreaView style={s.root} edges={['top']}>
       <View style={s.header}>
-        <Pressable accessibilityRole="button" accessibilityLabel="Volver" onPress={() => navigation.goBack()}>
-          <Text style={s.back}>‹</Text>
-        </Pressable>
-        <Text style={s.title}>Control por sonido</Text>
+        <BackButton onPress={() => goBackOr(navigation, 'Dashboard')} />
+        <Text style={s.title}>{pick('Control por sonido', 'Sound control')}</Text>
       </View>
       <View style={s.content}>
         <View style={s.meterCard}>
           <Text style={s.meterValue}>{level}</Text>
-          <Text style={s.meterLabel}>{listening ? 'Nivel de sonido' : 'Micrófono inactivo'}</Text>
+          <Text style={s.meterLabel}>{listening ? pick('Nivel de sonido', 'Sound level') : pick('Micrófono inactivo', 'Microphone inactive')}</Text>
           <View style={s.meterTrack}><View style={[s.meterFill, { width: `${level}%` }]} /></View>
         </View>
         <View style={s.section}>
-          <Text style={s.sectionTitle}>Sensibilidad</Text>
-          <Text style={s.sectionText}>Los sonidos más suaves activan una sensibilidad más alta.</Text>
+          <Text style={s.sectionTitle}>{pick('Sensibilidad', 'Sensitivity')}</Text>
+          <Text style={s.sectionText}>{pick('Los sonidos más suaves activan una sensibilidad más alta.', 'Higher sensitivity reacts to softer sounds.')}</Text>
           <View style={s.options}>
             {[35, 65, 90].map((value) => (
               <Pressable key={value} onPress={() => setSensitivity(value)} style={[s.option, sensitivity === value && s.optionActive]}>
-                <Text style={[s.optionLabel, sensitivity === value && s.optionLabelActive]}>{value === 35 ? 'Suave' : value === 65 ? 'Media' : 'Alta'}</Text>
+                <Text style={[s.optionLabel, sensitivity === value && s.optionLabelActive]}>
+                  {value === 35 ? pick('Suave', 'Low') : value === 65 ? pick('Media', 'Medium') : pick('Alta', 'High')}
+                </Text>
               </Pressable>
             ))}
           </View>
         </View>
         <View style={s.previewCard}>
-          <Text style={s.previewTitle}>Respuesta prevista</Text>
+          <Text style={s.previewTitle}>{pick('Respuesta prevista', 'Expected response')}</Text>
           <Text style={s.previewValue}>{targetIntensity}%</Text>
         </View>
-        <Text style={s.privacy}>El nivel se procesa localmente. El audio no se envía a ningún servidor.</Text>
-        {error ? <Text style={s.error}>{error}</Text> : null}
+        <MotorSelector channelCount={channelCount} target={motorTarget} onChange={setMotorTarget} />
+        <Text style={s.privacy}>{pick('El nivel se procesa localmente. El audio no se envía a ningún servidor.', 'The level is processed locally. Audio is never sent to a server.')}</Text>
+        {error ? <Text style={s.error}>{translateError(error)}</Text> : null}
       </View>
       <View style={s.footer}>
         <Pressable onPress={() => void toggleResponse()} style={[s.primaryButton, responding && s.stopButton]}>
-          <Text style={s.primaryLabel}>{responding ? 'Detener' : 'Activar control por sonido'}</Text>
+          <Text style={s.primaryLabel}>{responding ? pick('Detener', 'Stop') : pick('Activar control por sonido', 'Enable sound control')}</Text>
         </Pressable>
       </View>
     </SafeAreaView>
   );
 }
 
-const s = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   root: { flex: 1, backgroundColor: palette.bg }, header: { height: 56, flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingHorizontal: spacing.xl }, back: { color: palette.ink, fontSize: 28 }, title: { ...typography.section, color: palette.ink }, content: { flex: 1, padding: spacing.xl, gap: spacing.xl }, meterCard: { alignItems: 'center', backgroundColor: palette.card, borderWidth: 1, borderColor: palette.border, borderRadius: radii.cardLg, padding: spacing.xxl, gap: spacing.sm }, meterValue: { fontSize: 52, fontWeight: '800', color: palette.ink }, meterLabel: { ...typography.small, color: palette.textSecondary }, meterTrack: { width: '100%', height: 8, backgroundColor: palette.tint, borderRadius: radii.pill, overflow: 'hidden', marginTop: spacing.md }, meterFill: { height: '100%', backgroundColor: palette.accent, borderRadius: radii.pill }, section: { gap: spacing.sm }, sectionTitle: { ...typography.label, color: palette.ink, fontWeight: '700' }, sectionText: { ...typography.small, color: palette.textSecondary }, options: { flexDirection: 'row', gap: spacing.sm }, option: { flex: 1, minHeight: 44, alignItems: 'center', justifyContent: 'center', borderRadius: radii.lg, borderWidth: 1, borderColor: palette.borderStrong, backgroundColor: palette.card }, optionActive: { borderColor: palette.accent, borderWidth: 1.5 }, optionLabel: { ...typography.small, color: palette.textSecondary, fontWeight: '600' }, optionLabelActive: { color: palette.accent }, previewCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: palette.tint2, borderRadius: radii.card, padding: spacing.lg }, previewTitle: { ...typography.label, color: palette.ink }, previewValue: { fontSize: 24, fontWeight: '800', color: palette.accent }, privacy: { ...typography.small, color: palette.textMuted, lineHeight: 18 }, error: { ...typography.small, color: palette.danger }, footer: { padding: spacing.xl, borderTopWidth: 1, borderColor: palette.border }, primaryButton: { minHeight: 54, alignItems: 'center', justifyContent: 'center', borderRadius: radii.lg, backgroundColor: palette.primary }, stopButton: { backgroundColor: palette.tint }, primaryLabel: { ...typography.label, color: palette.ink, fontWeight: '700' },
 });

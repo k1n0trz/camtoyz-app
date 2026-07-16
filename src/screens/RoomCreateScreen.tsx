@@ -4,14 +4,19 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { PrimaryButton, PrivacyCard, RoomHeader, RoomStatus } from '@/components/RoomUi';
+import { goBackOr } from '@/navigation/back';
 import type { RootStackParamList } from '@/navigation/routes';
 import { currentParticipant, useRoomStore } from '@/state/roomStore';
 import { palette, radii, spacing, typography } from '@/theme/index';
+import { useAdaptiveStyles } from '@/theme/useAdaptiveStyles';
+import { useTranslation } from '@/i18n/useTranslation';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'RoomCreate'>;
 
 export default function RoomCreateScreen({ navigation }: Props) {
-  const [name, setName] = useState('Anfitrión');
+  const s = useAdaptiveStyles(baseStyles);
+  const { pick, error: translateError } = useTranslation();
+  const [name, setName] = useState('');
   const [busy, setBusy] = useState(false);
   const room = useRoomStore((state) => state.room);
   const participantId = useRoomStore((state) => state.participantId);
@@ -30,7 +35,7 @@ export default function RoomCreateScreen({ navigation }: Props) {
 
   const create = async () => {
     setBusy(true);
-    const ok = await createRoom(name.trim() || 'Anfitrión');
+    const ok = await createRoom(name.trim() || pick('Anfitrión', 'Host'));
     setBusy(false);
     if (ok) navigation.replace('RoomHostPanel');
   };
@@ -38,31 +43,36 @@ export default function RoomCreateScreen({ navigation }: Props) {
   if (room) {
     return (
       <SafeAreaView style={s.root} edges={['top', 'bottom']}>
-        <RoomHeader title="Crear sala" badge="ANFITRIÓN" onBack={() => navigation.goBack()} />
+        <RoomHeader title={pick('Crear sala', 'Create room')} badge="ANFITRIÓN" onBack={() => goBackOr(navigation, 'Splash')} />
         <View style={s.created}>
-          <Text style={s.eyebrow}>CÓDIGO DE INVITACIÓN</Text>
+          <Text style={s.eyebrow}>{pick('CÓDIGO DE INVITACIÓN', 'INVITATION CODE')}</Text>
           <Text selectable style={s.code}>{room.code}</Text>
-          <RoomStatus>{room.participants.length} participante{room.participants.length === 1 ? '' : 's'}</RoomStatus>
+          <RoomStatus>
+            {pick(
+              `${room.participants.length} participante${room.participants.length === 1 ? '' : 's'}`,
+              `${room.participants.length} participant${room.participants.length === 1 ? '' : 's'}`,
+            )}
+          </RoomStatus>
           <PrivacyCard />
         </View>
-        <View style={s.footer}><PrimaryButton label="Abrir panel de la sala" onPress={() => navigation.replace('RoomHostPanel')} /></View>
+        <View style={s.footer}><PrimaryButton label={pick('Abrir panel de la sala', 'Open room panel')} onPress={() => navigation.replace('RoomHostPanel')} /></View>
       </SafeAreaView>
     );
   }
 
   return (
     <SafeAreaView style={s.root} edges={['top', 'bottom']}>
-      <RoomHeader title="Interacción remota" onBack={() => navigation.goBack()} />
+      <RoomHeader title={pick('Interacción remota', 'Remote interaction')} onBack={() => goBackOr(navigation, 'Dashboard')} />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">
           <View>
-            <Text style={s.heading}>Crea una sala privada</Text>
-            <Text style={s.copy}>Comparte el código con la persona que participará. Tú decides quién entra y cuándo termina.</Text>
+            <Text style={s.heading}>{pick('Crea una sala privada', 'Create a private room')}</Text>
+            <Text style={s.copy}>{pick('Comparte el código con la persona que participará. Tú decides quién entra y cuándo termina.', 'Share the code with the other person. You decide who enters and when the room ends.')}</Text>
           </View>
           <View>
-            <Text style={s.label}>Tu nombre en la sala</Text>
+            <Text style={s.label}>{pick('Tu nombre en la sala', 'Your name in the room')}</Text>
             <TextInput
-              accessibilityLabel="Nombre en la sala"
+              accessibilityLabel={pick('Nombre en la sala', 'Room display name')}
               autoCapitalize="words"
               maxLength={32}
               onChangeText={setName}
@@ -71,16 +81,16 @@ export default function RoomCreateScreen({ navigation }: Props) {
             />
           </View>
           <PrivacyCard />
-          {error ? <Text style={s.error}>{error}</Text> : null}
-          <PrimaryButton label="Crear sala" loading={busy} onPress={() => void create()} />
-          <PrimaryButton label="Tengo un código" outline onPress={() => navigation.replace('RoomJoin')} />
+          {error ? <Text style={s.error}>{translateError(error)}</Text> : null}
+          <PrimaryButton label={pick('Crear sala', 'Create room')} loading={busy} onPress={() => void create()} />
+          <PrimaryButton label={pick('Tengo un código', 'I have a code')} outline onPress={() => navigation.navigate('RoomJoin')} />
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
-const s = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   root: { flex: 1, backgroundColor: palette.bg },
   content: { padding: spacing.xxl, gap: spacing.xl },
   created: { flex: 1, padding: spacing.xxl, alignItems: 'center', justifyContent: 'center', gap: spacing.xxl },

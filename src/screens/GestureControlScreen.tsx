@@ -6,18 +6,28 @@ import Animated, { runOnJS, useAnimatedStyle, useSharedValue } from 'react-nativ
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { GESTURE_THROTTLE_MS, clampIntensity, intensityFromY } from '@/features/gesture/intensity';
+import { BackButton } from '@/components/BackButton';
+import { MotorSelector } from '@/components/MotorSelector';
+import { goBackOr } from '@/navigation/back';
 import type { RootStackParamList } from '@/navigation/routes';
 import { useBleStore } from '@/state/bleStore';
 import { palette, radii, spacing, typography } from '@/theme/index';
+import { useAdaptiveStyles } from '@/theme/useAdaptiveStyles';
+import { useTranslation } from '@/i18n/useTranslation';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'GestureControl'>;
 
 export default function GestureControlScreen({ navigation }: Props) {
+  const s = useAdaptiveStyles(baseStyles);
+  const { pick, error: translateError } = useTranslation();
   const connectionState = useBleStore((state) => state.connectionState);
   const commandBusy = useBleStore((state) => state.commandBusy);
   const commandError = useBleStore((state) => state.error);
   const setIntensity = useBleStore((state) => state.setIntensity);
   const stop = useBleStore((state) => state.stop);
+  const channelCount = useBleStore((state) => state.device?.channelCount ?? 1);
+  const motorTarget = useBleStore((state) => state.motorTarget);
+  const setMotorTarget = useBleStore((state) => state.setMotorTarget);
   const connected = connectionState === 'connected';
   const [intensity, setIntensityLabel] = useState(0);
   const [frozen, setFrozen] = useState(false);
@@ -149,10 +159,8 @@ export default function GestureControlScreen({ navigation }: Props) {
   return (
     <SafeAreaView style={s.root} edges={['top']}>
       <View style={s.header}>
-        <Pressable accessibilityRole="button" accessibilityLabel="Volver" onPress={() => navigation.goBack()}>
-          <Text style={s.back}>‹</Text>
-        </Pressable>
-        <Text style={s.title}>Control por gesto</Text>
+        <BackButton onPress={() => goBackOr(navigation, 'Dashboard')} />
+        <Text style={s.title}>{pick('Control por gesto', 'Gesture control')}</Text>
         <View style={{ flex: 1 }} />
         <View style={s.levelBadge}>
           <Text style={s.levelNumber}>{intensity}</Text>
@@ -161,52 +169,59 @@ export default function GestureControlScreen({ navigation }: Props) {
 
       <GestureDetector gesture={gesture}>
         <View
-          accessibilityLabel="Pad de intensidad"
-          accessibilityHint="Desliza hacia arriba para aumentar la intensidad"
+          accessibilityLabel={pick('Pad de intensidad', 'Intensity pad')}
+          accessibilityHint={pick('Desliza hacia arriba para aumentar la intensidad', 'Swipe up to increase intensity')}
           onLayout={onPadLayout}
           style={[s.pad, (!connected || frozen) && s.padInactive]}
         >
           <Text style={s.padHint}>
-            {frozen ? 'Nivel congelado' : connected ? 'Desliza para controlar la intensidad' : 'Conecta un dispositivo para controlar'}
+            {frozen
+              ? pick('Nivel congelado', 'Level locked')
+              : connected
+                ? pick('Desliza para controlar la intensidad', 'Swipe to control intensity')
+                : pick('Conecta un dispositivo para controlar', 'Connect a device to begin')}
           </Text>
           <Animated.View style={[s.cursor, cursorStyle]} />
           <View style={s.scale}>
-            <Text style={s.scaleLabel}>SUAVE</Text>
+            <Text style={s.scaleLabel}>{pick('SUAVE', 'LOW')}</Text>
             <View style={s.scaleTrack}>
               <View style={[s.scaleFill, { width: `${intensity}%` }]} />
             </View>
-            <Text style={s.scaleLabel}>FUERTE</Text>
+            <Text style={s.scaleLabel}>{pick('FUERTE', 'HIGH')}</Text>
           </View>
         </View>
       </GestureDetector>
 
-      {commandError ? <Text style={s.error}>{commandError}</Text> : null}
+      {commandError ? <Text style={s.error}>{translateError(commandError)}</Text> : null}
+      <View style={{ paddingHorizontal: spacing.xl }}>
+        <MotorSelector channelCount={channelCount} target={motorTarget} onChange={setMotorTarget} />
+      </View>
 
       <View style={s.footer}>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={frozen ? 'Reanudar control' : 'Congelar nivel'}
+          accessibilityLabel={frozen ? pick('Reanudar control', 'Resume control') : pick('Congelar nivel', 'Lock level')}
           disabled={!connected || commandBusy}
           onPress={handleFreeze}
           style={[s.freezeButton, (!connected || commandBusy) && s.disabled]}
         >
-          <Text style={s.freezeLabel}>{frozen ? 'Reanudar control' : 'Congelar nivel'}</Text>
+          <Text style={s.freezeLabel}>{frozen ? pick('Reanudar control', 'Resume control') : pick('Congelar nivel', 'Lock level')}</Text>
         </Pressable>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Detener vibración"
+          accessibilityLabel={pick('Detener vibración', 'Stop vibration')}
           disabled={!connected}
           onPress={() => void handleStop()}
           style={[s.stopButton, !connected && s.disabled]}
         >
-          <Text style={s.stopLabel}>Detener</Text>
+          <Text style={s.stopLabel}>{pick('Detener', 'Stop')}</Text>
         </Pressable>
       </View>
     </SafeAreaView>
   );
 }
 
-const s = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   root: { flex: 1, backgroundColor: palette.bg },
   header: { height: 56, flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingHorizontal: spacing.xl },
   back: { color: palette.ink, fontSize: 28, lineHeight: 28 },

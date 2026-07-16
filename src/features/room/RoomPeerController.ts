@@ -42,6 +42,7 @@ export interface RoomPeerSnapshot {
   isVideoStarting: boolean;
   mediaError?: string;
   remoteControlAllowed: boolean;
+  remoteChannelCount: number;
 }
 
 type SignalSender = (targetParticipantId: string, signal: PeerSignalPayload) => Promise<void>;
@@ -70,6 +71,12 @@ function controlCommand(value: unknown): RoomControlCommand | undefined {
   if (command.version !== 1 || !Number.isSafeInteger(command.sequence) || typeof command.sentAt !== 'number') return undefined;
   if (Math.abs(Date.now() - command.sentAt) > MAX_COMMAND_AGE_MS) return undefined;
   if (command.type === 'stop') return command as RoomControlCommand;
+  const target = 'target' in command ? command.target : undefined;
+  if (
+    target !== undefined &&
+    target !== 'all' &&
+    (!Number.isInteger(target) || Number(target) < 0 || Number(target) > 7)
+  ) return undefined;
   if (command.type === 'pattern' && Number.isInteger(command.value) && Number(command.value) >= 1 && Number(command.value) <= 64) return command as RoomControlCommand;
   if (command.type === 'intensity' && typeof command.value === 'number' && Number.isFinite(command.value) && command.value >= 0 && command.value <= 100) return command as RoomControlCommand;
   return undefined;
@@ -79,6 +86,10 @@ function controlPermission(value: unknown): RoomControlPermission | undefined {
   if (!value || typeof value !== 'object') return undefined;
   const permission = value as Partial<RoomControlPermission>;
   if (permission.version !== 1 || permission.type !== 'control-permission' || typeof permission.allowed !== 'boolean') return undefined;
+  if (
+    permission.channelCount !== undefined &&
+    (!Number.isInteger(permission.channelCount) || permission.channelCount < 1 || permission.channelCount > 8)
+  ) return undefined;
   return permission as RoomControlPermission;
 }
 
@@ -94,7 +105,7 @@ export class RoomPeerController {
   private localStream?: MediaStream;
   private sequence = 0;
   private lastIntensityAt = 0;
-  private pendingIntensity?: number;
+  private pendingIntensity?: { value: number; target?: 'all' | number };
   private intensityTimer?: ReturnType<typeof setTimeout>;
   private state: RoomPeerSnapshot = {
     connectedPeers: 0,
@@ -103,12 +114,14 @@ export class RoomPeerController {
     microphoneEnabled: false,
     isVideoStarting: false,
     remoteControlAllowed: false,
+    remoteChannelCount: 1,
   };
 
   constructor(
     private readonly sendSignal: SignalSender,
     private readonly receiveCommand: CommandReceiver,
     private readonly safeStop: () => Promise<void>,
+    private readonly getLocalChannelCount: () => number,
   ) {}
 
   get snapshot(): RoomPeerSnapshot {
@@ -138,7 +151,7 @@ export class RoomPeerController {
     if (this.sessionKey !== nextSessionKey) {
       this.sessionKey = nextSessionKey;
       this.remoteControlAllowed = false;
-      this.update({ remoteControlAllowed: false });
+      this.update({ remoteControlAllowed: false, remoteChannelCount: 1 });
     }
     this.acceptsCommands = me?.role === 'host';
 
@@ -202,21 +215,21 @@ export class RoomPeerController {
     }
   }
 
-  async sendPattern(pattern: number): Promise<void> {
-    return this.send({ version: 1, sequence: ++this.sequence, sentAt: Date.now(), type: 'pattern', value: pattern });
+  async sendPattern(pattern: number, target?: 'all' | number): Promise<void> {
+    return this.send({ version: 1, sequence: ++this.sequence, sentAt: Date.now(), type: 'pattern', value: pattern, target });
   }
 
-  async sendIntensity(value: number): Promise<void> {
+  async sendIntensity(value: number, target?: 'all' | number): Promise<void> {
     const now = Date.now();
     const rounded = Math.round(value);
-    if (now - this.lastIntensityAt >= 40) return this.sendIntensityNow(rounded);
-    this.pendingIntensity = rounded;
+    if (now - this.lastIntensityAt >= 40) return this.sendIntensityNow(rounded, target);
+    this.pendingIntensity = { value: rounded, target };
     if (!this.intensityTimer) {
       this.intensityTimer = setTimeout(() => {
         this.intensityTimer = undefined;
         const pending = this.pendingIntensity;
         this.pendingIntensity = undefined;
-        if (pending !== undefined) void this.sendIntensityNow(pending);
+        if (pending !== undefined) void this.sendIntensityNow(pending.value, pending.target);
       }, 40 - (now - this.lastIntensityAt));
     }
   }
@@ -238,9 +251,13 @@ export class RoomPeerController {
 
   async emergencyStop(): Promise<void> {
     this.remoteControlAllowed = false;
-    this.update({ remoteControlAllowed: false });
+    this.update({ remoteControlAllowed: false, remoteChannelCount: 1 });
     if (this.acceptsCommands) this.broadcastPermission();
     await this.safeStop();
+  }
+
+  refreshLocalCapabilities(): void {
+    if (this.acceptsCommands) this.broadcastPermission();
   }
 
   async suspendForSafety(): Promise<void> {
@@ -346,9 +363,9 @@ export class RoomPeerController {
     }
   }
 
-  private async sendIntensityNow(value: number): Promise<void> {
+  private async sendIntensityNow(value: number, target?: 'all' | number): Promise<void> {
     this.lastIntensityAt = Date.now();
-    return this.send({ version: 1, sequence: ++this.sequence, sentAt: Date.now(), type: 'intensity', value });
+    return this.send({ version: 1, sequence: ++this.sequence, sentAt: Date.now(), type: 'intensity', value, target });
   }
 
   private async send(command: RoomControlCommand): Promise<void> {
@@ -359,7 +376,12 @@ export class RoomPeerController {
   }
 
   private broadcastPermission(): void {
-    const payload = JSON.stringify({ version: 1, type: 'control-permission', allowed: this.remoteControlAllowed } satisfies RoomControlPermission);
+    const payload = JSON.stringify({
+      version: 1,
+      type: 'control-permission',
+      allowed: this.remoteControlAllowed,
+      channelCount: Math.max(1, this.getLocalChannelCount()),
+    } satisfies RoomControlPermission);
     for (const entry of this.peers.values()) {
       if (entry.channel?.readyState === 'open') entry.channel.send(payload);
     }
@@ -435,7 +457,10 @@ export class RoomPeerController {
         if (permission) {
           if (!this.acceptsCommands) {
             this.remoteControlAllowed = permission.allowed;
-            this.update({ remoteControlAllowed: permission.allowed });
+            this.update({
+              remoteControlAllowed: permission.allowed,
+              remoteChannelCount: permission.channelCount ?? 1,
+            });
           }
           return;
         }
@@ -491,7 +516,7 @@ export class RoomPeerController {
     }
     this.peers.clear();
     this.remoteControlAllowed = false;
-    this.update({ remoteControlAllowed: false });
+    this.update({ remoteControlAllowed: false, remoteChannelCount: 1 });
     if (stop) await this.safeStop();
     this.notify();
   }
@@ -506,7 +531,7 @@ export class RoomPeerController {
 
   private revokeForDisconnect(): void {
     this.remoteControlAllowed = false;
-    this.update({ remoteControlAllowed: false });
+    this.update({ remoteControlAllowed: false, remoteChannelCount: 1 });
     void this.safeStop();
   }
 }

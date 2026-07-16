@@ -1,6 +1,7 @@
 import { Image, StyleSheet, View, type ImageSourcePropType } from 'react-native';
 
-import { palette, radii } from '@/theme/index';
+import { useAppTheme } from '@/preferences/AppPreferences';
+import { radii } from '@/theme/index';
 
 interface Props {
   name?: string;
@@ -25,19 +26,31 @@ function sourceFor(name?: string): ImageSourcePropType | undefined {
 
 /** Imagen comercial cuando existe; los modelos sin arte aprobado conservan un ícono neutro. */
 export function ProductImage({ name, size = 44 }: Props) {
+  const theme = useAppTheme();
   const source = sourceFor(name);
   if (source) {
     return <Image accessibilityLabel={name} source={source} resizeMode="contain" style={{ width: size, height: size, borderRadius: size / 2 }} />;
   }
 
   return (
-    <View style={[s.fallback, { width: size, height: size, borderRadius: Math.min(radii.md, size / 2) }]}>
-      <View style={[s.fallbackMark, { width: Math.round(size * 0.27), height: Math.round(size * 0.5), borderRadius: size / 4 }]} />
+    <View style={[s.fallback, {
+      width: size,
+      height: size,
+      borderRadius: Math.min(radii.md, size / 2),
+      backgroundColor: theme.colors.tint,
+      borderColor: theme.colors.border,
+    }]}>
+      <View style={[s.fallbackMark, {
+        width: Math.round(size * 0.27),
+        height: Math.round(size * 0.5),
+        borderRadius: size / 4,
+        borderColor: theme.colors.ink,
+      }]} />
     </View>
   );
 }
 
 const s = StyleSheet.create({
-  fallback: { backgroundColor: palette.tint, borderWidth: 1, borderColor: palette.border, alignItems: 'center', justifyContent: 'center' },
-  fallbackMark: { borderWidth: 2, borderColor: palette.ink },
+  fallback: { borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  fallbackMark: { borderWidth: 2 },
 });

@@ -1,18 +1,30 @@
 import { useEffect } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import * as Clipboard from 'expo-clipboard';
 import { RTCView } from 'react-native-webrtc';
 
-import { PrimaryButton, PrivacyCard, RemoteControlSafetyCard, RoomHeader, RoomStatus } from '@/components/RoomUi';
+import { BackButton } from '@/components/BackButton';
+import {
+  PrimaryButton,
+  RemoteControlSafetyCard,
+  RoomStatus,
+} from '@/components/RoomUi';
 import { RoomVibrationControls } from '@/components/RoomVibrationControls';
+import { useTranslation } from '@/i18n/useTranslation';
+import { goBackOr } from '@/navigation/back';
 import type { RootStackParamList } from '@/navigation/routes';
+import { useBleStore } from '@/state/bleStore';
 import { currentParticipant, useRoomStore } from '@/state/roomStore';
-import { palette, radii, spacing, typography } from '@/theme/index';
+import type { AppTheme } from '@/theme/index';
+import { useThemedStyles } from '@/theme/useThemedStyles';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'RoomCamera'>;
 
 export default function RoomCameraScreen({ navigation }: Props) {
+  const s = useThemedStyles(createStyles);
+  const { t, pick, error: translateError } = useTranslation();
   const room = useRoomStore((state) => state.room);
   const participantId = useRoomStore((state) => state.participantId);
   const connectionState = useRoomStore((state) => state.connectionState);
@@ -32,6 +44,7 @@ export default function RoomCameraScreen({ navigation }: Props) {
   const sendIntensity = useRoomStore((state) => state.sendIntensity);
   const sendStop = useRoomStore((state) => state.sendStop);
   const remoteControlAllowed = useRoomStore((state) => state.remoteControlAllowed);
+  const remoteChannelCount = useRoomStore((state) => state.remoteChannelCount);
   const setRemoteControlAllowed = useRoomStore((state) => state.setRemoteControlAllowed);
   const emergencyStop = useRoomStore((state) => state.emergencyStop);
   const startVideo = useRoomStore((state) => state.startVideo);
@@ -39,6 +52,7 @@ export default function RoomCameraScreen({ navigation }: Props) {
   const toggleCamera = useRoomStore((state) => state.toggleCamera);
   const toggleMicrophone = useRoomStore((state) => state.toggleMicrophone);
   const switchCamera = useRoomStore((state) => state.switchCamera);
+  const localChannelCount = useBleStore((state) => state.device?.channelCount ?? 1);
   const me = currentParticipant(room, participantId);
 
   useEffect(() => {
@@ -54,139 +68,299 @@ export default function RoomCameraScreen({ navigation }: Props) {
   }, [stopVideo]);
 
   const close = () => {
-    void stopVideo().finally(() => navigation.goBack());
+    void stopVideo().finally(() => {
+      goBackOr(navigation, me?.role === 'host' ? 'RoomHostPanel' : 'RoomMemberSession');
+    });
+  };
+
+  const copyCode = async () => {
+    if (!room) return;
+    await Clipboard.setStringAsync(room.code);
+    Alert.alert(t('room.codeCopied'), room.code);
   };
 
   const status = connectionState === 'reconnecting'
-    ? 'Reconectando la sala…'
+    ? t('room.videoConnecting')
     : remoteStream
-      ? 'Video directo conectado'
+      ? t('room.videoConnected')
       : totalPeers > 0
-        ? 'Esperando el video de la otra persona…'
-        : 'Esperando a que se una alguien…';
+        ? t('room.videoConnecting')
+        : t('common.loading');
 
   return (
     <SafeAreaView style={s.root} edges={['top', 'bottom']}>
-      <RoomHeader
-        title={room ? `Sala · ${room.code}` : 'Sala'}
-        badge={me?.role === 'host' ? 'ANFITRIÓN' : 'MIEMBRO'}
-        onBack={close}
-      />
-      <ScrollView contentContainerStyle={s.content}>
-        <RoomStatus>{status}</RoomStatus>
-        <View style={s.stage}>
-          {remoteStream ? (
-            <RTCView streamURL={remoteStream.toURL()} style={s.remoteVideo} objectFit="cover" zOrder={0} />
-          ) : (
-            <View style={s.waitingRemote}>
-              <Text style={s.waitingTitle}>{totalPeers ? 'Esperando video' : 'Sala privada'}</Text>
-              <Text style={s.waitingCopy}>
-                {totalPeers
-                  ? 'La otra persona puede activar su cámara cuando quiera.'
-                  : 'Comparte el código de la sala para iniciar una videollamada privada.'}
-              </Text>
-            </View>
-          )}
-          {localStream ? (
-            <View style={s.localPreview}>
-              <RTCView streamURL={localStream.toURL()} style={s.localVideo} objectFit="cover" mirror zOrder={1} />
-              {!cameraEnabled ? <View style={s.cameraOff}><Text style={s.cameraOffText}>Cámara apagada</Text></View> : null}
-            </View>
-          ) : null}
-        </View>
-
-        {!localStream ? (
-          <View style={s.startCard}>
-            <Text style={s.startTitle}>Activa tu cámara cuando quieras</Text>
-            <Text style={s.startCopy}>Tu cámara y micrófono solo se comparten dentro de esta sala privada.</Text>
-            <PrimaryButton label="Activar cámara" loading={isVideoStarting} onPress={() => void startVideo()} />
-          </View>
+      <View style={s.stage}>
+        {remoteStream ? (
+          <RTCView streamURL={remoteStream.toURL()} style={s.remoteVideo} objectFit="cover" zOrder={0} />
         ) : (
-          <View style={s.controls}>
-            <Pressable accessibilityRole="button" onPress={toggleMicrophone} style={[s.control, !microphoneEnabled && s.controlOff]}>
-              <Text style={s.controlIcon}>{microphoneEnabled ? '●' : '×'}</Text>
-              <Text style={s.controlLabel}>{microphoneEnabled ? 'Silenciar' : 'Micrófono'}</Text>
-            </Pressable>
-            <Pressable accessibilityRole="button" onPress={toggleCamera} style={[s.control, !cameraEnabled && s.controlOff]}>
-              <Text style={s.controlIcon}>{cameraEnabled ? '●' : '×'}</Text>
-              <Text style={s.controlLabel}>{cameraEnabled ? 'Apagar cámara' : 'Encender cámara'}</Text>
-            </Pressable>
-            <Pressable accessibilityRole="button" onPress={switchCamera} style={s.control}>
-              <Text style={s.controlIcon}>↻</Text>
-              <Text style={s.controlLabel}>Cambiar</Text>
-            </Pressable>
+          <View style={s.waitingRemote}>
+            <Text style={s.waitingTitle}>{totalPeers ? pick('Esperando video', 'Waiting for video') : pick('Sala privada', 'Private room')}</Text>
+            <Text style={s.waitingCopy}>
+              {totalPeers
+                ? pick('La otra persona puede activar su cámara cuando quiera.', 'The other person can enable their camera at any time.')
+                : pick('Comparte el código para iniciar una videollamada privada.', 'Share the code to start a private video call.')}
+            </Text>
           </View>
         )}
 
-        {me?.role === 'member' ? (
-          <>
-            {!remoteControlAllowed ? <Text style={s.permissionNotice}>La otra persona todavía no ha permitido el control remoto.</Text> : null}
+        <View style={s.topOverlay}>
+          <BackButton onPress={close} inverted style={s.back} />
+          <Pressable
+            accessibilityRole={me?.role === 'host' ? 'button' : undefined}
+            accessibilityLabel={me?.role === 'host' ? t('room.copyCode') : undefined}
+            disabled={me?.role !== 'host'}
+            onPress={() => void copyCode()}
+            style={s.roomPill}
+          >
+            <Text style={s.roomTitle}>{room ? `${pick('Sala', 'Room')} · ${room.code}` : pick('Sala', 'Room')}</Text>
+            {me?.role === 'host' ? <Text style={s.copyHint}>{t('room.copyCode')}</Text> : null}
+          </Pressable>
+          <Text style={[s.badge, me?.role === 'member' && s.memberBadge]}>
+            {me?.role === 'host' ? t('common.host') : t('common.member')}
+          </Text>
+        </View>
+
+        <View style={s.statusOverlay}><RoomStatus inverted>{status}</RoomStatus></View>
+
+        {localStream ? (
+          <View style={s.localPreview}>
+            <RTCView
+              streamURL={localStream.toURL()}
+              style={s.localVideo}
+              objectFit="cover"
+              mirror
+              zOrder={2}
+            />
+            {!cameraEnabled ? (
+              <View style={s.cameraOff}>
+                <Text style={s.cameraOffText}>{t('room.cameraOff')}</Text>
+              </View>
+            ) : null}
+          </View>
+        ) : (
+          <View style={s.startCard}>
+            <Text style={s.startTitle}>{t('room.startVideo')}</Text>
+            <PrimaryButton
+              label={t('room.cameraOn')}
+              loading={isVideoStarting}
+              onPress={() => void startVideo()}
+            />
+          </View>
+        )}
+
+        <View style={s.bottomOverlay}>
+          {localStream ? (
+            <View style={s.cameraControls}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={microphoneEnabled ? t('room.mute') : t('room.unmute')}
+                onPress={toggleMicrophone}
+                style={[s.control, !microphoneEnabled && s.controlOff]}
+              >
+                <Text style={s.controlIcon}>{microphoneEnabled ? '●' : '×'}</Text>
+                <Text style={s.controlLabel}>{microphoneEnabled ? t('room.mute') : t('room.unmute')}</Text>
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={cameraEnabled ? t('room.cameraOff') : t('room.cameraOn')}
+                onPress={toggleCamera}
+                style={[s.control, !cameraEnabled && s.controlOff]}
+              >
+                <Text style={s.controlIcon}>{cameraEnabled ? '●' : '×'}</Text>
+                <Text style={s.controlLabel}>{cameraEnabled ? t('room.cameraOff') : t('room.cameraOn')}</Text>
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t('room.switchCamera')}
+                onPress={switchCamera}
+                style={s.control}
+              >
+                <Text style={s.controlIcon}>↻</Text>
+                <Text style={s.controlLabel}>{t('room.switchCamera')}</Text>
+              </Pressable>
+            </View>
+          ) : null}
+
+          {me?.role === 'member' ? (
             <RoomVibrationControls
               connected={connectedPeers > 0 && remoteControlAllowed}
+              channelCount={remoteChannelCount}
+              variant="overlay"
               onPattern={sendPattern}
               onIntensity={sendIntensity}
               onStop={sendStop}
             />
-          </>
-        ) : me?.role === 'host' ? (
-          <RemoteControlSafetyCard
-            allowed={remoteControlAllowed}
-            connected={connectedPeers > 0}
-            onChange={setRemoteControlAllowed}
-            onStop={emergencyStop}
-          />
-        ) : null}
-        {mediaError ? <Text style={s.error}>{mediaError}</Text> : null}
-        {peerError ? <Text style={s.error}>{peerError}</Text> : null}
-        <PrivacyCard />
-        {localStream ? <Pressable accessibilityRole="button" onPress={close} style={s.stopVideo}><Text style={s.stopVideoText}>Detener cámara y volver</Text></Pressable> : null}
-      </ScrollView>
+          ) : me?.role === 'host' ? (
+            <RemoteControlSafetyCard
+              allowed={remoteControlAllowed}
+              connected={connectedPeers > 0}
+              onChange={setRemoteControlAllowed}
+              onStop={emergencyStop}
+              compact
+              inverted
+            />
+          ) : null}
+
+          {mediaError || peerError ? (
+            <Text style={s.error}>{translateError(mediaError ?? peerError)}</Text>
+          ) : null}
+          {me?.role === 'host' && localChannelCount > 1 ? (
+            <Text style={s.capabilityHint}>
+              {pick(
+                `${localChannelCount} motores disponibles para control remoto`,
+                `${localChannelCount} motors available for remote control`,
+              )}
+            </Text>
+          ) : null}
+        </View>
+      </View>
     </SafeAreaView>
   );
 }
 
-const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: palette.bg },
-  content: { flexGrow: 1, padding: spacing.xl, paddingBottom: spacing.xxl, gap: spacing.lg },
+const createStyles = (theme: AppTheme) => ({
+  root: { flex: 1, backgroundColor: theme.colors.bg },
   stage: {
-    height: 330,
-    borderRadius: radii.cardLg,
-    overflow: 'hidden',
-    backgroundColor: palette.ink,
+    flex: 1,
+    margin: theme.spacing.sm,
+    borderRadius: theme.radii.frame,
+    overflow: 'hidden' as const,
+    backgroundColor: '#160D22',
     borderWidth: 1,
-    borderColor: palette.borderStrong,
+    borderColor: theme.colors.borderStrong,
   },
   remoteVideo: { flex: 1 },
-  waitingRemote: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.xxl },
-  waitingTitle: { ...typography.section, color: palette.white, textAlign: 'center' },
-  waitingCopy: { ...typography.body, color: palette.tint, textAlign: 'center', lineHeight: 20, marginTop: spacing.sm },
+  waitingRemote: {
+    flex: 1,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    padding: theme.spacing.xxl,
+    paddingBottom: 270,
+  },
+  waitingTitle: { ...theme.typography.h2, color: '#FFFFFF', textAlign: 'center' as const },
+  waitingCopy: {
+    ...theme.typography.body,
+    color: '#E7D7EC',
+    textAlign: 'center' as const,
+    lineHeight: 20,
+    marginTop: theme.spacing.sm,
+  },
+  topOverlay: {
+    position: 'absolute' as const,
+    top: theme.spacing.sm,
+    left: theme.spacing.sm,
+    right: theme.spacing.sm,
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: theme.spacing.sm,
+  },
+  back: { backgroundColor: 'rgba(20,10,30,.72)' },
+  roomPill: {
+    flex: 1,
+    minHeight: 48,
+    justifyContent: 'center' as const,
+    backgroundColor: 'rgba(20,10,30,.72)',
+    borderRadius: theme.radii.pill,
+    paddingHorizontal: theme.spacing.lg,
+  },
+  roomTitle: { ...theme.typography.label, color: '#FFFFFF', fontWeight: '800' as const },
+  copyHint: { fontSize: 9, color: '#E7D7EC', marginTop: 1 },
+  badge: {
+    backgroundColor: theme.colors.accent,
+    color: '#FFFFFF',
+    fontSize: 9,
+    fontWeight: '800' as const,
+    letterSpacing: 0.8,
+    paddingVertical: 7,
+    paddingHorizontal: 9,
+    borderRadius: theme.radii.pill,
+  },
+  memberBadge: { backgroundColor: theme.colors.secondary, color: theme.colors.ink },
+  statusOverlay: {
+    position: 'absolute' as const,
+    top: 70,
+    left: 0,
+    right: 0,
+    alignItems: 'center' as const,
+  },
   localPreview: {
-    position: 'absolute',
-    right: spacing.md,
-    bottom: spacing.md,
-    width: 108,
-    height: 144,
-    backgroundColor: palette.card,
-    borderRadius: radii.lg,
-    overflow: 'hidden',
+    position: 'absolute' as const,
+    right: theme.spacing.md,
+    top: 116,
+    width: 112,
+    height: 164,
+    backgroundColor: theme.colors.card,
+    borderRadius: theme.radii.lg,
+    overflow: 'hidden' as const,
     borderWidth: 2,
-    borderColor: palette.card,
-    zIndex: 2,
-    elevation: 2,
+    borderColor: '#FFFFFF',
+    zIndex: 5,
+    elevation: 5,
   },
   localVideo: { flex: 1 },
-  cameraOff: { ...StyleSheet.absoluteFillObject, backgroundColor: palette.ink, alignItems: 'center', justifyContent: 'center' },
-  cameraOffText: { ...typography.small, color: palette.white, textAlign: 'center' },
-  startCard: { backgroundColor: palette.card, borderWidth: 1, borderColor: palette.border, borderRadius: radii.cardLg, padding: spacing.xl, gap: spacing.md },
-  startTitle: { ...typography.section, color: palette.ink },
-  startCopy: { ...typography.body, color: palette.textSecondary, lineHeight: 20 },
-  controls: { flexDirection: 'row', gap: spacing.sm },
-  control: { flex: 1, minHeight: 72, borderRadius: radii.lg, backgroundColor: palette.card, borderWidth: 1, borderColor: palette.borderStrong, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6 },
-  controlOff: { borderColor: palette.accent, backgroundColor: palette.tint },
-  controlIcon: { fontSize: 20, fontWeight: '800', color: palette.accent, lineHeight: 24 },
-  controlLabel: { ...typography.small, color: palette.ink, textAlign: 'center', marginTop: 3, fontWeight: '700' },
-  error: { ...typography.small, color: palette.danger, textAlign: 'center', lineHeight: 18 },
-  permissionNotice: { ...typography.body, color: palette.textSubtle, textAlign: 'center', lineHeight: 20, backgroundColor: palette.tint, borderRadius: radii.lg, padding: spacing.md },
-  stopVideo: { minHeight: 48, alignItems: 'center', justifyContent: 'center' },
-  stopVideoText: { ...typography.label, color: palette.textSecondary },
+  cameraOff: {
+    position: 'absolute' as const,
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    backgroundColor: '#241833',
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+  },
+  cameraOffText: { ...theme.typography.small, color: '#FFFFFF', textAlign: 'center' as const },
+  startCard: {
+    position: 'absolute' as const,
+    top: '36%' as const,
+    left: theme.spacing.xxl,
+    right: theme.spacing.xxl,
+    backgroundColor: 'rgba(20,10,30,.78)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,.25)',
+    borderRadius: theme.radii.cardLg,
+    padding: theme.spacing.xl,
+    gap: theme.spacing.md,
+  },
+  startTitle: { ...theme.typography.section, color: '#FFFFFF', textAlign: 'center' as const },
+  bottomOverlay: {
+    position: 'absolute' as const,
+    left: theme.spacing.sm,
+    right: theme.spacing.sm,
+    bottom: theme.spacing.sm,
+    gap: theme.spacing.sm,
+  },
+  cameraControls: { flexDirection: 'row' as const, justifyContent: 'center' as const, gap: theme.spacing.sm },
+  control: {
+    flex: 1,
+    minHeight: 52,
+    borderRadius: theme.radii.lg,
+    backgroundColor: 'rgba(20,10,30,.74)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,.34)',
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    paddingHorizontal: 4,
+  },
+  controlOff: { borderColor: theme.colors.primary, backgroundColor: 'rgba(83,37,67,.82)' },
+  controlIcon: { fontSize: 16, fontWeight: '800' as const, color: theme.colors.primary, lineHeight: 18 },
+  controlLabel: {
+    ...theme.typography.small,
+    color: '#FFFFFF',
+    textAlign: 'center' as const,
+    marginTop: 2,
+    fontWeight: '700' as const,
+  },
+  error: {
+    ...theme.typography.small,
+    color: '#FFFFFF',
+    textAlign: 'center' as const,
+    backgroundColor: 'rgba(165,59,101,.85)',
+    borderRadius: theme.radii.md,
+    padding: theme.spacing.sm,
+  },
+  capabilityHint: {
+    ...theme.typography.small,
+    color: '#E7D7EC',
+    textAlign: 'center' as const,
+  },
 });

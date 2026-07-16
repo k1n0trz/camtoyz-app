@@ -1,19 +1,25 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { useAppTheme } from '@/preferences/AppPreferences';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useBleStore } from '@/state/bleStore';
-import { palette, radii, spacing, typography } from '@/theme/index';
+import { radii, spacing, typography } from '@/theme/index';
 
 export function ConnectionStatusOverlay() {
+  const theme = useAppTheme();
+  const { pick } = useTranslation();
   const connectionState = useBleStore((state) => state.connectionState);
   const device = useBleStore((state) => state.device);
 
   if (device?.battery !== undefined && device.battery <= 15 && connectionState === 'connected') {
     return (
       <SafeAreaView pointerEvents="box-none" style={s.bannerWrap} edges={['top']}>
-        <View style={s.banner}>
-          <View style={s.bannerDot} />
-          <Text style={s.bannerText}>Batería baja · {device.battery}%</Text>
+        <View style={[s.banner, { backgroundColor: theme.colors.card, borderColor: theme.colors.borderStrong }]}>
+          <View style={[s.bannerDot, { backgroundColor: theme.colors.accent }]} />
+          <Text style={[s.bannerText, { color: theme.colors.ink }]}>
+            {pick('Batería baja', 'Low battery')} · {device.battery}%
+          </Text>
         </View>
       </SafeAreaView>
     );
@@ -28,12 +34,10 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    backgroundColor: palette.card,
     borderWidth: 1,
-    borderColor: palette.borderStrong,
     borderRadius: radii.md,
     padding: spacing.md,
   },
-  bannerDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: palette.accent },
-  bannerText: { ...typography.label, color: palette.ink },
+  bannerDot: { width: 8, height: 8, borderRadius: 4 },
+  bannerText: { ...typography.label },
 });

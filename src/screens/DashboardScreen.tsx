@@ -17,7 +17,10 @@ import { palette, radii, spacing, typography, patternGrid } from '@/theme/index'
 import { useBleStore } from '@/state/bleStore';
 import { PatternTile } from '@/components/PatternTile';
 import { ProductImage } from '@/components/ProductImage';
+import { MotorSelector } from '@/components/MotorSelector';
 import { featuredPatterns, isPatternSupported } from '@/features/patterns/catalog';
+import { useAdaptiveStyles } from '@/theme/useAdaptiveStyles';
+import { useTranslation } from '@/i18n/useTranslation';
 
 /**
  * 03 Dashboard-Connected — patrón de referencia con:
@@ -29,14 +32,16 @@ import { featuredPatterns, isPatternSupported } from '@/features/patterns/catalo
 type Props = NativeStackScreenProps<RootStackParamList, 'Dashboard'>;
 
 const MODES = [
-  { label: 'Mis dispositivos', sub: 'Administra tus dispositivos conectados', route: 'MultiDevice' as const, icon: require('../../assets/dashboard/mis-dispositivos.png') },
-  { label: 'Control por sonido', sub: 'Reacciona al sonido ambiente', route: 'SoundControl' as const, icon: require('../../assets/dashboard/control-sonido.png') },
-  { label: 'Control musical', sub: 'Sincroniza con tu música', route: 'MusicControl' as const, icon: require('../../assets/dashboard/control-musica.png') },
-  { label: 'Interacción remota', sub: 'Salas privadas para compartir el control', route: 'RoomCreate' as const, icon: require('../../assets/dashboard/interaccion-remota.png') },
-  { label: 'Control por gesto', sub: 'Dibuja la intensidad en la pantalla', route: 'GestureControl' as const, icon: require('../../assets/dashboard/control-gesto.png') },
+  { es: 'Mis dispositivos', en: 'My devices', subEs: 'Administra tus dispositivos conectados', subEn: 'Manage your connected devices', route: 'MultiDevice' as const, icon: require('../../assets/dashboard/mis-dispositivos.png') },
+  { es: 'Control por sonido', en: 'Sound control', subEs: 'Reacciona al sonido ambiente', subEn: 'React to ambient sound', route: 'SoundControl' as const, icon: require('../../assets/dashboard/control-sonido.png') },
+  { es: 'Control musical', en: 'Music control', subEs: 'Sincroniza con tu música', subEn: 'Sync with your music', route: 'MusicControl' as const, icon: require('../../assets/dashboard/control-musica.png') },
+  { es: 'Interacción remota', en: 'Remote interaction', subEs: 'Salas privadas para compartir el control', subEn: 'Private rooms to share control', route: 'RoomCreate' as const, icon: require('../../assets/dashboard/interaccion-remota.png') },
+  { es: 'Control por gesto', en: 'Gesture control', subEs: 'Dibuja la intensidad en la pantalla', subEn: 'Draw the intensity on screen', route: 'GestureControl' as const, icon: require('../../assets/dashboard/control-gesto.png') },
 ];
 
 export default function DashboardScreen({ navigation }: Props) {
+  const s = useAdaptiveStyles(baseStyles);
+  const { pick, error: translateError } = useTranslation();
   const device = useBleStore((state) => state.device);
   const connectionState = useBleStore((state) => state.connectionState);
   const activePattern = useBleStore((state) => state.activePattern);
@@ -44,8 +49,10 @@ export default function DashboardScreen({ navigation }: Props) {
   const commandError = useBleStore((state) => state.error);
   const setPattern = useBleStore((state) => state.setPattern);
   const stop = useBleStore((state) => state.stop);
+  const motorTarget = useBleStore((state) => state.motorTarget);
+  const setMotorTarget = useBleStore((state) => state.setMotorTarget);
   const connected = connectionState === 'connected';
-  const deviceName = device?.name ?? 'Sin dispositivo';
+  const deviceName = device?.name ?? pick('Sin dispositivo', 'No device');
   const battery = device?.battery;
   const patternCount = device?.patternCount ?? 0;
   const batteryWidth: DimensionValue = `${Math.max(0, Math.min(100, battery ?? 0))}%`;
@@ -77,7 +84,7 @@ export default function DashboardScreen({ navigation }: Props) {
         </Pressable>
         <View style={{ flex: 1 }} />
         <Pressable accessibilityRole="button" accessibilityLabel="Abrir ajustes" onPress={() => navigation.navigate('SettingsDevice')} style={s.settingsButton}>
-          <Text style={s.settingsText}>Ajustes</Text>
+          <Text style={s.settingsText}>{pick('Ajustes', 'Settings')}</Text>
         </Pressable>
       </View>
 
@@ -88,7 +95,7 @@ export default function DashboardScreen({ navigation }: Props) {
           <View style={{ flex: 1 }}>
             <Text style={s.deviceName}>{deviceName}</Text>
             <Text style={s.deviceStatus}>
-              {connected ? 'Conectado · BLE' : 'Toca arriba para buscar'}
+              {connected ? pick('Conectado · BLE', 'Connected · BLE') : pick('Toca arriba para buscar', 'Tap above to search')}
             </Text>
           </View>
           <View style={s.batteryRow}>
@@ -102,15 +109,20 @@ export default function DashboardScreen({ navigation }: Props) {
         {/* Grid de patrones escalable */}
         <View>
           <View style={s.sectionHead}>
-            <Text style={s.sectionTitle}>Vibración</Text>
+            <Text style={s.sectionTitle}>{pick('Vibración', 'Vibration')}</Text>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Ver todos los patrones"
+              accessibilityLabel={pick('Ver todos los patrones', 'View all patterns')}
               onPress={() => navigation.navigate('PatternsAll')}
             >
-              <Text style={s.link}>Ver todos</Text>
+              <Text style={s.link}>{pick('Ver todos', 'View all')}</Text>
             </Pressable>
           </View>
+          <MotorSelector
+            channelCount={device?.channelCount ?? 1}
+            target={motorTarget}
+            onChange={setMotorTarget}
+          />
           <View style={s.grid}>
             {featuredPatterns.map((pattern) => (
               <PatternTile
@@ -124,51 +136,53 @@ export default function DashboardScreen({ navigation }: Props) {
           </View>
           <View style={s.safetyRow}>
             <Text style={s.safetyHint}>
-              {activePattern ? `Patrón P${activePattern} activo` : 'Motor detenido'}
+              {activePattern
+                ? pick(`Patrón P${activePattern} activo`, `Pattern P${activePattern} active`)
+                : pick('Motor detenido', 'Motor stopped')}
             </Text>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Detener vibración"
+              accessibilityLabel={pick('Detener vibración', 'Stop vibration')}
               disabled={!connected}
               onPress={() => void stop()}
               style={[s.stopButton, !connected && s.stopButtonDisabled]}
             >
-              <Text style={s.stopLabel}>Detener</Text>
+              <Text style={s.stopLabel}>{pick('Detener', 'Stop')}</Text>
             </Pressable>
           </View>
-          {connected && commandError ? <Text style={s.commandError}>{commandError}</Text> : null}
+          {connected && commandError ? <Text style={s.commandError}>{translateError(commandError)}</Text> : null}
         </View>
 
         {/* Modos de control */}
         <View>
-          <Text style={[s.sectionTitle, { marginBottom: spacing.md }]}>Modos de control</Text>
+          <Text style={[s.sectionTitle, { marginBottom: spacing.md }]}>{pick('Modos de control', 'Control modes')}</Text>
           <View style={{ gap: spacing.md }}>
             {MODES.map((m) => (
               <Pressable
-                key={m.label}
+                key={m.es}
                 accessibilityRole="button"
-                accessibilityLabel={m.label}
+                accessibilityLabel={pick(m.es, m.en)}
                 onPress={m.route ? () => navigation.navigate(m.route) : undefined}
                 disabled={!m.route}
                 style={[s.modeRow, !m.route && s.modeDisabled]}
               >
                 <Image source={m.icon} resizeMode="contain" style={s.modeIcon} />
                 <View style={{ flex: 1 }}>
-                  <Text style={s.modeLabel}>{m.label}</Text>
-                  <Text style={s.modeSub}>{m.sub}</Text>
+                  <Text style={s.modeLabel}>{pick(m.es, m.en)}</Text>
+                  <Text style={s.modeSub}>{pick(m.subEs, m.subEn)}</Text>
                 </View>
                 <Text style={s.chevron}>›</Text>
               </Pressable>
             ))}
           </View>
         </View>
-        <Text style={s.version}>Camtoyz App · versión {appVersion}</Text>
+        <Text style={s.version}>Camtoyz App · {pick('versión', 'version')} {appVersion}</Text>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-const s = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   root: { flex: 1, backgroundColor: palette.bg },
   topbar: { height: 56, flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.xl, gap: spacing.md },
   pill: {

@@ -1,14 +1,18 @@
 import { useCallback, useRef, useState } from 'react';
 import { StyleSheet, View, type GestureResponderEvent } from 'react-native';
 
-import { palette } from '@/theme/index';
+import { useTranslation } from '@/i18n/useTranslation';
+import { useAppTheme } from '@/preferences/AppPreferences';
 
 interface Props {
   value: number;
   onChange: (value: number) => void;
+  inverted?: boolean;
 }
 
-export default function IntensitySlider({ value, onChange }: Props) {
+export default function IntensitySlider({ value, onChange, inverted = false }: Props) {
+  const theme = useAppTheme();
+  const { t } = useTranslation();
   const width = useRef(1);
   const [trackWidth, setTrackWidth] = useState(1);
 
@@ -21,7 +25,7 @@ export default function IntensitySlider({ value, onChange }: Props) {
 
   return <View
     accessible
-    accessibilityLabel="Nivel máximo de vibración"
+    accessibilityLabel={t('room.intensity')}
     accessibilityRole="adjustable"
     accessibilityValue={{ min: 0, max: 100, now: value, text: `${value}%` }}
     accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
@@ -41,9 +45,16 @@ export default function IntensitySlider({ value, onChange }: Props) {
     onResponderTerminationRequest={() => false}
     style={s.touchArea}
   >
-    <View pointerEvents="none" style={s.track}>
-      <View style={[s.fill, { width: (trackWidth * value) / 100 }]} />
-      <View style={[s.thumb, { left: thumbLeft }]} />
+    <View
+      pointerEvents="none"
+      style={[s.track, { backgroundColor: inverted ? 'rgba(255,255,255,.28)' : theme.colors.border }]}
+    >
+      <View style={[s.fill, { width: (trackWidth * value) / 100, backgroundColor: theme.colors.accent }]} />
+      <View style={[s.thumb, {
+        left: thumbLeft,
+        backgroundColor: theme.colors.primary,
+        borderColor: inverted ? '#FFFFFF' : theme.colors.card,
+      }]} />
     </View>
   </View>;
 }
@@ -52,10 +63,10 @@ const THUMB_SIZE = 26;
 
 const s = StyleSheet.create({
   touchArea: { height: 48, justifyContent: 'center' },
-  track: { height: 12, borderRadius: 6, backgroundColor: palette.border, position: 'relative', overflow: 'visible' },
-  fill: { height: 12, borderRadius: 6, backgroundColor: palette.accent },
+  track: { height: 12, borderRadius: 6, position: 'relative', overflow: 'visible' },
+  fill: { height: 12, borderRadius: 6 },
   thumb: {
     position: 'absolute', top: -7, width: THUMB_SIZE, height: THUMB_SIZE,
-    borderRadius: 13, backgroundColor: palette.primary, borderWidth: 3, borderColor: palette.card,
+    borderRadius: 13, borderWidth: 3,
   },
 });
