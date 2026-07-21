@@ -131,11 +131,11 @@ export default function SplashScreen({ navigation }: Props) {
         </Pressable>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={pick('Continuar sin juguete y unirse a una sala', 'Continue without a toy and join a room')}
+          accessibilityLabel={pick('Unirse a una sala', 'Join a room')}
           style={s.secondary}
           onPress={() => navigation.navigate('RoomJoin')}
         >
-          <Text style={s.secondaryLabel}>{pick('Continuar sin juguete', 'Continue without a toy')}</Text>
+          <Text style={s.secondaryLabel}>{pick('Unirse a una sala', 'Join a room')}</Text>
         </Pressable>
         {resumeError ? <Text style={s.resumeError}>{resumeError}</Text> : null}
         <Text style={s.version}>{pick('Versión', 'Version')} {appVersion}</Text>

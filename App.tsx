@@ -28,6 +28,7 @@ import RoomKickedScreen from '@/screens/RoomKickedScreen';
 import RoomCameraScreen from '@/screens/RoomCameraScreen';
 import SettingsDeviceScreen from '@/screens/SettingsDeviceScreen';
 import { ConnectionStatusOverlay } from '@/components/ConnectionStatusOverlay';
+import { AppErrorBoundary } from '@/components/AppErrorBoundary';
 import { useBleStore } from '@/state/bleStore';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -104,7 +105,9 @@ export default function App() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <AppPreferencesProvider>
-        <AppContent />
+        <AppErrorBoundary>
+          <AppContent />
+        </AppErrorBoundary>
       </AppPreferencesProvider>
     </GestureHandlerRootView>
   );

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Animated,
@@ -15,6 +15,7 @@ import type { RootStackParamList } from '@/navigation/routes';
 import { palette, radii, spacing, typography } from '@/theme/index';
 import { useBleStore } from '@/state/bleStore';
 import { ProductImage } from '@/components/ProductImage';
+import { SignalStrength, signalBarsForRssi } from '@/components/SignalStrength';
 import { useAdaptiveStyles } from '@/theme/useAdaptiveStyles';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -33,6 +34,7 @@ export default function ScanScreen({ navigation }: Props) {
   const connect = useBleStore((state) => state.connect);
   const disconnect = useBleStore((state) => state.disconnect);
   const pulse = useRef(new Animated.Value(0)).current;
+  const [connectingDeviceId, setConnectingDeviceId] = useState<string>();
 
   useEffect(() => {
     void scan();
@@ -64,8 +66,19 @@ export default function ScanScreen({ navigation }: Props) {
   };
 
   const handleConnect = async (deviceId: string) => {
+    setConnectingDeviceId(deviceId);
     const connected = await connect(deviceId);
+    setConnectingDeviceId(undefined);
     if (connected) navigation.replace('Dashboard');
+  };
+
+  const signalLabel = (rssi?: number) => {
+    const bars = signalBarsForRssi(rssi);
+    if (bars >= 4) return pick('Señal fuerte', 'Strong signal');
+    if (bars === 3) return pick('Señal buena', 'Good signal');
+    if (bars === 2) return pick('Señal débil', 'Weak signal');
+    if (bars === 1) return pick('Señal muy débil', 'Very weak signal');
+    return pick('Señal disponible', 'Signal available');
   };
 
   const restartSearch = () => {
@@ -171,18 +184,20 @@ export default function ScanScreen({ navigation }: Props) {
             <ScrollView contentContainerStyle={s.deviceList}>
               {devices.map((device) => {
                 const isConnected = connectedDevices.some((connectedDevice) => connectedDevice.id === device.id);
+                const isConnecting = connectingDeviceId === device.id;
                 return (
                   <View key={device.id} style={s.deviceRow}>
                     <ProductImage name={device.name} />
                     <View style={s.deviceInfo}>
                       <Text style={s.deviceName}>{device.name}</Text>
-                      <Text style={isConnected ? s.deviceConnected : s.deviceMeta}>
-                        {isConnected
-                          ? pick('Conectado · BLE', 'Connected · BLE')
-                          : device.rssi !== undefined
-                            ? `Señal ${device.rssi} dBm`
-                            : pick('Toca para conectar', 'Tap to connect')}
-                      </Text>
+                      {isConnected ? (
+                        <Text style={s.deviceConnected}>{pick('Conectado · BLE', 'Connected · BLE')}</Text>
+                      ) : (
+                        <SignalStrength
+                          label={isConnecting ? pick('Conectando…', 'Connecting…') : signalLabel(device.rssi)}
+                          rssi={device.rssi}
+                        />
+                      )}
                     </View>
                     <Pressable
                       disabled={connecting}
@@ -191,7 +206,7 @@ export default function ScanScreen({ navigation }: Props) {
                         isConnected ? void disconnect(device.id) : void handleConnect(device.id)
                       }
                     >
-                      {connecting && !isConnected ? (
+                      {isConnecting ? (
                         <ActivityIndicator color={palette.white} />
                       ) : (
                         <Text style={isConnected ? s.disconnectLabel : s.connectLabel}>
@@ -321,7 +336,6 @@ const baseStyles = StyleSheet.create({
   },
   deviceInfo: { flex: 1 },
   deviceName: { fontSize: 15, fontWeight: '700', color: palette.ink },
-  deviceMeta: { ...typography.small, color: palette.textSecondary, marginTop: 2 },
   deviceConnected: { ...typography.small, color: palette.accent, fontWeight: '600', marginTop: 2 },
   connectButton: {
     minWidth: 88,

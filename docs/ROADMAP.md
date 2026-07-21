@@ -49,7 +49,7 @@ La versión no cambia a `1.0.0` hasta que todas las puertas 7.0–7.7 estén ver
 - Las salas siguen limitadas a dos participantes.
 - Nombre legal, correo de soporte y textos legales definitivos quedan pendientes del cliente antes de promover `0.9.2` a `1.0.0`.
 
-**Estado actual:** `0.9.2` integra modo oscuro, selector ES/EN, navegación de retorno robusta, privacidad del identificador BLE, menor latencia musical, cámara vertical con controles superpuestos y control independiente de los motores que el juguete anuncie. El FlexiCurve confirmó físicamente dos canales. Faltan la documentación del cliente y la regresión manual final en dos teléfonos para promoverla.
+**Estado actual (21 de julio de 2026):** la candidata interna Android `1.0.0` (`versionCode 12`) está compilada e instalada en el Galaxy. Integra modo oscuro, selector ES/EN, navegación de retorno robusta, privacidad del identificador BLE, menor latencia musical, cámara vertical con controles superpuestos, control independiente de motores, acceso directo a salas sin juguete, imagen Duo Egg, señal BLE no técnica y protecciones frente a pantalla vacía. El cierre corporativo y la regresión manual final en varios teléfonos siguen siendo puertas de aprobación; esta numeración no implica publicación en tiendas.
 
 ### 7.0 — Congelar alcance y línea base
 

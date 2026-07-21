@@ -13,6 +13,7 @@ const productAssets: Readonly<Record<string, ImageSourcePropType>> = {
   flexicurve: require('../../assets/products/flexicurve.png'),
   flexring: require('../../assets/products/flexring.png'),
   whisper: require('../../assets/products/whisper.png'),
+  duoEgg: require('../../assets/products/duo-egg.jpeg'),
 };
 
 function sourceFor(name?: string): ImageSourcePropType | undefined {
@@ -21,6 +22,7 @@ function sourceFor(name?: string): ImageSourcePropType | undefined {
   if (normalized.includes('flexicurve')) return productAssets.flexicurve;
   if (normalized.includes('flexring')) return productAssets.flexring;
   if (normalized.includes('whisper')) return productAssets.whisper;
+  if (normalized.includes('duo egg')) return productAssets.duoEgg;
   return undefined;
 }
 
