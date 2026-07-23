@@ -3,7 +3,13 @@ import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
-import { PrimaryButton, PrivacyCard, RoomHeader, RoomStatus } from '@/components/RoomUi';
+import {
+  PrimaryButton,
+  PrivacyCard,
+  RoomConsentCard,
+  RoomHeader,
+  RoomStatus,
+} from '@/components/RoomUi';
 import { goBackOr } from '@/navigation/back';
 import type { RootStackParamList } from '@/navigation/routes';
 import { currentParticipant, useRoomStore } from '@/state/roomStore';
@@ -17,6 +23,7 @@ export default function RoomCreateScreen({ navigation }: Props) {
   const s = useAdaptiveStyles(baseStyles);
   const { pick, error: translateError } = useTranslation();
   const [name, setName] = useState('');
+  const [consentAccepted, setConsentAccepted] = useState(false);
   const [busy, setBusy] = useState(false);
   const room = useRoomStore((state) => state.room);
   const participantId = useRoomStore((state) => state.participantId);
@@ -34,6 +41,7 @@ export default function RoomCreateScreen({ navigation }: Props) {
   }, [navigation, participantId, restoreRoom, room]);
 
   const create = async () => {
+    if (!consentAccepted) return;
     setBusy(true);
     const ok = await createRoom(name.trim() || pick('Anfitrión', 'Host'));
     setBusy(false);
@@ -81,8 +89,14 @@ export default function RoomCreateScreen({ navigation }: Props) {
             />
           </View>
           <PrivacyCard />
+          <RoomConsentCard accepted={consentAccepted} onChange={setConsentAccepted} />
           {error ? <Text style={s.error}>{translateError(error)}</Text> : null}
-          <PrimaryButton label={pick('Crear sala', 'Create room')} loading={busy} onPress={() => void create()} />
+          <PrimaryButton
+            label={pick('Crear sala', 'Create room')}
+            disabled={!consentAccepted}
+            loading={busy}
+            onPress={() => void create()}
+          />
           <PrimaryButton label={pick('Tengo un código', 'I have a code')} outline onPress={() => navigation.navigate('RoomJoin')} />
         </ScrollView>
       </KeyboardAvoidingView>

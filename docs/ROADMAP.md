@@ -51,6 +51,8 @@ La versión no cambia a `1.0.0` hasta que todas las puertas 7.0–7.7 estén ver
 
 **Estado actual (21 de julio de 2026):** la candidata interna Android `1.0.0` (`versionCode 12`) está compilada e instalada en el Galaxy. Integra modo oscuro, selector ES/EN, navegación de retorno robusta, privacidad del identificador BLE, menor latencia musical, cámara vertical con controles superpuestos, control independiente de motores, acceso directo a salas sin juguete, imagen Duo Egg, señal BLE no técnica y protecciones frente a pantalla vacía. El cierre corporativo y la regresión manual final en varios teléfonos siguen siendo puertas de aprobación; esta numeración no implica publicación en tiendas.
 
+**Actualización 1.0.1 (23 de julio de 2026):** incorpora confirmación obligatoria de mayoría de edad y consentimiento por sala, acceso visible a reglas/privacidad/soporte y cierre seguro centralizado al salir o terminar una sesión. La entrega continúa siendo una APK interna. Permanecen como puertas manuales la matriz de detención remota en dos teléfonos, la validación física de Duo Egg, las firmas del protocolo y la auditoría efectiva de registros en Google Cloud.
+
 ### 7.0 — Congelar alcance y línea base
 
 - Resolver los cambios locales de compatibilidad BLE: conservarlos y validarlos o descartarlos.

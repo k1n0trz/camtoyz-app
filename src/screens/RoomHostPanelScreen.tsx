@@ -1,10 +1,16 @@
-import { useEffect } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import * as Clipboard from 'expo-clipboard';
 
-import { PrimaryButton, PrivacyCard, RemoteControlSafetyCard, RoomHeader } from '@/components/RoomUi';
+import {
+  PrimaryButton,
+  PrivacyCard,
+  RemoteControlSafetyCard,
+  RoomHeader,
+  RoomPolicyLinks,
+} from '@/components/RoomUi';
 import { goBackOr } from '@/navigation/back';
 import type { RootStackParamList } from '@/navigation/routes';
 import { currentParticipant, useRoomStore } from '@/state/roomStore';
@@ -31,6 +37,7 @@ export default function RoomHostPanelScreen({ navigation }: Props) {
   const setRemoteControlAllowed = useRoomStore((state) => state.setRemoteControlAllowed);
   const emergencyStop = useRoomStore((state) => state.emergencyStop);
   const me = currentParticipant(room, participantId);
+  const exiting = useRef(false);
 
   useEffect(() => {
     if (!room) void restoreRoom();
@@ -40,25 +47,39 @@ export default function RoomHostPanelScreen({ navigation }: Props) {
     if (me && me.role !== 'host') navigation.replace('RoomMemberSession');
   }, [me, navigation]);
 
-  useEffect(
-    () => navigation.addListener('beforeRemove', () => {
-      void setRemoteControlAllowed(false);
-    }),
-    [navigation, setRemoteControlAllowed],
-  );
-
   const confirmBlock = (id: string, name: string) => Alert.alert(
     pick(`¿Bloquear a ${name}?`, `Block ${name}?`),
     pick('Se le expulsará y no podrá volver a unirse con este código desde esta instalación.', 'They will be removed and this installation will not be able to rejoin with the same code.'),
     [{ text: pick('Cancelar', 'Cancel'), style: 'cancel' }, { text: pick('Bloquear', 'Block'), style: 'destructive', onPress: () => void block(id) }],
   );
 
-  const confirmEnd = () => Alert.alert(
+  const finishRoom = useCallback(async () => {
+    exiting.current = true;
+    if (await endRoom()) {
+      navigation.popToTop();
+    } else {
+      exiting.current = false;
+    }
+  }, [endRoom, navigation]);
+
+  const confirmEnd = useCallback(() => Alert.alert(
     pick('¿Terminar la sesión para todos?', 'End the session for everyone?'),
-    pick('El código dejará de funcionar. Esta acción no se puede deshacer.', 'The code will stop working. This cannot be undone.'),
+    pick(
+      'El código dejará de funcionar, se revocará el control remoto y se cerrarán la cámara y el micrófono. Esta acción no se puede deshacer.',
+      'The code will stop working, remote control will be revoked, and the camera and microphone will close. This cannot be undone.',
+    ),
     [{ text: pick('Cancelar', 'Cancel'), style: 'cancel' }, { text: pick('Terminar', 'End'), style: 'destructive', onPress: async () => {
-      if (await endRoom()) navigation.popToTop();
+      await finishRoom();
     } }],
+  ), [finishRoom, pick]);
+
+  useEffect(
+    () => navigation.addListener('beforeRemove', (event) => {
+      if (exiting.current || !room) return;
+      event.preventDefault();
+      confirmEnd();
+    }),
+    [confirmEnd, navigation, room],
   );
 
   const copyCode = async () => {
@@ -78,7 +99,7 @@ export default function RoomHostPanelScreen({ navigation }: Props) {
 
   return (
     <SafeAreaView style={s.root} edges={['top', 'bottom']}>
-      <RoomHeader title={`${pick('Participantes', 'Participants')} · ${room.participants.length}`} badge="ANFITRIÓN" onBack={() => goBackOr(navigation, 'Splash')} />
+      <RoomHeader title={`${pick('Participantes', 'Participants')} · ${room.participants.length}`} badge="ANFITRIÓN" onBack={confirmEnd} />
       <ScrollView contentContainerStyle={s.content}>
         <View style={s.roomCodeWrap}>
           <Text selectable style={s.roomCode}>{pick('SALA', 'ROOM')} {room.code}</Text>
@@ -111,6 +132,7 @@ export default function RoomHostPanelScreen({ navigation }: Props) {
           onStop={emergencyStop}
         />
         <PrivacyCard />
+        <RoomPolicyLinks />
         {error ? <Text style={s.error}>{translateError(error)}</Text> : null}
       </ScrollView>
       <View style={s.footer}>

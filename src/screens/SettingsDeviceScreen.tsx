@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import Constants from 'expo-constants';
 
-import { RoomHeader } from '@/components/RoomUi';
+import { RoomHeader, RoomPolicyLinks } from '@/components/RoomUi';
 import { useTranslation } from '@/i18n/useTranslation';
 import { goBackOr } from '@/navigation/back';
 import type { RootStackParamList } from '@/navigation/routes';
@@ -27,8 +27,8 @@ export default function SettingsDeviceScreen({ navigation }: Props) {
     setLanguagePreference,
     setThemePreference,
   } = useAppPreferences();
-  const version = Constants.nativeAppVersion ?? Constants.expoConfig?.version ?? '0.9.2';
-  const build = Constants.nativeBuildVersion ?? '11';
+  const version = Constants.nativeAppVersion ?? Constants.expoConfig?.version ?? '1.0.1';
+  const build = Constants.nativeBuildVersion ?? '13';
 
   const InfoCard = ({ title, children }: { title: string; children: ReactNode }) => (
     <View style={s.card}>
@@ -109,6 +109,7 @@ export default function SettingsDeviceScreen({ navigation }: Props) {
         <View style={s.pendingCard}>
           <Text style={s.pendingTitle}>{t('settings.pending')}</Text>
           <Text style={s.pendingCopy}>{t('settings.pendingCopy')}</Text>
+          <RoomPolicyLinks />
         </View>
       </ScrollView>
     </SafeAreaView>

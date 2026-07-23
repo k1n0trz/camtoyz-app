@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import { KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
-import { PrimaryButton, PrivacyCard, RoomHeader } from '@/components/RoomUi';
+import { PrimaryButton, PrivacyCard, RoomConsentCard, RoomHeader } from '@/components/RoomUi';
 import { goBackOr } from '@/navigation/back';
 import type { RootStackParamList } from '@/navigation/routes';
 import { useRoomStore } from '@/state/roomStore';
@@ -20,6 +20,7 @@ export default function RoomJoinScreen({ navigation }: Props) {
   const { pick, error: translateError } = useTranslation();
   const [code, setCode] = useState('');
   const [name, setName] = useState('');
+  const [consentAccepted, setConsentAccepted] = useState(false);
   const [busy, setBusy] = useState(false);
   const error = useRoomStore((state) => state.error);
   const joinRoom = useRoomStore((state) => state.joinRoom);
@@ -31,6 +32,7 @@ export default function RoomJoinScreen({ navigation }: Props) {
 
   const normalizedCode = code.toUpperCase().replace(/[^ABCDEFGHJKLMNPQRSTUVWXYZ23456789]/g, '').slice(0, 6);
   const join = async () => {
+    if (!consentAccepted) return;
     setBusy(true);
     const ok = await joinRoom(normalizedCode, name.trim() || pick('Invitado', 'Guest'));
     setBusy(false);
@@ -40,29 +42,36 @@ export default function RoomJoinScreen({ navigation }: Props) {
   return (
     <SafeAreaView style={s.root} edges={['top', 'bottom']}>
       <RoomHeader title={pick('Unirse a sala', 'Join room')} onBack={() => goBackOr(navigation, 'Splash')} />
-      <KeyboardAvoidingView style={s.content} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <View>
-          <Text style={s.help}>{pick('Introduce el código que te compartió el anfitrión', 'Enter the code shared by the host')}</Text>
-          <TextInput
-            accessibilityLabel={pick('Código de sala', 'Room code')}
-            autoCapitalize="characters"
-            autoCorrect={false}
-            maxLength={6}
-            onChangeText={setCode}
-            placeholder="ABC234"
-            placeholderTextColor={theme.colors.textMuted}
-            style={s.codeInput}
-            value={normalizedCode}
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <ScrollView contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">
+          <View>
+            <Text style={s.help}>{pick('Introduce el código que te compartió el anfitrión', 'Enter the code shared by the host')}</Text>
+            <TextInput
+              accessibilityLabel={pick('Código de sala', 'Room code')}
+              autoCapitalize="characters"
+              autoCorrect={false}
+              maxLength={6}
+              onChangeText={setCode}
+              placeholder="ABC234"
+              placeholderTextColor={theme.colors.textMuted}
+              style={s.codeInput}
+              value={normalizedCode}
+            />
+          </View>
+          <View>
+            <Text style={s.label}>{pick('Tu nombre en la sala', 'Your name in the room')}</Text>
+            <TextInput accessibilityLabel={pick('Nombre en la sala', 'Room display name')} maxLength={32} onChangeText={setName} style={s.nameInput} value={name} />
+          </View>
+          <PrivacyCard />
+          <RoomConsentCard accepted={consentAccepted} onChange={setConsentAccepted} />
+          {error ? <Text style={s.error}>{translateError(error)}</Text> : null}
+          <PrimaryButton
+            label={pick('Unirse', 'Join')}
+            disabled={normalizedCode.length !== 6 || !consentAccepted}
+            loading={busy}
+            onPress={() => void join()}
           />
-        </View>
-        <View>
-          <Text style={s.label}>{pick('Tu nombre en la sala', 'Your name in the room')}</Text>
-          <TextInput accessibilityLabel={pick('Nombre en la sala', 'Room display name')} maxLength={32} onChangeText={setName} style={s.nameInput} value={name} />
-        </View>
-        <PrivacyCard />
-        {error ? <Text style={s.error}>{translateError(error)}</Text> : null}
-        <View style={{ flex: 1 }} />
-        <PrimaryButton label={pick('Unirse', 'Join')} disabled={normalizedCode.length !== 6} loading={busy} onPress={() => void join()} />
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -70,7 +79,7 @@ export default function RoomJoinScreen({ navigation }: Props) {
 
 const baseStyles = StyleSheet.create({
   root: { flex: 1, backgroundColor: palette.bg },
-  content: { flex: 1, padding: spacing.xxl, gap: spacing.xxl },
+  content: { flexGrow: 1, padding: spacing.xxl, gap: spacing.xl },
   help: { ...typography.body, color: palette.textSecondary, marginBottom: spacing.md },
   codeInput: { height: 64, backgroundColor: palette.card, borderWidth: 1.5, borderColor: palette.accent, borderRadius: radii.lg, textAlign: 'center', fontSize: 28, fontWeight: '800', letterSpacing: 10, color: palette.ink },
   label: { ...typography.label, color: palette.ink, marginBottom: spacing.sm },

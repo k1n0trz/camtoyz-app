@@ -1,11 +1,10 @@
-import { useEffect } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useEffect, useRef } from 'react';
+import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
-import { PrivacyCard, RoomHeader, RoomStatus } from '@/components/RoomUi';
+import { PrivacyCard, RoomHeader, RoomPolicyLinks, RoomStatus } from '@/components/RoomUi';
 import { RoomVibrationControls } from '@/components/RoomVibrationControls';
-import { goBackOr } from '@/navigation/back';
 import type { RootStackParamList } from '@/navigation/routes';
 import { currentParticipant, useRoomStore } from '@/state/roomStore';
 import { palette, radii, spacing, typography } from '@/theme/index';
@@ -33,6 +32,7 @@ export default function RoomMemberSessionScreen({ navigation }: Props) {
   const remoteControlAllowed = useRoomStore((state) => state.remoteControlAllowed);
   const remoteChannelCount = useRoomStore((state) => state.remoteChannelCount);
   const me = currentParticipant(room, participantId);
+  const exiting = useRef(false);
 
   useEffect(() => {
     if (!room && !removedReason && !endedReason) void restoreRoom();
@@ -46,15 +46,36 @@ export default function RoomMemberSessionScreen({ navigation }: Props) {
     if (me?.role === 'host') navigation.replace('RoomHostPanel');
   }, [me, navigation]);
 
-  const leave = async () => {
-    await sendStop();
+  const leave = useCallback(async () => {
+    exiting.current = true;
     await leaveRoom();
     navigation.popToTop();
-  };
+  }, [leaveRoom, navigation]);
+
+  const confirmLeave = useCallback(() => Alert.alert(
+    pick('¿Salir de la sala?', 'Leave the room?'),
+    pick(
+      'Se retirará tu consentimiento, se detendrá el control remoto y se cerrarán la cámara y el micrófono.',
+      'Your consent will be withdrawn, remote control will stop, and the camera and microphone will close.',
+    ),
+    [
+      { text: pick('Cancelar', 'Cancel'), style: 'cancel' },
+      { text: pick('Salir', 'Leave'), style: 'destructive', onPress: () => void leave() },
+    ],
+  ), [leave, pick]);
+
+  useEffect(
+    () => navigation.addListener('beforeRemove', (event) => {
+      if (exiting.current || !room) return;
+      event.preventDefault();
+      confirmLeave();
+    }),
+    [confirmLeave, navigation, room],
+  );
 
   return (
     <SafeAreaView style={s.root} edges={['top', 'bottom']}>
-      <RoomHeader title={room ? `${pick('Sala', 'Room')} ${room.code}` : pick('Sala', 'Room')} badge="MIEMBRO" onBack={() => goBackOr(navigation, 'Splash')} />
+      <RoomHeader title={room ? `${pick('Sala', 'Room')} ${room.code}` : pick('Sala', 'Room')} badge="MIEMBRO" onBack={confirmLeave} />
       <View style={s.content}>
         {room ? (
           <>
@@ -79,11 +100,12 @@ export default function RoomMemberSessionScreen({ navigation }: Props) {
               </Pressable>
             </>
             <PrivacyCard />
+            <RoomPolicyLinks />
             {peerError ? <Text style={s.error}>{translateError(peerError)}</Text> : null}
           </>
         ) : <Text style={s.muted}>{translateError(error) ?? pick('Recuperando la sala…', 'Restoring room…')}</Text>}
         <View style={{ flex: 1 }} />
-        <Pressable accessibilityRole="button" onPress={() => void leave()} style={s.leave}><Text style={s.leaveText}>{pick('Salir de la sala', 'Leave room')}</Text></Pressable>
+        <Pressable accessibilityRole="button" onPress={confirmLeave} style={s.leave}><Text style={s.leaveText}>{pick('Salir de la sala', 'Leave room')}</Text></Pressable>
       </View>
     </SafeAreaView>
   );

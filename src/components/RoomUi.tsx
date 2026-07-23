@@ -1,11 +1,92 @@
 import type { ReactNode } from 'react';
-import { ActivityIndicator, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Linking, Pressable, Text, View } from 'react-native';
 
 import { BackButton } from '@/components/BackButton';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useAppTheme } from '@/preferences/AppPreferences';
 import type { AppTheme } from '@/theme/index';
 import { useThemedStyles } from '@/theme/useThemedStyles';
+
+export const SUPPORT_EMAIL = 'support.app@camtoyz.com';
+
+export function RoomPolicyLinks({ compact = false }: { compact?: boolean }) {
+  const s = useThemedStyles(createStyles);
+  const { pick } = useTranslation();
+
+  const showRules = () => Alert.alert(
+    pick('Reglas de la sala', 'Room rules'),
+    pick(
+      'Solo para mayores de 18 años. Comparte el código únicamente con la persona autorizada. Respeta sus límites y su decisión de retirarse. No grabes, captures ni difundas audio, video o imágenes sin autorización. Se prohíben el acoso, las amenazas, la coerción, la suplantación y cualquier conducta ilegal.',
+      'Adults 18+ only. Share the code only with the authorized person. Respect their boundaries and decision to withdraw. Do not record, capture, or share audio, video, or images without permission. Harassment, threats, coercion, impersonation, and illegal conduct are prohibited.',
+    ),
+  );
+
+  const showPrivacy = () => Alert.alert(
+    pick('Privacidad y soporte', 'Privacy and support'),
+    pick(
+      `Video, audio y comandos usan WebRTC cifrado y pueden pasar por un relevo TURN cuando la red lo requiere. La app no incorpora una función de grabación. El servidor mantiene la sala de forma temporal y no almacena el contenido multimedia. Soporte: ${SUPPORT_EMAIL}`,
+      `Video, audio, and commands use encrypted WebRTC and may pass through a TURN relay when required by the network. The app does not include a recording feature. The server keeps the room temporarily and does not store media content. Support: ${SUPPORT_EMAIL}`,
+    ),
+  );
+
+  return (
+    <View style={[s.policyLinks, compact && s.compactPolicyLinks]}>
+      <Pressable accessibilityRole="button" onPress={showRules} style={s.policyLink}>
+        <Text style={s.policyLinkText}>{pick('Ver reglas de la sala', 'View room rules')}</Text>
+      </Pressable>
+      <Pressable accessibilityRole="button" onPress={showPrivacy} style={s.policyLink}>
+        <Text style={s.policyLinkText}>{pick('Privacidad y soporte', 'Privacy and support')}</Text>
+      </Pressable>
+      {!compact ? (
+        <Pressable
+          accessibilityRole="link"
+          accessibilityLabel={pick('Escribir a soporte', 'Email support')}
+          onPress={() => void Linking.openURL(`mailto:${SUPPORT_EMAIL}`)}
+        >
+          <Text selectable style={s.supportEmail}>{SUPPORT_EMAIL}</Text>
+        </Pressable>
+      ) : null}
+    </View>
+  );
+}
+
+export function RoomConsentCard({
+  accepted,
+  onChange,
+}: {
+  accepted: boolean;
+  onChange: (accepted: boolean) => void;
+}) {
+  const s = useThemedStyles(createStyles);
+  const { pick } = useTranslation();
+
+  return (
+    <View style={s.consentCard}>
+      <Text style={s.consentTitle}>{pick('Consentimiento obligatorio', 'Required consent')}</Text>
+      <Pressable
+        accessibilityRole="checkbox"
+        accessibilityState={{ checked: accepted }}
+        accessibilityLabel={pick(
+          'Confirmo que tengo 18 años o más y acepto las condiciones de la sala',
+          'I confirm that I am 18 or older and accept the room conditions',
+        )}
+        onPress={() => onChange(!accepted)}
+        style={s.consentRow}
+      >
+        <View style={[s.checkbox, accepted && s.checkboxChecked]}>
+          {accepted ? <Text style={s.checkmark}>✓</Text> : null}
+        </View>
+        <Text style={s.consentCopy}>
+          {pick(
+            'Declaro que tengo 18 años o más y participo voluntariamente. Acepto el uso de video, audio y, cuando corresponda, el control remoto del juguete. Puedo retirar mi consentimiento en cualquier momento saliendo de la sala. No grabaré, capturaré ni compartiré el contenido sin autorización expresa.',
+            'I confirm that I am 18 or older and participate voluntarily. I consent to video, audio, and, when applicable, remote toy control. I may withdraw consent at any time by leaving the room. I will not record, capture, or share content without explicit permission.',
+          )}
+        </Text>
+      </Pressable>
+      <RoomPolicyLinks compact />
+    </View>
+  );
+}
 
 export function RoomHeader({
   title,
@@ -216,6 +297,67 @@ const createStyles = (theme: AppTheme) => ({
     color: theme.colors.textSecondary,
     lineHeight: 18,
     flex: 1,
+  },
+  consentCard: {
+    gap: theme.spacing.md,
+    backgroundColor: theme.colors.card,
+    borderWidth: 1.5,
+    borderColor: theme.colors.accent,
+    borderRadius: theme.radii.cardLg,
+    padding: theme.spacing.lg,
+  },
+  consentTitle: {
+    ...theme.typography.label,
+    color: theme.colors.ink,
+    fontWeight: '800' as const,
+  },
+  consentRow: {
+    flexDirection: 'row' as const,
+    alignItems: 'flex-start' as const,
+    gap: theme.spacing.md,
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderWidth: 2,
+    borderColor: theme.colors.accent,
+    borderRadius: 6,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    marginTop: 1,
+  },
+  checkboxChecked: { backgroundColor: theme.colors.accent },
+  checkmark: { color: theme.colors.white, fontSize: 16, fontWeight: '900' as const, lineHeight: 18 },
+  consentCopy: {
+    ...theme.typography.small,
+    color: theme.colors.textSubtle,
+    lineHeight: 18,
+    flex: 1,
+  },
+  policyLinks: {
+    flexDirection: 'row' as const,
+    flexWrap: 'wrap' as const,
+    alignItems: 'center' as const,
+    gap: theme.spacing.sm,
+  },
+  compactPolicyLinks: { paddingLeft: 36 },
+  policyLink: {
+    minHeight: 34,
+    justifyContent: 'center' as const,
+    borderRadius: theme.radii.pill,
+    borderWidth: 1,
+    borderColor: theme.colors.borderStrong,
+    paddingHorizontal: theme.spacing.md,
+  },
+  policyLinkText: {
+    ...theme.typography.small,
+    color: theme.colors.accent,
+    fontWeight: '700' as const,
+  },
+  supportEmail: {
+    ...theme.typography.small,
+    color: theme.colors.textSecondary,
+    textDecorationLine: 'underline' as const,
   },
   status: {
     flexDirection: 'row' as const,

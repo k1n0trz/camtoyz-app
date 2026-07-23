@@ -92,10 +92,16 @@ export const useRoomStore = create<RoomStore>(() => ({
   createRoom: (displayName) => safely(() => roomClient.create(displayName)),
   joinRoom: (roomCode, displayName) => safely(() => roomClient.join(roomCode, displayName)),
   restoreRoom: () => roomClient.restore(),
-  leaveRoom: () => roomClient.leave(),
+  leaveRoom: async () => {
+    await roomPeers.suspendForSafety();
+    await roomClient.leave();
+  },
   kick: (participantId) => safely(() => roomClient.kick(participantId)),
   block: (participantId) => safely(() => roomClient.block(participantId)),
-  endRoom: () => safely(() => roomClient.end()),
+  endRoom: () => safely(async () => {
+    await roomPeers.suspendForSafety();
+    await roomClient.end();
+  }),
   sendPattern: (pattern, target) => safely(() => roomPeers.sendPattern(pattern, target)),
   sendIntensity: (value, target) => safely(() => roomPeers.sendIntensity(value, target)),
   sendStop: () => safely(() => roomPeers.sendStop()),
