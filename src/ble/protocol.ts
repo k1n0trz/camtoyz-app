@@ -21,8 +21,6 @@ export const BLE = {
   characteristicNotify: '0000FFE4-0000-1000-8000-00805F9B34FB',
   // Nombres de dispositivo conocidos para filtrar el escaneo:
   nameHints: ['LHD BLE', 'DSJM', 'HyperBullet', 'Duo Egg', 'CAMTOYZ'],
-  // El APK legacy recibía esta tabla desde su catálogo remoto.
-  nameAliases: { LY379A: 'HyperBullet' } as Readonly<Record<string, string>>,
   serviceHints: ['ACAB'],
 } as const;
 
@@ -49,10 +47,22 @@ export interface PatternChannelState {
   pattern: number;
 }
 
+/** `all` aplica el comando a todos los motores; un número apunta al canal base cero. */
+export type MotorTarget = 'all' | number;
+
 const COMMAND_HEADER = 0x89;
 const COMMAND_CONTINUOUS = 0x04;
 const COMMAND_PATTERN = 0x05;
 const PATTERN_INTENSITY_MAX = 10;
+
+/** Convierte el porcentaje visible a la escala discreta 0..10 del modo patrón. */
+export function patternIntensityFromPercent(percent: number): number {
+  if (!Number.isFinite(percent)) {
+    throw new RangeError('La intensidad del patrón debe ser un número finito.');
+  }
+  const clamped = Math.max(0, Math.min(100, percent));
+  return clamped === 0 ? 0 : Math.max(1, Math.round(clamped / 10));
+}
 
 /** FFE4 `66 01 LL ...`: LL bytes, organizados en pares por canal. */
 export function parseCapabilitiesNotification(
@@ -88,16 +98,26 @@ export function buildIntensityCommand(
   channelCount: number,
 ): Uint8Array {
   assertChannelCount(channelCount, 1);
-  if (!Number.isFinite(intensity0to100)) {
-    throw new RangeError('La intensidad continua debe ser un número finito.');
-  }
-  const clamped = Math.max(0, Math.min(100, intensity0to100));
-  const value = Math.round((clamped / 100) * 0xff);
+  return buildIntensityChannelsCommand(Array(channelCount).fill(intensity0to100));
+}
+
+/** Modo continuo por canal: permite controlar motores independientes. */
+export function buildIntensityChannelsCommand(
+  intensities0to100: readonly number[],
+): Uint8Array {
+  assertChannelCount(intensities0to100.length, 1);
+  const values = intensities0to100.map((intensity) => {
+    if (!Number.isFinite(intensity)) {
+      throw new RangeError('La intensidad continua debe ser un número finito.');
+    }
+    const clamped = Math.max(0, Math.min(100, intensity));
+    return Math.round((clamped / 100) * 0xff);
+  });
   return new Uint8Array([
     COMMAND_HEADER,
     COMMAND_CONTINUOUS,
-    channelCount,
-    ...Array(channelCount).fill(value),
+    values.length,
+    ...values,
   ]);
 }
 

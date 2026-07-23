@@ -1,6 +1,6 @@
 # Plan de ejecución para Codex
 
-Guía operativa para implementar Camtoyz Control sobre este scaffold. Trabaja **en orden**, en ramas por tarea, y deja `npm run typecheck` en verde en cada PR.
+Guía operativa para implementar Camtoyz App sobre este scaffold. Trabaja **en orden**, en ramas por tarea, y deja `npm run typecheck` en verde en cada PR.
 
 ## Reglas permanentes
 - **Diseño:** replica los frames de `design/reference/*.html`. Abre el HTML en el navegador como referencia visual.

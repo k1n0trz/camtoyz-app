@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Animated,
@@ -12,21 +12,29 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import type { RootStackParamList } from '@/navigation/routes';
-import { palette, radii, spacing, typography } from '@/theme';
+import { palette, radii, spacing, typography } from '@/theme/index';
 import { useBleStore } from '@/state/bleStore';
+import { ProductImage } from '@/components/ProductImage';
+import { SignalStrength, signalBarsForRssi } from '@/components/SignalStrength';
+import { useAdaptiveStyles } from '@/theme/useAdaptiveStyles';
+import { useTranslation } from '@/i18n/useTranslation';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Scan'>;
 
 export default function ScanScreen({ navigation }: Props) {
+  const s = useAdaptiveStyles(baseStyles);
+  const { pick, error: translateError } = useTranslation();
   const devices = useBleStore((state) => state.devices);
   const connectionState = useBleStore((state) => state.connectionState);
-  const connectedDevice = useBleStore((state) => state.device);
+  const connectedDevices = useBleStore((state) => state.connectedDevices);
+  const isScanning = useBleStore((state) => state.isScanning);
   const error = useBleStore((state) => state.error);
   const scan = useBleStore((state) => state.scan);
   const stopScan = useBleStore((state) => state.stopScan);
   const connect = useBleStore((state) => state.connect);
   const disconnect = useBleStore((state) => state.disconnect);
   const pulse = useRef(new Animated.Value(0)).current;
+  const [connectingDeviceId, setConnectingDeviceId] = useState<string>();
 
   useEffect(() => {
     void scan();
@@ -49,17 +57,38 @@ export default function ScanScreen({ navigation }: Props) {
 
   const close = () => {
     void stopScan();
-    navigation.goBack();
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+      return;
+    }
+
+    navigation.reset({ index: 0, routes: [{ name: 'Splash' }] });
   };
 
   const handleConnect = async (deviceId: string) => {
+    setConnectingDeviceId(deviceId);
     const connected = await connect(deviceId);
+    setConnectingDeviceId(undefined);
     if (connected) navigation.replace('Dashboard');
   };
 
-  const searching = connectionState === 'scanning';
+  const signalLabel = (rssi?: number) => {
+    const bars = signalBarsForRssi(rssi);
+    if (bars >= 4) return pick('Señal fuerte', 'Strong signal');
+    if (bars === 3) return pick('Señal buena', 'Good signal');
+    if (bars === 2) return pick('Señal débil', 'Weak signal');
+    if (bars === 1) return pick('Señal muy débil', 'Very weak signal');
+    return pick('Señal disponible', 'Signal available');
+  };
+
+  const restartSearch = () => {
+    void scan();
+  };
+
+  const searching = isScanning;
   const connecting = connectionState === 'connecting';
   const showError = connectionState === 'error' && devices.length === 0;
+  const connectionError = connectionState === 'error' ? error : undefined;
 
   return (
     <SafeAreaView style={s.root} edges={[]}>
@@ -67,9 +96,9 @@ export default function ScanScreen({ navigation }: Props) {
       <View style={s.sheet}>
         <View style={s.handle} />
         <View style={s.header}>
-          <Text style={s.title}>Buscar dispositivos</Text>
+          <Text style={s.title}>{pick('Buscar dispositivos', 'Find devices')}</Text>
           <Pressable accessibilityRole="button" onPress={close} hitSlop={12}>
-            <Text style={s.cancel}>Cancelar</Text>
+            <Text style={s.cancel}>{pick('Cancelar', 'Cancel')}</Text>
           </Pressable>
         </View>
 
@@ -79,18 +108,21 @@ export default function ScanScreen({ navigation }: Props) {
               <Text style={s.errorBang}>!</Text>
             </View>
             <View>
-              <Text style={s.errorTitle}>No se encontró el dispositivo</Text>
+              <Text style={s.errorTitle}>{pick('No se encontró el dispositivo', 'Device not found')}</Text>
               <Text style={s.errorText}>
-                {error ??
-                  'Comprueba que esté encendido y con carga. Mantén pulsado su botón 3 segundos hasta que parpadee.'}
+                {translateError(error) ??
+                  pick(
+                    'Comprueba que esté encendido y con carga. Mantén pulsado su botón 3 segundos hasta que parpadee.',
+                    'Check that it is powered on and charged. Hold its button for 3 seconds until it flashes.',
+                  )}
               </Text>
             </View>
             <View style={s.errorActions}>
               <Pressable style={s.primaryButton} onPress={() => void scan()}>
-                <Text style={s.primaryLabel}>Reintentar búsqueda</Text>
+                <Text style={s.primaryLabel}>{pick('Reintentar búsqueda', 'Search again')}</Text>
               </Pressable>
               <Pressable style={s.secondaryButton} onPress={close}>
-                <Text style={s.secondaryLabel}>Volver</Text>
+                <Text style={s.secondaryLabel}>{pick('Volver', 'Back')}</Text>
               </Pressable>
             </View>
           </View>
@@ -114,57 +146,71 @@ export default function ScanScreen({ navigation }: Props) {
               </View>
             </View>
             <View style={s.centerText}>
-              <Text style={s.searchingTitle}>Buscando dispositivos…</Text>
+              <Text style={s.searchingTitle}>{pick('Buscando dispositivos…', 'Searching for devices…')}</Text>
               <Text style={s.searchingText}>
-                Ningún dispositivo aún.{`\n`}Asegúrate de que esté encendido y cerca.
+                {pick(
+                  'Ningún dispositivo aún.\nAsegúrate de que esté encendido y cerca.',
+                  'No devices yet.\nMake sure it is on and nearby.',
+                )}
               </Text>
             </View>
             <View style={s.scanNote}>
               <View style={s.noteDot} />
               <Text style={s.noteText}>
-                Bluetooth activo · el escaneo se detiene automáticamente a los 30 s
+                {pick(
+                  'Bluetooth activo · el escaneo se detiene automáticamente a los 30 s',
+                  'Bluetooth active · scanning stops automatically after 30 s',
+                )}
               </Text>
             </View>
           </View>
         ) : (
           <View style={s.foundBody}>
             <View style={s.foundStatus}>
-              {searching && <ActivityIndicator color={palette.accent} />}
-              <Text style={s.foundStatusText}>
-                Buscando… <Text style={s.foundCount}>{devices.length} detectado(s)</Text>
-              </Text>
+              <View style={s.foundState}>
+                {searching && <ActivityIndicator color={palette.accent} />}
+                <Text style={s.foundStatusText}>
+                  {searching ? pick('Buscando…', 'Searching…') : pick('Búsqueda pausada', 'Search paused')}{' '}
+                  <Text style={s.foundCount}>
+                    {pick(`${devices.length} detectado(s)`, `${devices.length} found`)}
+                  </Text>
+                </Text>
+              </View>
+              <Pressable accessibilityRole="button" accessibilityLabel={pick('Reiniciar búsqueda de dispositivos', 'Restart device search')} onPress={restartSearch} style={s.restartButton}>
+                <Text style={s.restartLabel}>{searching ? pick('Reiniciar', 'Restart') : pick('Buscar de nuevo', 'Search again')}</Text>
+              </Pressable>
             </View>
+            {connectionError ? <Text style={s.connectionError}>{translateError(connectionError)}</Text> : null}
             <ScrollView contentContainerStyle={s.deviceList}>
               {devices.map((device) => {
-                const isConnected =
-                  connectionState === 'connected' && connectedDevice?.id === device.id;
+                const isConnected = connectedDevices.some((connectedDevice) => connectedDevice.id === device.id);
+                const isConnecting = connectingDeviceId === device.id;
                 return (
                   <View key={device.id} style={s.deviceRow}>
-                    <View style={s.deviceIcon}>
-                      <View style={s.deviceDot} />
-                    </View>
+                    <ProductImage name={device.name} />
                     <View style={s.deviceInfo}>
                       <Text style={s.deviceName}>{device.name}</Text>
-                      <Text style={isConnected ? s.deviceConnected : s.deviceMeta}>
-                        {isConnected
-                          ? 'Conectado · BLE'
-                          : device.rssi !== undefined
-                            ? `Señal ${device.rssi} dBm`
-                            : 'Toca para conectar'}
-                      </Text>
+                      {isConnected ? (
+                        <Text style={s.deviceConnected}>{pick('Conectado · BLE', 'Connected · BLE')}</Text>
+                      ) : (
+                        <SignalStrength
+                          label={isConnecting ? pick('Conectando…', 'Connecting…') : signalLabel(device.rssi)}
+                          rssi={device.rssi}
+                        />
+                      )}
                     </View>
                     <Pressable
                       disabled={connecting}
                       style={isConnected ? s.disconnectButton : s.connectButton}
                       onPress={() =>
-                        isConnected ? void disconnect() : void handleConnect(device.id)
+                        isConnected ? void disconnect(device.id) : void handleConnect(device.id)
                       }
                     >
-                      {connecting && !isConnected ? (
+                      {isConnecting ? (
                         <ActivityIndicator color={palette.white} />
                       ) : (
                         <Text style={isConnected ? s.disconnectLabel : s.connectLabel}>
-                          {isConnected ? 'Desconectar' : 'Conectar'}
+                          {isConnected ? pick('Desconectar', 'Disconnect') : pick('Conectar', 'Connect')}
                         </Text>
                       )}
                     </Pressable>
@@ -172,7 +218,12 @@ export default function ScanScreen({ navigation }: Props) {
                 );
               })}
             </ScrollView>
-            <Text style={s.guide}>¿No aparece tu dispositivo? Comprueba que esté encendido.</Text>
+            <Text style={s.guide}>
+              {pick(
+                '¿No aparece tu dispositivo? Comprueba que esté encendido y pulsa “Buscar de nuevo”.',
+                'Can’t see your device? Check that it is on and tap “Search again”.',
+              )}
+            </Text>
           </View>
         )}
       </View>
@@ -180,7 +231,7 @@ export default function ScanScreen({ navigation }: Props) {
   );
 }
 
-const s = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   root: { flex: 1, backgroundColor: palette.bgAlt },
   scrim: { ...StyleSheet.absoluteFillObject, backgroundColor: palette.overlay },
   sheet: {
@@ -265,9 +316,13 @@ const s = StyleSheet.create({
   noteDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: palette.textMuted },
   noteText: { ...typography.small, color: palette.textSecondary, lineHeight: 17, flex: 1 },
   foundBody: { flex: 1 },
-  foundStatus: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: spacing.lg },
+  foundStatus: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm, paddingVertical: spacing.lg },
+  foundState: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
   foundStatusText: { ...typography.body, color: palette.textSecondary },
   foundCount: { fontWeight: '700', color: palette.ink },
+  restartButton: { minHeight: 34, borderRadius: radii.pill, borderWidth: 1, borderColor: palette.borderStrong, paddingHorizontal: spacing.md, alignItems: 'center', justifyContent: 'center' },
+  restartLabel: { ...typography.small, color: palette.accent, fontWeight: '700' },
+  connectionError: { ...typography.small, color: palette.danger, lineHeight: 18, marginBottom: spacing.md },
   deviceList: { gap: spacing.md },
   deviceRow: {
     flexDirection: 'row',
@@ -279,20 +334,8 @@ const s = StyleSheet.create({
     borderRadius: radii.card,
     padding: spacing.lg,
   },
-  deviceIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: radii.md,
-    backgroundColor: palette.card,
-    borderWidth: 1,
-    borderColor: palette.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  deviceDot: { width: 12, height: 22, borderRadius: 6, borderWidth: 2, borderColor: palette.ink },
   deviceInfo: { flex: 1 },
   deviceName: { fontSize: 15, fontWeight: '700', color: palette.ink },
-  deviceMeta: { ...typography.small, color: palette.textSecondary, marginTop: 2 },
   deviceConnected: { ...typography.small, color: palette.accent, fontWeight: '600', marginTop: 2 },
   connectButton: {
     minWidth: 88,

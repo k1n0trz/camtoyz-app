@@ -86,19 +86,24 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace 'com.camtoyz.control'
+    namespace 'com.camtoyz.app'
     defaultConfig {
-        applicationId 'com.camtoyz.control'
+        applicationId 'com.camtoyz.app'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "0.1.0"
+        versionCode 13
+        versionName "1.0.1"
     }
     buildTypes {
         debug {}
         release {
             // La firma de produccion se configurara mediante Play App Signing/CI.
             // Nunca usar la clave debug para una entrega de Play Store.
+            // Las APK internas conservan el certificado de pruebas existente para
+            // permitir actualizaciones sobre 0.9.x sin desinstalar la aplicacion.
+            if ((findProperty('camtoyzInternalSigning') ?: 'false').toBoolean()) {
+                signingConfig signingConfigs.debug
+            }
             shrinkResources (findProperty('android.enableShrinkResourcesInReleaseBuilds')?.toBoolean() ?: false)
             minifyEnabled enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"

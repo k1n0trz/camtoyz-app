@@ -4,14 +4,21 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { PatternTile } from '@/components/PatternTile';
+import { BackButton } from '@/components/BackButton';
+import { MotorIntensityMixer } from '@/components/MotorIntensityMixer';
+import { goBackOr } from '@/navigation/back';
 import { patternCategories, isPatternSupported } from '@/features/patterns/catalog';
 import type { RootStackParamList } from '@/navigation/routes';
 import { useBleStore } from '@/state/bleStore';
-import { palette, radii, spacing, typography, patternGrid } from '@/theme';
+import { palette, radii, spacing, typography, patternGrid } from '@/theme/index';
+import { useAdaptiveStyles } from '@/theme/useAdaptiveStyles';
+import { useTranslation } from '@/i18n/useTranslation';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PatternsAll'>;
 
 export default function PatternsAllScreen({ navigation }: Props) {
+  const s = useAdaptiveStyles(baseStyles);
+  const { pick, error: translateError } = useTranslation();
   const device = useBleStore((state) => state.device);
   const connectionState = useBleStore((state) => state.connectionState);
   const activePattern = useBleStore((state) => state.activePattern);
@@ -19,6 +26,9 @@ export default function PatternsAllScreen({ navigation }: Props) {
   const commandError = useBleStore((state) => state.error);
   const setPattern = useBleStore((state) => state.setPattern);
   const stop = useBleStore((state) => state.stop);
+  const channelCount = useBleStore((state) => state.device?.channelCount ?? 1);
+  const motorIntensities = useBleStore((state) => state.motorIntensities);
+  const setIntensities = useBleStore((state) => state.setIntensities);
   const connected = connectionState === 'connected';
   const patternCount = device?.patternCount;
 
@@ -34,33 +44,40 @@ export default function PatternsAllScreen({ navigation }: Props) {
     if (activePattern === pattern) {
       await stop();
     } else {
-      await setPattern(pattern);
+      await setPattern(pattern, 'all');
     }
   };
 
   return (
     <SafeAreaView style={s.root} edges={['top']}>
       <View style={s.header}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Volver al control"
-          onPress={() => navigation.goBack()}
-          style={s.backButton}
-        >
-          <Text style={s.backLabel}>‹</Text>
-        </Pressable>
-        <Text style={s.title}>Todos los patrones</Text>
+        <BackButton onPress={() => goBackOr(navigation, 'Dashboard')} />
+        <Text style={s.title}>{pick('Todos los patrones', 'All patterns')}</Text>
         <View style={{ flex: 1 }} />
         <View style={s.activePill}>
           <View style={s.activeDot} />
-          <Text style={s.activeLabel}>{activePattern ? `P${activePattern}` : 'Stop'}</Text>
+          <Text style={s.activeLabel}>{activePattern ? `P${activePattern}` : pick('Detenido', 'Stopped')}</Text>
         </View>
       </View>
 
       <ScrollView contentContainerStyle={s.content}>
+        <MotorIntensityMixer
+          channelCount={channelCount}
+          values={motorIntensities}
+          disabled={!connected}
+          onChange={(_channel, _value, values) => {
+            void setIntensities(values);
+          }}
+        />
         {patternCategories.map((category) => (
           <View key={category.id}>
-            <Text style={s.category}>{category.label}</Text>
+            <Text style={s.category}>
+              {category.id === 'constant'
+                ? pick('Constantes', 'Constant')
+                : category.id === 'waves'
+                  ? pick('Ondas', 'Waves')
+                  : pick('Ráfagas', 'Bursts')}
+            </Text>
             <View style={s.grid}>
               {category.patterns.map((pattern) => (
                 <PatternTile
@@ -82,29 +99,36 @@ export default function PatternsAllScreen({ navigation }: Props) {
         <View style={s.infoCard}>
           <View style={s.infoDot} />
           <Text style={s.infoText}>
-            El catálogo crece por datos. Este dispositivo habilita únicamente los patrones que anuncia por Bluetooth.
+            {pick(
+              'El catálogo crece por datos. Este dispositivo habilita únicamente los patrones que anuncia por Bluetooth.',
+              'The catalog is data-driven. This device only enables the patterns it reports over Bluetooth.',
+            )}
           </Text>
         </View>
-        {commandError ? <Text style={s.error}>{commandError}</Text> : null}
+        {commandError ? <Text style={s.error}>{translateError(commandError)}</Text> : null}
       </ScrollView>
 
       <View style={s.footer}>
-        <Text style={s.stopState}>{activePattern ? `Patrón P${activePattern} activo` : 'Motor detenido'}</Text>
+        <Text style={s.stopState}>
+          {activePattern
+            ? pick(`Patrón P${activePattern} activo`, `Pattern P${activePattern} active`)
+            : pick('Motor detenido', 'Motor stopped')}
+        </Text>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Detener vibración"
+          accessibilityLabel={pick('Detener vibración', 'Stop vibration')}
           disabled={!connected}
           onPress={() => void stop()}
           style={[s.stopButton, !connected && s.stopDisabled]}
         >
-          <Text style={s.stopLabel}>Detener</Text>
+          <Text style={s.stopLabel}>{pick('Detener', 'Stop')}</Text>
         </Pressable>
       </View>
     </SafeAreaView>
   );
 }
 
-const s = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   root: { flex: 1, backgroundColor: palette.bg },
   header: {
     height: 56,

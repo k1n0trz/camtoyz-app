@@ -1,6 +1,6 @@
 /**
- * Camtoyz Control — Design Tokens
- * Fuente de verdad: "Camtoyz Control - Sistema de pantallas.dc.html" (Claude Design, aprobado por Edison Múnera).
+ * Camtoyz App — Design Tokens
+ * Fuente de verdad: "Camtoyz App - Sistema de pantallas.dc.html" (Claude Design, aprobado por Edison Múnera).
  * Paleta canónica: rosa/lila (Pantone). SIN rojo.
  *
  * Regla: NINGÚN componente debe usar colores hardcodeados. Todo sale de aquí.
@@ -25,9 +25,9 @@ export const palette = {
   borderStrong: '#EBD0DD', // borde de card/pill
 
   // Texto secundario
-  textSecondary: '#9D5E7C',
-  textMuted: '#BE87A2',
-  textFaint: '#A794BA',
+  textSecondary: '#8B4F6C',
+  textMuted: '#76506A',
+  textFaint: '#6F5B85',
   textSubtle: '#5F4B77',
   textLabel: '#6E5987',
 
@@ -45,11 +45,18 @@ export const paletteDark = {
   bg: '#241833',
   bgAlt: '#2C1E40',
   card: '#3D2A57',
+  tint: '#4A335F',
+  tint2: '#432E57',
   ink: '#F6ECF3',
-  border: 'rgba(233,179,203,.14)',
-  borderStrong: 'rgba(233,179,203,.22)',
-  textSecondary: '#C7A9BC',
-  textMuted: '#A98BA0',
+  border: '#4A365F',
+  borderStrong: '#5A426F',
+  textSecondary: '#DFC6E5',
+  textMuted: '#C7A9BC',
+  textFaint: '#BDA7CF',
+  textSubtle: '#D1BADB',
+  textLabel: '#CFB8DD',
+  overlay: 'rgba(8,4,16,.72)',
+  white: '#FFFFFF',
 } as const;
 
 export const typography = {
@@ -107,4 +114,4 @@ export const shadow = {
   },
 } as const;
 
-export type Palette = typeof palette;
+export type Palette = { [Key in keyof typeof palette]: string };

@@ -1,0 +1,170 @@
+import { useCallback, useEffect, useRef } from 'react';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import * as Clipboard from 'expo-clipboard';
+
+import {
+  PrimaryButton,
+  PrivacyCard,
+  RemoteControlSafetyCard,
+  RoomHeader,
+  RoomPolicyLinks,
+} from '@/components/RoomUi';
+import { goBackOr } from '@/navigation/back';
+import type { RootStackParamList } from '@/navigation/routes';
+import { currentParticipant, useRoomStore } from '@/state/roomStore';
+import { palette, radii, spacing, typography } from '@/theme/index';
+import { useAdaptiveStyles } from '@/theme/useAdaptiveStyles';
+import { useTranslation } from '@/i18n/useTranslation';
+
+type Props = NativeStackScreenProps<RootStackParamList, 'RoomHostPanel'>;
+
+const initials = (name: string) => name.split(/\s+/).slice(0, 2).map((part) => part[0]?.toUpperCase()).join('');
+
+export default function RoomHostPanelScreen({ navigation }: Props) {
+  const s = useAdaptiveStyles(baseStyles);
+  const { pick, error: translateError } = useTranslation();
+  const room = useRoomStore((state) => state.room);
+  const participantId = useRoomStore((state) => state.participantId);
+  const error = useRoomStore((state) => state.error);
+  const restoreRoom = useRoomStore((state) => state.restoreRoom);
+  const kick = useRoomStore((state) => state.kick);
+  const block = useRoomStore((state) => state.block);
+  const endRoom = useRoomStore((state) => state.endRoom);
+  const connectedPeers = useRoomStore((state) => state.connectedPeers);
+  const remoteControlAllowed = useRoomStore((state) => state.remoteControlAllowed);
+  const setRemoteControlAllowed = useRoomStore((state) => state.setRemoteControlAllowed);
+  const emergencyStop = useRoomStore((state) => state.emergencyStop);
+  const me = currentParticipant(room, participantId);
+  const exiting = useRef(false);
+
+  useEffect(() => {
+    if (!room) void restoreRoom();
+  }, [restoreRoom, room]);
+
+  useEffect(() => {
+    if (me && me.role !== 'host') navigation.replace('RoomMemberSession');
+  }, [me, navigation]);
+
+  const confirmBlock = (id: string, name: string) => Alert.alert(
+    pick(`¿Bloquear a ${name}?`, `Block ${name}?`),
+    pick('Se le expulsará y no podrá volver a unirse con este código desde esta instalación.', 'They will be removed and this installation will not be able to rejoin with the same code.'),
+    [{ text: pick('Cancelar', 'Cancel'), style: 'cancel' }, { text: pick('Bloquear', 'Block'), style: 'destructive', onPress: () => void block(id) }],
+  );
+
+  const finishRoom = useCallback(async () => {
+    exiting.current = true;
+    if (await endRoom()) {
+      navigation.popToTop();
+    } else {
+      exiting.current = false;
+    }
+  }, [endRoom, navigation]);
+
+  const confirmEnd = useCallback(() => Alert.alert(
+    pick('¿Terminar la sesión para todos?', 'End the session for everyone?'),
+    pick(
+      'El código dejará de funcionar, se revocará el control remoto y se cerrarán la cámara y el micrófono. Esta acción no se puede deshacer.',
+      'The code will stop working, remote control will be revoked, and the camera and microphone will close. This cannot be undone.',
+    ),
+    [{ text: pick('Cancelar', 'Cancel'), style: 'cancel' }, { text: pick('Terminar', 'End'), style: 'destructive', onPress: async () => {
+      await finishRoom();
+    } }],
+  ), [finishRoom, pick]);
+
+  useEffect(
+    () => navigation.addListener('beforeRemove', (event) => {
+      if (exiting.current || !room) return;
+      event.preventDefault();
+      confirmEnd();
+    }),
+    [confirmEnd, navigation, room],
+  );
+
+  const copyCode = async () => {
+    if (!room) return;
+    await Clipboard.setStringAsync(room.code);
+    Alert.alert(pick('Código copiado', 'Code copied'), pick(`Comparte ${room.code} con la persona que invitarás.`, `Share ${room.code} with the person you are inviting.`));
+  };
+
+  if (!room) {
+    return (
+      <SafeAreaView style={s.root} edges={['top', 'bottom']}>
+        <RoomHeader title={pick('Participantes', 'Participants')} badge="ANFITRIÓN" onBack={() => goBackOr(navigation, 'Splash')} />
+        <View style={s.center}><Text style={s.muted}>{translateError(error) ?? pick('Recuperando la sala…', 'Restoring room…')}</Text></View>
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView style={s.root} edges={['top', 'bottom']}>
+      <RoomHeader title={`${pick('Participantes', 'Participants')} · ${room.participants.length}`} badge="ANFITRIÓN" onBack={confirmEnd} />
+      <ScrollView contentContainerStyle={s.content}>
+        <View style={s.roomCodeWrap}>
+          <Text selectable style={s.roomCode}>{pick('SALA', 'ROOM')} {room.code}</Text>
+          <Pressable accessibilityRole="button" accessibilityLabel="Copiar código de sala" onPress={() => void copyCode()} style={s.copyCode}>
+            <Text style={s.copyCodeText}>{pick('Copiar código', 'Copy code')}</Text>
+          </Pressable>
+        </View>
+        {room.participants.map((participant) => {
+          const self = participant.id === participantId;
+          return (
+            <View key={participant.id} style={[s.participant, !participant.connected && s.offline]}>
+              <View style={[s.avatar, participant.role === 'host' && s.hostAvatar]}><Text style={s.avatarText}>{initials(participant.displayName)}</Text></View>
+              <View style={{ flex: 1 }}>
+                <Text style={s.name}>{self ? pick('Tú', 'You') : participant.displayName}</Text>
+                <Text style={s.meta}>{participant.connected ? pick('Conectado', 'Connected') : pick('Reconectando…', 'Reconnecting…')}</Text>
+              </View>
+              {participant.role === 'host' ? <Text style={s.hostBadge}>{pick('ANFITRIÓN', 'HOST')}</Text> : (
+                <View style={s.actions}>
+                  <Pressable onPress={() => void kick(participant.id)} style={s.action}><Text style={s.actionText}>{pick('Expulsar', 'Remove')}</Text></Pressable>
+                  <Pressable onPress={() => confirmBlock(participant.id, participant.displayName)} style={[s.action, s.block]}><Text style={s.blockText}>{pick('Bloquear', 'Block')}</Text></Pressable>
+                </View>
+              )}
+            </View>
+          );
+        })}
+        <RemoteControlSafetyCard
+          allowed={remoteControlAllowed}
+          connected={connectedPeers > 0}
+          onChange={setRemoteControlAllowed}
+          onStop={emergencyStop}
+        />
+        <PrivacyCard />
+        <RoomPolicyLinks />
+        {error ? <Text style={s.error}>{translateError(error)}</Text> : null}
+      </ScrollView>
+      <View style={s.footer}>
+        <PrimaryButton label={pick('Abrir cámara de la sala', 'Open room camera')} onPress={() => navigation.navigate('RoomCamera')} />
+        <PrimaryButton label={pick('Terminar sesión para todos', 'End session for everyone')} outline onPress={confirmEnd} />
+      </View>
+    </SafeAreaView>
+  );
+}
+
+const baseStyles = StyleSheet.create({
+  root: { flex: 1, backgroundColor: palette.bg },
+  content: { padding: spacing.xl, gap: spacing.md },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  muted: { ...typography.body, color: palette.textSecondary },
+  roomCodeWrap: { alignItems: 'center', gap: spacing.sm, marginBottom: spacing.sm },
+  roomCode: { ...typography.mono, color: palette.textSecondary, textAlign: 'center' },
+  copyCode: { minHeight: 36, paddingHorizontal: spacing.lg, borderRadius: radii.pill, borderWidth: 1, borderColor: palette.accent, alignItems: 'center', justifyContent: 'center' },
+  copyCodeText: { ...typography.small, color: palette.accent, fontWeight: '700' },
+  participant: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, backgroundColor: palette.card, borderWidth: 1, borderColor: palette.border, borderRadius: radii.card, padding: spacing.lg },
+  offline: { opacity: 0.55 },
+  avatar: { width: 38, height: 38, borderRadius: 19, backgroundColor: palette.tint, alignItems: 'center', justifyContent: 'center' },
+  hostAvatar: { backgroundColor: palette.secondary },
+  avatarText: { fontSize: 11, fontWeight: '700', color: palette.ink },
+  name: { ...typography.label, color: palette.ink, fontWeight: '700' },
+  meta: { fontSize: 11, color: palette.textSecondary, marginTop: 2 },
+  hostBadge: { backgroundColor: palette.accent, color: palette.white, fontSize: 9, fontWeight: '800', letterSpacing: 1, borderRadius: radii.pill, paddingVertical: 4, paddingHorizontal: 9 },
+  actions: { flexDirection: 'row', gap: 6 },
+  action: { borderWidth: 1, borderColor: palette.borderStrong, borderRadius: radii.pill, paddingVertical: 7, paddingHorizontal: 10 },
+  block: { borderColor: palette.accent },
+  actionText: { fontSize: 11, color: palette.ink, fontWeight: '600' },
+  blockText: { fontSize: 11, color: palette.accent, fontWeight: '700' },
+  error: { ...typography.small, color: palette.danger, textAlign: 'center' },
+  footer: { padding: spacing.xl, gap: spacing.sm },
+});

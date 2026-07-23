@@ -24,8 +24,8 @@ export class AdaptiveBeatDetector {
   process(sample: PlaybackSample, maximum: number, now = Date.now()): DetectedBeat | undefined {
     const bass = sample.bassDb;
     if (!Number.isFinite(bass) || !Number.isFinite(sample.db)) return undefined;
-    // Conserva la referencia durante las pausas cortas entre golpes. Solo una
-    // pausa real (aprox. dos segundos) vuelve a calibrar el siguiente inicio.
+    // Conserva la referencia durante pausas cortas entre golpes. Una pausa
+    // sostenida vuelve a calibrar el siguiente inicio.
     if (sample.db < -55) {
       this.silentFrames += 1;
       if (this.silentFrames >= 20) {
@@ -46,15 +46,16 @@ export class AdaptiveBeatDetector {
     const alpha = bass > baseline ? 0.045 : 0.14;
     this.bassBaseline += (bass - baseline) * alpha;
     this.frames += 1;
-    // Limita el ritmo a golpes perceptiblemente separados. El motor conserva inercia
-    // durante unos milisegundos y frecuencias mayores se sienten como vibración continua.
-    if (this.frames < 2 || riseDb < 4.5 || now - this.lastBeatAt < 360) return undefined;
+    const strength = clampPercent(((riseDb - 3.8) / 13) * 100);
+    // Una ventana corta conserva golpes rápidos sin convertir el motor en una
+    // vibración continua. Los ataques fuertes admiten un intervalo algo menor.
+    const minimumGap = strength >= 65 ? 175 : strength >= 35 ? 205 : 235;
+    if (this.frames < 2 || riseDb < 3.8 || now - this.lastBeatAt < minimumGap) return undefined;
 
     this.lastBeatAt = now;
-    const strength = clampPercent(((riseDb - 4.5) / 14) * 100);
-    const floor = Math.min(38, maximum);
-    const shapedStrength = Math.pow(strength / 100, 1.35);
+    const floor = Math.min(30, maximum);
+    const shapedStrength = Math.pow(strength / 100, 1.25);
     const intensity = clampPercent(floor + shapedStrength * (maximum - floor));
-    return { intensity, strength, durationMs: 70 + Math.round(strength * 0.25) };
+    return { intensity, strength, durationMs: 52 + Math.round(strength * 0.34) };
   }
 }

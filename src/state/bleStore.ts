@@ -1,21 +1,33 @@
 import { create } from 'zustand';
 
 import { ble, type BleConnectionState, type BleDevice } from '@/ble/BleManager';
+import type { MotorTarget } from '@/ble/protocol';
 
 interface BleStore {
   connectionState: BleConnectionState;
   device?: BleDevice;
+  connectedDevices: BleDevice[];
+  activeDeviceId?: string;
+  syncEnabled: boolean;
+  isScanning: boolean;
   devices: BleDevice[];
   activePattern?: number;
+  motorIntensities: number[];
+  motorTarget: MotorTarget;
   commandBusy: boolean;
   error?: string;
   scan: () => Promise<void>;
   stopScan: () => Promise<void>;
   connect: (deviceId: string) => Promise<boolean>;
-  disconnect: () => Promise<void>;
+  disconnect: (deviceId?: string) => Promise<void>;
   retryConnection: () => Promise<void>;
-  setPattern: (index: number) => Promise<boolean>;
-  setIntensity: (percent: number) => Promise<boolean>;
+  setActiveDevice: (deviceId: string) => void;
+  setSyncEnabled: (enabled: boolean) => void;
+  setMotorTarget: (target: MotorTarget) => void;
+  setPattern: (index: number, target?: MotorTarget) => Promise<boolean>;
+  setIntensity: (percent: number, target?: MotorTarget) => Promise<boolean>;
+  setIntensities: (values: readonly number[]) => Promise<boolean>;
+  stopSelected: (target?: MotorTarget) => Promise<boolean>;
   stop: () => Promise<boolean>;
   clearError: () => void;
 }
@@ -29,8 +41,14 @@ function upsertDevice(devices: BleDevice[], incoming: BleDevice): BleDevice[] {
 export const useBleStore = create<BleStore>((set) => ({
   connectionState: ble.snapshot.state,
   device: ble.snapshot.device,
+  connectedDevices: ble.snapshot.devices,
+  activeDeviceId: ble.snapshot.activeDeviceId,
+  syncEnabled: ble.snapshot.syncEnabled,
+  isScanning: ble.snapshot.isScanning,
   devices: [],
   activePattern: ble.snapshot.activePattern,
+  motorIntensities: ble.snapshot.motorIntensities,
+  motorTarget: ble.snapshot.motorTarget,
   commandBusy: false,
   error: ble.snapshot.error,
 
@@ -63,7 +81,7 @@ export const useBleStore = create<BleStore>((set) => ({
     }
   },
 
-  disconnect: () => ble.disconnect(),
+  disconnect: (deviceId) => ble.disconnect(deviceId),
 
   retryConnection: async () => {
     try {
@@ -76,10 +94,16 @@ export const useBleStore = create<BleStore>((set) => ({
     }
   },
 
-  setPattern: async (index) => {
+  setActiveDevice: (deviceId) => ble.setActiveDevice(deviceId),
+
+  setSyncEnabled: (enabled) => ble.setSyncEnabled(enabled),
+
+  setMotorTarget: (target) => ble.setMotorTarget(target),
+
+  setPattern: async (index, target) => {
     set({ commandBusy: true, error: undefined });
     try {
-      await ble.setPattern(index);
+      await ble.setPattern(index, target);
       return true;
     } catch (error) {
       set({
@@ -91,15 +115,43 @@ export const useBleStore = create<BleStore>((set) => ({
     }
   },
 
-  setIntensity: async (percent) => {
+  setIntensity: async (percent, target) => {
     set({ commandBusy: true, error: undefined });
     try {
-      await ble.setIntensity(percent);
+      await ble.setIntensity(percent, target);
       return true;
     } catch (error) {
       set({
         error: error instanceof Error ? error.message : 'No fue posible cambiar la intensidad.',
       });
+      return false;
+    } finally {
+      set({ commandBusy: false });
+    }
+  },
+
+  setIntensities: async (values) => {
+    set({ commandBusy: true, error: undefined });
+    try {
+      await ble.setIntensities(values);
+      return true;
+    } catch (error) {
+      set({
+        error: error instanceof Error ? error.message : 'No fue posible cambiar las intensidades.',
+      });
+      return false;
+    } finally {
+      set({ commandBusy: false });
+    }
+  },
+
+  stopSelected: async (target) => {
+    set({ commandBusy: true, error: undefined });
+    try {
+      await ble.stopSelected(target);
+      return true;
+    } catch (error) {
+      set({ error: error instanceof Error ? error.message : 'No fue posible detener el motor.' });
       return false;
     } finally {
       set({ commandBusy: false });
@@ -126,7 +178,13 @@ ble.subscribe((snapshot) => {
   useBleStore.setState({
     connectionState: snapshot.state,
     device: snapshot.device,
+    connectedDevices: snapshot.devices,
+    activeDeviceId: snapshot.activeDeviceId,
+    syncEnabled: snapshot.syncEnabled,
+    isScanning: snapshot.isScanning,
     activePattern: snapshot.activePattern,
+    motorIntensities: snapshot.motorIntensities,
+    motorTarget: snapshot.motorTarget,
     error: snapshot.error,
   });
 });

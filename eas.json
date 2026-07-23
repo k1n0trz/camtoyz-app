@@ -1,0 +1,22 @@
+{
+  "cli": {
+    "version": ">= 21.0.0"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal"
+    },
+    "preview": {
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_ROOM_SERVER_URL": "https://app.camtoyz.com"
+      }
+    },
+    "production": {
+      "env": {
+        "EXPO_PUBLIC_ROOM_SERVER_URL": "https://app.camtoyz.com"
+      }
+    }
+  }
+}

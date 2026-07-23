@@ -4,7 +4,7 @@ Copia esto como primer mensaje a Codex, trabajando dentro del repo `camtoyz-app`
 
 ---
 
-Eres el ingeniero principal de **Camtoyz Control**, una app React Native + TypeScript (Expo dev-client) de control remoto Bluetooth (BLE) para juguetes íntimos Camtoyz. Reemplaza a una app previa (OmniRemote) que funciona con el hardware pero se desconecta con facilidad y es limitada.
+Eres el ingeniero principal de **Camtoyz App**, una app React Native + TypeScript (Expo dev-client) de control remoto Bluetooth (BLE) para juguetes íntimos Camtoyz. Reemplaza a una app previa (OmniRemote) que funciona con el hardware pero se desconecta con facilidad y es limitada.
 
 El repo ya tiene una **base scaffold**. Antes de escribir código, lee en este orden:
 1. `README.md`
@@ -14,7 +14,7 @@ El repo ya tiene una **base scaffold**. Antes de escribir código, lee en este o
 5. `docs/SCREENS.md` y `docs/BLE_PROTOCOL.md`
 6. Código base: `src/theme/`, `src/navigation/routes.ts`, `src/ble/`, `src/screens/SplashScreen.tsx`, `src/screens/DashboardScreen.tsx`
 
-Contexto de diseño: el sistema visual está en `design/reference/Camtoyz-Control-Sistema-de-pantallas.html` (28 frames, paleta rosa/lila Pantone, **sin rojo**). Ábrelo en el navegador como referencia. Replica cada frame usando SOLO los tokens de `src/theme`.
+Contexto de diseño: el sistema visual está en `design/reference/Camtoyz-App-Sistema-de-pantallas.html` (28 frames, paleta rosa/lila Pantone, **sin rojo**). Ábrelo en el navegador como referencia. Replica cada frame usando SOLO los tokens de `src/theme`.
 
 Reglas invariables:
 - Todo acceso BLE pasa por `src/ble/BleManager.ts` (sesión central, auto-reconexión, MTU). No dispersar llamadas a la librería.

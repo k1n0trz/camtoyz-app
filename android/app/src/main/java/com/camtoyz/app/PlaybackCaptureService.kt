@@ -1,4 +1,4 @@
-package com.camtoyz.control
+package com.camtoyz.app
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -42,15 +42,16 @@ class PlaybackCaptureService : Service() {
   }
 
   companion object {
-    const val ACTION_START = "com.camtoyz.control.playback.START"
-    const val ACTION_START_LOCAL = "com.camtoyz.control.playback.START_LOCAL"
-    const val ACTION_STOP = "com.camtoyz.control.playback.STOP"
+    const val ACTION_START = "com.camtoyz.app.playback.START"
+    const val ACTION_START_LOCAL = "com.camtoyz.app.playback.START_LOCAL"
+    const val ACTION_STOP = "com.camtoyz.app.playback.STOP"
     const val EXTRA_RESULT_CODE = "resultCode"
     const val EXTRA_RESULT_DATA = "resultData"
     const val EXTRA_TRACK_URI = "trackUri"
     private const val NOTIFICATION_ID = 9042
     private const val CHANNEL_ID = "playback_capture"
     private const val SAMPLE_RATE = 44100
+    private const val ANALYSIS_SAMPLE_COUNT = 1024
     private const val TAG = "CamtoyzAudio"
 
     @Volatile var listener: Listener? = null
@@ -158,7 +159,7 @@ class PlaybackCaptureService : Service() {
       val generation = captureGeneration
       frameNumber = 0
       listener?.onStatus("active")
-      worker.execute { captureLoop(bufferSize / 2, generation) }
+      worker.execute { captureLoop(ANALYSIS_SAMPLE_COUNT, generation) }
     } catch (error: Throwable) {
       Log.e(TAG, "Playback capture failed", error)
       fail(error.message ?: "No fue posible iniciar la captura interna.")

@@ -1,4 +1,4 @@
-package com.camtoyz.control
+package com.camtoyz.app
 
 import android.app.Activity
 import android.content.Context

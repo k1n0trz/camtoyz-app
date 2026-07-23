@@ -5,6 +5,10 @@ node_modules/
 .claude/settings.local.json
 .vscode/
 .idea/
+.codex-docx/
+.qa-device/
+__pycache__/
+*.pyc
 
 # expo / native build artifacts
 .expo/
@@ -48,3 +52,4 @@ Thumbs.db
 data/omni remote/*.apk
 *.apk
 *.aab
+*.idsig

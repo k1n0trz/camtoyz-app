@@ -3,7 +3,9 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
-import IntensitySlider from '@/components/IntensitySlider';
+import { BackButton } from '@/components/BackButton';
+import { MotorIntensityMixer } from '@/components/MotorIntensityMixer';
+import { ble } from '@/ble/BleManager';
 import { AdaptiveBeatDetector } from '@/features/audio/beatDetector';
 import { meteringToPercent } from '@/features/audio/metering';
 import {
@@ -16,8 +18,11 @@ import {
   subscribePlaybackStatus,
 } from '@/features/audio/playbackCapture';
 import type { RootStackParamList } from '@/navigation/routes';
+import { goBackOr } from '@/navigation/back';
 import { useBleStore } from '@/state/bleStore';
-import { palette, radii, spacing, typography } from '@/theme';
+import { palette, radii, spacing, typography } from '@/theme/index';
+import { useAdaptiveStyles } from '@/theme/useAdaptiveStyles';
+import { useTranslation } from '@/i18n/useTranslation';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'MusicControl'>;
 type AudioSource = 'app' | 'local';
@@ -25,62 +30,60 @@ interface LocalTrack { uri: string; name: string }
 
 const BARS = [0.3, 0.55, 0.85, 0.45, 0.7, 1, 0.6, 0.35, 0.75, 0.5, 0.25];
 const SILENCE_DB = -65;
-const QUIET_GAP_MS = 180;
+const QUIET_GAP_MS = 45;
 
 export default function MusicControlScreen({ navigation }: Props) {
+  const s = useAdaptiveStyles(baseStyles);
+  const { pick, error: translateError } = useTranslation();
   const connected = useBleStore((state) => state.connectionState === 'connected');
-  const setIntensity = useBleStore((state) => state.setIntensity);
   const stop = useBleStore((state) => state.stop);
+  const channelCount = useBleStore((state) => state.device?.channelCount ?? 1);
   const [source, setSource] = useState<AudioSource>('app');
   const [localTrack, setLocalTrack] = useState<LocalTrack>();
   const [level, setLevel] = useState(0);
-  const [maximum, setMaximum] = useState(80);
+  const [motorLevels, setMotorLevels] = useState<number[]>(() => Array(channelCount).fill(80));
   const [active, setActive] = useState(false);
   const [beatStrength, setBeatStrength] = useState(0);
-  const [beatCount, setBeatCount] = useState(0);
   const [error, setError] = useState<string>();
 
   const activeRef = useRef(false);
-  const maximumRef = useRef(maximum);
+  const motorLevelsRef = useRef(motorLevels);
+  const channelCountRef = useRef(channelCount);
   const connectedRef = useRef(connected);
   const detector = useRef(new AdaptiveBeatDetector());
-  const commandChain = useRef<Promise<void>>(Promise.resolve());
-  const commandPending = useRef(false);
-  const stopQueued = useRef(false);
+  const writeInFlight = useRef(false);
+  const pulseTimer = useRef<ReturnType<typeof setTimeout>>();
   const motorOn = useRef(false);
-  const pulseEndsAt = useRef(0);
   const quietUntil = useRef(0);
   const silenceFrames = useRef(0);
   const silenceStopSent = useRef(false);
 
-  useEffect(() => { maximumRef.current = maximum; }, [maximum]);
+  useEffect(() => {
+    setMotorLevels((current) =>
+      Array.from({ length: channelCount }, (_, channel) => current[channel] ?? 80),
+    );
+    channelCountRef.current = channelCount;
+  }, [channelCount]);
+  useEffect(() => { motorLevelsRef.current = motorLevels; }, [motorLevels]);
   useEffect(() => { connectedRef.current = connected; }, [connected]);
-
-  const enqueueCommand = useCallback((operation: () => Promise<void>): Promise<void> => {
-    const task = commandChain.current.then(operation, operation);
-    commandChain.current = task.catch(() => undefined);
-    return task;
-  }, []);
 
   const resetPulseState = useCallback(() => {
     motorOn.current = false;
-    pulseEndsAt.current = 0;
     quietUntil.current = Date.now() + QUIET_GAP_MS;
     setBeatStrength(0);
   }, []);
 
-  const requestMotorStop = useCallback((): Promise<void> => {
-    if (stopQueued.current) return commandChain.current;
-    stopQueued.current = true;
-    const task = enqueueCommand(async () => {
-      await stop();
+  const requestMotorStop = useCallback(async (global = false): Promise<void> => {
+    if (pulseTimer.current) clearTimeout(pulseTimer.current);
+    pulseTimer.current = undefined;
+    try {
+      if (global) await stop();
+      else await ble.setIntensities(Array(channelCountRef.current).fill(0));
+    } finally {
+      writeInFlight.current = false;
       resetPulseState();
-    });
-    return task.catch(() => undefined).finally(() => {
-      stopQueued.current = false;
-      commandPending.current = false;
-    });
-  }, [enqueueCommand, resetPulseState, stop]);
+    }
+  }, [resetPulseState, stop]);
 
   const stopEverything = useCallback(async () => {
     activeRef.current = false;
@@ -89,7 +92,7 @@ export default function MusicControlScreen({ navigation }: Props) {
     silenceStopSent.current = true;
     detector.current.reset();
     stopPlaybackCapture();
-    await requestMotorStop();
+    await requestMotorStop(true);
   }, [requestMotorStop]);
 
   useEffect(() => {
@@ -97,7 +100,7 @@ export default function MusicControlScreen({ navigation }: Props) {
       const now = Date.now();
       setLevel(meteringToPercent(sample.db));
       if (!activeRef.current || !connectedRef.current) return;
-      const beat = detector.current.process(sample, maximumRef.current, now);
+      const beat = detector.current.process(sample, 100, now);
 
       if (sample.db < SILENCE_DB) {
         silenceFrames.current += 1;
@@ -110,40 +113,37 @@ export default function MusicControlScreen({ navigation }: Props) {
 
       silenceFrames.current = 0;
       silenceStopSent.current = false;
-      if (motorOn.current) {
-        if (now >= pulseEndsAt.current) void requestMotorStop();
-        return;
-      }
-      if (commandPending.current || stopQueued.current || now < quietUntil.current) return;
+      if (motorOn.current || writeInFlight.current || now < quietUntil.current) return;
 
       if (!beat || beat.intensity <= 0) return;
-      commandPending.current = true;
+      writeInFlight.current = true;
       setBeatStrength(beat.strength);
-      setBeatCount((count) => count + 1);
-      void enqueueCommand(async () => {
-        const started = await setIntensity(beat.intensity);
-        if (!started || !activeRef.current) {
-          await stop();
-          resetPulseState();
-          return;
-        }
+      const outputs = motorLevelsRef.current.map(
+        (maximum) => Math.round((beat.intensity * maximum) / 100),
+      );
+      void ble.setIntensities(outputs).then(() => {
+        if (!activeRef.current) return requestMotorStop(true);
         motorOn.current = true;
-        pulseEndsAt.current = Date.now() + beat.durationMs;
-      }).catch(() => requestMotorStop()).finally(() => {
-        commandPending.current = false;
+        pulseTimer.current = setTimeout(() => {
+          void requestMotorStop();
+        }, beat.durationMs);
+      }).catch(() => {
+        setError(pick('No fue posible enviar el pulso al dispositivo.', 'The pulse could not be sent to the device.'));
+        return requestMotorStop(true);
+      }).finally(() => {
+        writeInFlight.current = false;
       });
     });
 
     const states = subscribePlaybackStatus(({ status, message, trackUri, trackName }) => {
       if (status === 'selected' && trackUri) {
-        setLocalTrack({ uri: trackUri, name: trackName ?? 'Canción seleccionada' });
+        setLocalTrack({ uri: trackUri, name: trackName ?? pick('Canción seleccionada', 'Selected song') });
         setError(undefined);
       }
       if (status === 'active') {
         detector.current.reset();
         silenceFrames.current = 0;
         silenceStopSent.current = false;
-        setBeatCount(0);
         activeRef.current = true;
         setActive(true);
       }
@@ -152,19 +152,19 @@ export default function MusicControlScreen({ navigation }: Props) {
         setActive(false);
         void requestMotorStop();
       }
-      if (status === 'denied') setError('Android no autorizó la captura de audio interno.');
+      if (status === 'denied') setError(pick('Android no autorizó la captura de audio interno.', 'Android did not allow internal audio capture.'));
       if (status === 'error') {
         activeRef.current = false;
         setActive(false);
-        setError(message ?? 'No fue posible iniciar el control musical.');
+        setError(message ?? pick('No fue posible iniciar el control musical.', 'Music control could not be started.'));
         void requestMotorStop();
       }
       if (status === 'unsupported' || status === 'unavailable') {
-        setError('La captura musical no está disponible en esta instalación.');
+        setError(pick('La captura musical no está disponible en esta instalación.', 'Music capture is not available in this build.'));
       }
     });
     return () => { levels.remove(); states.remove(); void stopEverything(); };
-  }, [enqueueCommand, requestMotorStop, resetPulseState, setIntensity, stop, stopEverything]);
+  }, [pick, requestMotorStop, stopEverything]);
 
   useEffect(() => navigation.addListener('blur', () => void stopEverything()), [navigation, stopEverything]);
 
@@ -174,14 +174,13 @@ export default function MusicControlScreen({ navigation }: Props) {
     setSource(next);
     setError(undefined);
     setLevel(0);
-    setBeatCount(0);
   };
 
   const toggle = () => {
     if (active) { void stopEverything(); return; }
-    if (!connected) { setError('Conecta la bala antes de activar el ritmo.'); return; }
+    if (!connected) { setError(pick('Conecta el juguete antes de activar el ritmo.', 'Connect the toy before enabling rhythm control.')); return; }
     if (!isPlaybackCaptureSupported()) {
-      setError('Esta instalación necesita reconstruirse para usar el control musical.');
+      setError(pick('Esta instalación necesita reconstruirse para usar el control musical.', 'This build must be rebuilt to use music control.'));
       return;
     }
     setError(undefined);
@@ -194,27 +193,27 @@ export default function MusicControlScreen({ navigation }: Props) {
   };
 
   const actionLabel = active
-    ? 'Detener'
+    ? pick('Detener', 'Stop')
     : source === 'local'
-      ? localTrack ? 'Reproducir con ritmo' : 'Elegir canción'
-      : 'Activar ritmo musical';
+      ? localTrack ? pick('Reproducir con ritmo', 'Play with rhythm') : pick('Elegir canción', 'Choose song')
+      : pick('Activar ritmo musical', 'Enable music rhythm');
 
   return <SafeAreaView style={s.root} edges={['top']}>
     <View style={s.header}>
-      <Pressable onPress={() => navigation.goBack()}><Text style={s.back}>‹</Text></Pressable>
-      <Text style={s.title}>Control musical</Text>
+      <BackButton onPress={() => goBackOr(navigation, 'Dashboard')} />
+      <Text style={s.title}>{pick('Control musical', 'Music control')}</Text>
     </View>
     <ScrollView contentContainerStyle={s.content}>
       <View>
-        <Text style={s.sectionTitle}>Fuente de música</Text>
+        <Text style={s.sectionTitle}>{pick('Fuente de música', 'Music source')}</Text>
         <View style={s.sourceOptions}>
           <Pressable style={[s.sourceOption, source === 'app' && s.sourceSelected]} onPress={() => chooseSource('app')}>
-            <Text style={s.sourceIcon}>◉</Text><Text style={s.sourceName}>Otra app</Text>
+            <Text style={s.sourceIcon}>◉</Text><Text style={s.sourceName}>{pick('Otra app', 'Another app')}</Text>
             <Text style={s.sourceHint}>Spotify, YouTube Music…</Text>
           </Pressable>
           <Pressable style={[s.sourceOption, source === 'local' && s.sourceSelected]} onPress={() => chooseSource('local')}>
-            <Text style={s.sourceIcon}>♫</Text><Text style={s.sourceName}>Mi dispositivo</Text>
-            <Text style={s.sourceHint}>Archivos de audio guardados</Text>
+            <Text style={s.sourceIcon}>♫</Text><Text style={s.sourceName}>{pick('Mi dispositivo', 'My device')}</Text>
+            <Text style={s.sourceHint}>{pick('Archivos de audio guardados', 'Saved audio files')}</Text>
           </Pressable>
         </View>
       </View>
@@ -222,15 +221,15 @@ export default function MusicControlScreen({ navigation }: Props) {
       {source === 'local' ? <Pressable style={s.trackCard} onPress={requestLocalTrack}>
         <View style={s.art}><Text style={s.artText}>♫</Text></View>
         <View style={{ flex: 1 }}>
-          <Text style={s.label}>{localTrack?.name ?? 'Seleccionar una canción'}</Text>
-          <Text style={s.sub}>{localTrack ? 'Toca para cambiar el archivo' : 'MP3, M4A y otros formatos compatibles'}</Text>
+          <Text style={s.label}>{localTrack?.name ?? pick('Seleccionar una canción', 'Select a song')}</Text>
+          <Text style={s.sub}>{localTrack ? pick('Toca para cambiar el archivo', 'Tap to change the file') : pick('MP3, M4A y otros formatos compatibles', 'MP3, M4A, and other supported formats')}</Text>
         </View>
         <Text style={s.chevron}>›</Text>
       </Pressable> : <View style={s.trackCard}>
         <View style={s.art}><Text style={s.artText}>audio</Text></View>
         <View style={{ flex: 1 }}>
-          <Text style={s.label}>Audio interno de otra app</Text>
-          <Text style={s.sub}>{active ? 'Capturando ritmo y graves' : 'Android te pedirá elegir la app de música'}</Text>
+          <Text style={s.label}>{pick('Audio interno de otra app', 'Internal audio from another app')}</Text>
+          <Text style={s.sub}>{active ? pick('Capturando ritmo y graves', 'Capturing rhythm and bass') : pick('Android te pedirá elegir la app de música', 'Android will ask you to choose the music app')}</Text>
         </View>
       </View>}
 
@@ -242,19 +241,29 @@ export default function MusicControlScreen({ navigation }: Props) {
             opacity: beatStrength > 0 ? 1 : 0.45,
           }]}
         />)}</View>
-        <Text style={s.sub}>{active ? `Ritmo: ${beatCount} golpes · pulso ${beatStrength}%` : 'Cada golpe tendrá encendido y pausa separados'}</Text>
       </View>
 
       <View>
-        <View style={s.row}><Text style={s.label}>Nivel de vibración</Text><Text style={s.max}>{maximum}%</Text></View>
-        <IntensitySlider value={maximum} onChange={setMaximum} />
-        <View style={s.scale}><Text style={s.scaleText}>Suave</Text><Text style={s.scaleText}>Intenso</Text></View>
+        <View style={s.row}>
+          <View>
+            <Text style={s.label}>{pick('Fuerza por motor', 'Strength per motor')}</Text>
+            <Text style={s.sub}>{pick('Cada motor conserva su propio nivel.', 'Each motor keeps its own level.')}</Text>
+          </View>
+        </View>
+        <MotorIntensityMixer
+          channelCount={channelCount}
+          values={motorLevels}
+          onChange={(channel, value) => {
+            setMotorLevels((current) => current.map((level, index) => index === channel ? value : level));
+          }}
+        />
+        <View style={s.scale}><Text style={s.scaleText}>{pick('Suave', 'Low')}</Text><Text style={s.scaleText}>{pick('Intenso', 'High')}</Text></View>
       </View>
 
       <Text style={s.privacy}>{source === 'app'
-        ? 'Android pedirá permiso para capturar el audio de la app que elijas. No guardamos ni enviamos el audio.'
-        : 'La canción se reproduce y analiza únicamente en este teléfono. No guardamos ni enviamos el audio.'}</Text>
-      {error ? <Text style={s.error}>{error}</Text> : null}
+        ? pick('Android pedirá permiso para capturar el audio de la app que elijas. No guardamos ni enviamos el audio.', 'Android will request permission to capture audio from the selected app. Audio is never stored or sent.')
+        : pick('La canción se reproduce y analiza únicamente en este teléfono. No guardamos ni enviamos el audio.', 'The song is played and analyzed only on this phone. Audio is never stored or sent.')}</Text>
+      {error ? <Text style={s.error}>{translateError(error)}</Text> : null}
     </ScrollView>
     <View style={s.footer}>
       <Pressable style={[s.button, active && s.stopButton]} onPress={toggle}>
@@ -264,7 +273,7 @@ export default function MusicControlScreen({ navigation }: Props) {
   </SafeAreaView>;
 }
 
-const s = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   root: { flex: 1, backgroundColor: palette.bg },
   header: { height: 56, paddingHorizontal: spacing.xl, alignItems: 'center', flexDirection: 'row', gap: spacing.md },
   back: { fontSize: 28, color: palette.ink },
@@ -283,7 +292,7 @@ const s = StyleSheet.create({
   chevron: { fontSize: 28, color: palette.textMuted },
   label: { ...typography.label, color: palette.ink },
   sub: { ...typography.small, color: palette.textSecondary, marginTop: 2 },
-  visual: { height: 210, alignItems: 'center', justifyContent: 'center', gap: spacing.md, padding: spacing.xl, backgroundColor: palette.card, borderColor: palette.border, borderWidth: 1, borderRadius: radii.cardLg },
+  visual: { height: 180, alignItems: 'center', justifyContent: 'center', padding: spacing.xl, backgroundColor: palette.card, borderColor: palette.border, borderWidth: 1, borderRadius: radii.cardLg },
   bars: { width: '100%', height: 115, alignItems: 'flex-end', justifyContent: 'center', flexDirection: 'row', gap: 5 },
   bar: { width: 9, borderRadius: 4, backgroundColor: palette.accent },
   row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },

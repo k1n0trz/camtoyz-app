@@ -1,4 +1,4 @@
-package com.camtoyz.control
+package com.camtoyz.app
 
 import com.facebook.react.ReactPackage
 import com.facebook.react.bridge.NativeModule

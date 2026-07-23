@@ -11,7 +11,6 @@ export type RootStackParamList = {
   PatternsAll: undefined; // 03b Patterns-Extended (grid por categorías)
   MultiDevice: undefined; // 03c Multi-Device
   GestureControl: undefined; // 04 Gesture-Control (pad de dibujo)
-  GestureMultiDevice: undefined; // 04b Gesture-MultiDevice
   SoundControl: undefined; // 05 Sound-Control
   MusicControl: undefined; // 06 Music-Control
   RoomCreate: undefined; // 07a Room-Create-Host
@@ -38,7 +37,7 @@ export const DESIGN_FRAME_MAP: Record<string, string> = {
   '03b Patterns-Extended': 'PatternsAll',
   '03c Multi-Device': 'MultiDevice',
   '04 Gesture-Control': 'GestureControl',
-  '04b Gesture-MultiDevice': 'GestureMultiDevice',
+  '04b Gesture-MultiDevice': 'MultiDevice (control individual)',
   '05 Sound-Control': 'SoundControl',
   '06 Music-Control': 'MusicControl',
   '07a Room-Create-Host': 'RoomCreate',

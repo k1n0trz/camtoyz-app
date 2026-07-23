@@ -1,22 +1,28 @@
 {
   "expo": {
-    "name": "Camtoyz Control",
-    "slug": "camtoyz-control",
-    "version": "0.1.0",
+    "name": "Camtoyz App",
+    "slug": "camtoyz-app",
+    "version": "1.0.1",
+    "platforms": [
+      "android"
+    ],
     "orientation": "portrait",
-    "scheme": "camtoyz",
+    "scheme": "camtoyz-app",
     "icon": "./assets/icon/app-icon.png",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "splash": {
       "backgroundColor": "#FAF0F5"
     },
     "assetBundlePatterns": [
       "**/*"
     ],
+    "extra": {
+      "roomServerUrl": "https://app.camtoyz.com"
+    },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.camtoyz.control",
+      "bundleIdentifier": "com.camtoyz.app",
       "infoPlist": {
         "NSBluetoothAlwaysUsageDescription": "Camtoyz usa Bluetooth para conectarse con tu dispositivo.",
         "NSMicrophoneUsageDescription": "El control por sonido usa el micrófono para reaccionar al ambiente.",
@@ -24,7 +30,8 @@
       }
     },
     "android": {
-      "package": "com.camtoyz.control",
+      "package": "com.camtoyz.app",
+      "versionCode": 13,
       "adaptiveIcon": {
         "foregroundImage": "./assets/icon/adaptive-foreground.png",
         "backgroundColor": "#E8B4CB"
@@ -35,6 +42,11 @@
         "ACCESS_FINE_LOCATION",
         "RECORD_AUDIO",
         "CAMERA"
+      ],
+      "blockedPermissions": [
+        "android.permission.SYSTEM_ALERT_WINDOW",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE"
       ]
     },
     "plugins": [
@@ -49,7 +61,16 @@
         }
       ],
       "expo-dev-client",
-      "expo-asset"
+      "expo-asset",
+      "expo-secure-store",
+      [
+        "@config-plugins/react-native-webrtc",
+        {
+          "cameraPermission": "Camtoyz usa la cámara solo cuando activas video en una sala privada.",
+          "microphonePermission": "Camtoyz usa el micrófono para el control por sonido y las salas privadas."
+        }
+      ],
+      "expo-localization"
     ]
   }
 }

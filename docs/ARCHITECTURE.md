@@ -1,4 +1,4 @@
-# Arquitectura — Camtoyz Control
+# Arquitectura — Camtoyz App
 
 ## 1. App cliente (React Native + TS / Expo dev-client)
 
@@ -6,7 +6,7 @@
 UI (screens/) ──▶ hooks/state (zustand) ──▶ BleManager (singleton)
                           │                        │
                           │                        └─▶ react-native-ble-plx ─▶ dispositivo
-                          └─▶ RoomClient (Fase 5) ─▶ WebRTC DataChannel (control P2P)
+                          └─▶ RoomClient (Fase 6) ─▶ WebRTC DataChannel (control P2P)
                                                    └─▶ socket.io (control plane de sala)
 ```
 
@@ -14,7 +14,7 @@ UI (screens/) ──▶ hooks/state (zustand) ──▶ BleManager (singleton)
 - **Estado global** (zustand, `src/state/`): dispositivo(s) conectado(s), patrón/intensidad activos, estado de sala. La UI se suscribe; nadie habla con BLE directo salvo el manager.
 - **Throttling del gesto**: el pad (Fase 4) usa reanimated/gesture-handler en el hilo de UI y hace *throttle* (~20–33 ms) antes de `write` para no saturar el enlace BLE (saturarlo es lo que causa desconexiones).
 
-## 2. Interacción remota (salas) — modelo híbrido (Fase 5)
+## 2. Interacción remota (salas) — modelo híbrido (Fase 6)
 
 Decisión tomada con el usuario: **P2P para el control, servidor ligero para la membresía.**
 
@@ -35,7 +35,7 @@ Roles:
 - **Anfitrión** (quien comparte el código): panel de participantes, expulsar, bloquear (no puede re-unirse), terminar sesión para todos. Se distingue con el acento P7433.
 - **Miembro**: controla pero no ve el panel; badge "Miembro".
 
-Componentes a crear en Fase 5: `src/features/room/RoomClient.ts` (WebRTC + socket), servidor `server/` (Node + socket.io; ver ROADMAP).
+Estado actual: `server/`, `shared/roomProtocol.ts`, `src/features/room/RoomClient.ts`, `RoomPeerController.ts` y el estado de sala están implementados. Socket.IO gestiona membresía y señalización; WebRTC DataChannel transporta patrón, intensidad y detener entre pares. El servidor nunca recibe audio, video ni comandos de vibración. La validación pendiente es física, entre dos teléfonos, antes de habilitar video.
 
 ## 3. Protocolo con el hardware
 
