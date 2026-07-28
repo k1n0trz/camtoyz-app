@@ -44,6 +44,18 @@ Fecha de preparación: 23 de julio de 2026.
 - SHA-256: `E21909B3300E1147BDBDF764DB47AC9E31EEDE26EC0B7A67561BC576ADE18123`
 - Certificado: firma interna de pruebas para permitir actualización sobre las versiones anteriores; no usar para Google Play.
 
+## Entregables empresariales
+
+- APK: `deliverables/Camtoyz-App-1.0.1-enterprise.apk`
+- Tamaño APK: `161576747` bytes.
+- SHA-256 APK: `D4C7AC1209E5E8FE6FF738C4FC1868576C49B26607861AB36F62E6B4F23D7FC3`
+- AAB para Play Console: `deliverables/Camtoyz-App-1.0.1-play-upload.aab`
+- Tamaño AAB: `99895260` bytes.
+- SHA-256 AAB: `0D5781BF1914590FA3F1523CBDF7060D5B035D057520AEAEAD4DCD595F7D66D8`
+- Certificado empresarial: `CN=Helti S.A.S., O=Helti S.A.S., C=CO`.
+- SHA-256 del certificado: `20:CB:B9:94:BE:25:D8:87:95:B9:A6:E8:1A:E0:8E:C8:FE:96:66:8E:70:38:77:BF:E5:C4:19:59:26:EC:5D:B2`.
+- APK y AAB firmados con la misma clave de carga. APK instalada y arrancada correctamente en el Galaxy S22+.
+
 ## Validación física requerida
 
 - Crear y unir una sala desde dos teléfonos confirmando que la casilla inicia desmarcada.
