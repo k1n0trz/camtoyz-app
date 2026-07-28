@@ -10,7 +10,7 @@
     "scheme": "camtoyz-app",
     "icon": "./assets/icon/app-icon.png",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": false,
+    "newArchEnabled": true,
     "splash": {
       "backgroundColor": "#FAF0F5"
     },
@@ -31,7 +31,7 @@
     },
     "android": {
       "package": "com.camtoyz.app",
-      "versionCode": 13,
+      "versionCode": 14,
       "adaptiveIcon": {
         "foregroundImage": "./assets/icon/adaptive-foreground.png",
         "backgroundColor": "#E8B4CB"

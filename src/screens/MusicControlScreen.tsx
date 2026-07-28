@@ -52,7 +52,7 @@ export default function MusicControlScreen({ navigation }: Props) {
   const connectedRef = useRef(connected);
   const detector = useRef(new AdaptiveBeatDetector());
   const writeInFlight = useRef(false);
-  const pulseTimer = useRef<ReturnType<typeof setTimeout>>();
+  const pulseTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const motorOn = useRef(false);
   const quietUntil = useRef(0);
   const silenceFrames = useRef(0);

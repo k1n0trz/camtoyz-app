@@ -17,6 +17,29 @@ import type {
 } from '../../../shared/roomProtocol';
 
 type DataChannel = ReturnType<RTCPeerConnection['createDataChannel']>;
+type MediaTrack = ReturnType<MediaStream['getTracks']>[number];
+
+interface PeerConnectionEvents {
+  icecandidate: { candidate: RTCIceCandidate | null };
+  datachannel: { channel: DataChannel };
+  track: { streams: MediaStream[]; track?: MediaTrack };
+  negotiationneeded: object;
+  connectionstatechange: object;
+}
+
+interface DataChannelEvents {
+  open: object;
+  close: object;
+  error: object;
+  message: { data: unknown };
+}
+
+type TypedEventTarget<Events> = {
+  addEventListener<EventName extends keyof Events>(
+    type: EventName,
+    listener: (event: Events[EventName]) => void,
+  ): void;
+};
 
 interface PeerEntry {
   connection: RTCPeerConnection;
@@ -386,11 +409,12 @@ export class RoomPeerController {
       lastSequence: -1,
     };
     this.peers.set(peerId, entry);
-    connection.addEventListener('icecandidate', (event) => {
+    const connectionEvents = connection as unknown as TypedEventTarget<PeerConnectionEvents>;
+    connectionEvents.addEventListener('icecandidate', (event) => {
       if (event.candidate) void this.sendSignal(peerId, { type: 'ice', data: event.candidate.toJSON() });
     });
-    connection.addEventListener('datachannel', (event) => this.attachChannel(peerId, entry, event.channel));
-    connection.addEventListener('track', (event) => {
+    connectionEvents.addEventListener('datachannel', (event) => this.attachChannel(peerId, entry, event.channel));
+    connectionEvents.addEventListener('track', (event) => {
       if (event.streams[0]) entry.remoteStream = event.streams[0];
       else if (event.track) {
         entry.remoteStream ??= new MediaStream();
@@ -398,10 +422,10 @@ export class RoomPeerController {
       }
       this.notify();
     });
-    connection.addEventListener('negotiationneeded', () => {
+    connectionEvents.addEventListener('negotiationneeded', () => {
       if (entry.initialNegotiationComplete) void this.createOffer(peerId, entry);
     });
-    connection.addEventListener('connectionstatechange', () => {
+    connectionEvents.addEventListener('connectionstatechange', () => {
       if (connection.connectionState === 'failed' || connection.connectionState === 'closed') {
         this.closePeer(peerId, true);
       }
@@ -421,17 +445,18 @@ export class RoomPeerController {
 
   private attachChannel(peerId: string, entry: PeerEntry, channel: DataChannel): void {
     entry.channel = channel;
-    channel.addEventListener('open', () => {
+    const channelEvents = channel as unknown as TypedEventTarget<DataChannelEvents>;
+    channelEvents.addEventListener('open', () => {
       this.update({ error: undefined });
       if (this.acceptsCommands) this.broadcastPermission();
       this.notify();
     });
-    channel.addEventListener('close', () => {
+    channelEvents.addEventListener('close', () => {
       this.revokeForDisconnect();
       this.notify();
     });
-    channel.addEventListener('error', () => this.update({ error: 'El canal directo de control tuvo un error.' }));
-    channel.addEventListener('message', (event) => {
+    channelEvents.addEventListener('error', () => this.update({ error: 'El canal directo de control tuvo un error.' }));
+    channelEvents.addEventListener('message', (event) => {
       if (typeof event.data !== 'string' || event.data.length > MAX_COMMAND_BYTES) return;
       try {
         const value: unknown = JSON.parse(event.data);

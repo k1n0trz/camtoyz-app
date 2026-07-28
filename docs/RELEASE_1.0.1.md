@@ -15,7 +15,7 @@ Fecha de preparación: 23 de julio de 2026.
 ## Identificación Android
 
 - Versión: `1.0.1`
-- `versionCode`: `13`
+- `versionCode`: `14`
 - Paquete: `com.camtoyz.app`
 - Servidor: `https://app.camtoyz.com`
 - Distribución: APK interna; no corresponde todavía a publicación en Google Play.
@@ -28,7 +28,10 @@ Fecha de preparación: 23 de julio de 2026.
 - Diez pruebas de integración del servidor aprobadas.
 - APK release compilada correctamente, con firma interna v2 verificada.
 - Instalación y arranque sin Metro confirmados en Galaxy S22+ (`SM-S906E`).
-- La instalación reporta `versionName 1.0.1`, `versionCode 13` y `targetSdk 35`.
+- La instalación reporta `versionName 1.0.1`, `versionCode 14` y `targetSdk 36`.
+- Migración validada a Expo SDK 54, React Native 0.81 y arquitectura nueva de Android.
+- Las 24 bibliotecas nativas ARM64 y sus 73 segmentos de carga cumplen alineación de 16 KB.
+- El APK permanece abierto en el Galaxy y no registra errores fatales tras corregir la compatibilidad WebRTC.
 - En el Galaxy se comprobó que el consentimiento inicia desmarcado, impide el ingreso y habilita el botón únicamente después de aceptarlo y completar los datos.
 - Reglas de sala verificadas visualmente en el dispositivo.
 - Copia nueva verificada en español e inglés.
@@ -36,9 +39,9 @@ Fecha de preparación: 23 de julio de 2026.
 
 ## Artefacto
 
-- Archivo: `releases/Camtoyz-App-1.0.1-internal.apk`
-- Tamaño: `119498194` bytes.
-- SHA-256: `ABBA39218CA336EEA9D13F0DB5A96E237476C179B96C7AFFBBB64CEBFE90D95E`
+- Archivo: `deliverables/Camtoyz-App-1.0.1-internal-api36.apk`
+- Tamaño: `161571295` bytes.
+- SHA-256: `E21909B3300E1147BDBDF764DB47AC9E31EEDE26EC0B7A67561BC576ADE18123`
 - Certificado: firma interna de pruebas para permitir actualización sobre las versiones anteriores; no usar para Google Play.
 
 ## Validación física requerida

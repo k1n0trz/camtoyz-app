@@ -37,6 +37,7 @@ android/**/local.properties
 # Android signing and machine-local configuration
 *.jks
 *.keystore
+*.p12
 local.properties
 
 # logs

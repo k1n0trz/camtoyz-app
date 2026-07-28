@@ -35,8 +35,8 @@ export default function GestureControlScreen({ navigation }: Props) {
   const cursorY = useSharedValue(0);
   const lastSentAt = useRef(0);
   const inFlight = useRef(false);
-  const pending = useRef<number>();
-  const throttleTimer = useRef<ReturnType<typeof setTimeout>>();
+  const pending = useRef<number | undefined>(undefined);
+  const throttleTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const gestureEnabled = useRef(false);
   const commandGeneration = useRef(0);
   const motorLevelsRef = useRef(motorLevels);

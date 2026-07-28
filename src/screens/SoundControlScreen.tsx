@@ -42,7 +42,7 @@ export default function SoundControlScreen({ navigation }: Props) {
   const lastSentAt = useRef(0);
   const lastIntensities = useRef<number[]>(Array(channelCount).fill(0));
   const sending = useRef(false);
-  const releaseTimer = useRef<ReturnType<typeof setTimeout>>();
+  const releaseTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const clearReleaseTimer = useCallback(() => {
     if (releaseTimer.current) clearTimeout(releaseTimer.current);

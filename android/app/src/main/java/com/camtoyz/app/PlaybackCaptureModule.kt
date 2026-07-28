@@ -36,7 +36,7 @@ class PlaybackCaptureModule(private val context: ReactApplicationContext) :
       onStatus("unsupported")
       return
     }
-    val activity = currentActivity ?: run {
+    val activity = context.currentActivity ?: run {
       onStatus("unavailable")
       return
     }
@@ -46,7 +46,7 @@ class PlaybackCaptureModule(private val context: ReactApplicationContext) :
 
   @ReactMethod
   fun requestLocalTrack() {
-    val activity = currentActivity ?: run {
+    val activity = context.currentActivity ?: run {
       onStatus("unavailable")
       return
     }
@@ -74,7 +74,7 @@ class PlaybackCaptureModule(private val context: ReactApplicationContext) :
     )
   }
 
-  override fun onActivityResult(activity: Activity?, requestCode: Int, resultCode: Int, data: Intent?) {
+  override fun onActivityResult(activity: Activity, requestCode: Int, resultCode: Int, data: Intent?) {
     if (requestCode == REQUEST_LOCAL_TRACK) {
       if (resultCode != Activity.RESULT_OK || data?.data == null) {
         onStatus("selection_cancelled")
@@ -125,7 +125,7 @@ class PlaybackCaptureModule(private val context: ReactApplicationContext) :
       .emit("playbackCaptureStatus", payload)
   }
 
-  override fun onNewIntent(intent: Intent?) = Unit
+  override fun onNewIntent(intent: Intent) = Unit
   override fun onHostResume() = Unit
   override fun onHostPause() = Unit
   override fun onHostDestroy() {

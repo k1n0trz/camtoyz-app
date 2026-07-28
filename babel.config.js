@@ -2,10 +2,10 @@ module.exports = function (api) {
   api.cache(true);
   return {
     presets: ['babel-preset-expo'],
-    // react-native-reanimated/plugin DEBE ir al final (gesto de alta frecuencia).
+    // El plugin de Worklets debe ir al final para Reanimated 4.
     plugins: [
       ['module-resolver', { alias: { '@': './src' }, extensions: ['.ts', '.tsx', '.js', '.jsx', '.json'] }],
-      'react-native-reanimated/plugin',
+      'react-native-worklets/plugin',
     ],
   };
 };

@@ -12,6 +12,27 @@ export const SUPPORT_EMAIL = 'support.app@camtoyz.com';
 export function RoomPolicyLinks({ compact = false }: { compact?: boolean }) {
   const s = useThemedStyles(createStyles);
   const { pick } = useTranslation();
+  const reportIncident = async () => {
+    const subject = encodeURIComponent(pick('Reporte de incidente en Camtoyz App', 'Camtoyz App incident report'));
+    const body = encodeURIComponent(
+      pick(
+        'Describe lo ocurrido, el código de sala si aún lo tienes, la fecha aproximada y cualquier evidencia que voluntariamente quieras adjuntar. No incluyas contenido íntimo innecesario.',
+        'Describe what happened, the room code if you still have it, the approximate date, and any evidence you voluntarily want to attach. Do not include unnecessary intimate content.',
+      ),
+    );
+    const url = `mailto:${SUPPORT_EMAIL}?subject=${subject}&body=${body}`;
+    if (await Linking.canOpenURL(url)) {
+      await Linking.openURL(url);
+      return;
+    }
+    Alert.alert(
+      pick('Canal de reportes', 'Reporting channel'),
+      pick(
+        `Escribe a ${SUPPORT_EMAIL} e indica que se trata de un reporte de seguridad o conducta.`,
+        `Email ${SUPPORT_EMAIL} and indicate that this is a safety or conduct report.`,
+      ),
+    );
+  };
 
   const showRules = () => Alert.alert(
     pick('Reglas de la sala', 'Room rules'),
@@ -36,6 +57,9 @@ export function RoomPolicyLinks({ compact = false }: { compact?: boolean }) {
       </Pressable>
       <Pressable accessibilityRole="button" onPress={showPrivacy} style={s.policyLink}>
         <Text style={s.policyLinkText}>{pick('Privacidad y soporte', 'Privacy and support')}</Text>
+      </Pressable>
+      <Pressable accessibilityRole="button" onPress={() => void reportIncident()} style={s.policyLink}>
+        <Text style={s.policyLinkText}>{pick('Reportar un incidente', 'Report an incident')}</Text>
       </Pressable>
       {!compact ? (
         <Pressable
