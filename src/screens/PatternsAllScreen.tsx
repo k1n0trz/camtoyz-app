@@ -93,9 +93,9 @@ export default function PatternsAllScreen({ navigation }: Props) {
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Detener vibración"
-          disabled={!connected || commandBusy}
+          disabled={!connected}
           onPress={() => void stop()}
-          style={[s.stopButton, (!connected || commandBusy) && s.stopDisabled]}
+          style={[s.stopButton, !connected && s.stopDisabled]}
         >
           <Text style={s.stopLabel}>Detener</Text>
         </Pressable>

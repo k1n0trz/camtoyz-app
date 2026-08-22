@@ -11,6 +11,7 @@ import DashboardScreen from '@/screens/DashboardScreen';
 import ScanScreen from '@/screens/ScanScreen';
 import PatternsAllScreen from '@/screens/PatternsAllScreen';
 import MultiDeviceScreen from '@/screens/MultiDeviceScreen';
+import GestureControlScreen from '@/screens/GestureControlScreen';
 import { ConnectionStatusOverlay } from '@/components/ConnectionStatusOverlay';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -33,6 +34,7 @@ export default function App() {
             <Stack.Screen name="Dashboard" component={DashboardScreen} />
             <Stack.Screen name="PatternsAll" component={PatternsAllScreen} />
             <Stack.Screen name="MultiDevice" component={MultiDeviceScreen} />
+            <Stack.Screen name="GestureControl" component={GestureControlScreen} />
             {/* Codex: registrar aquí el resto de rutas de src/navigation/routes.ts
                 a medida que se construyen (Scan, PatternsAll, MultiDevice, GestureControl,
                 SoundControl, MusicControl, Room*, SettingsDevice). */}

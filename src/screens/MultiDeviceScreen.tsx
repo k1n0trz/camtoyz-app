@@ -17,7 +17,6 @@ export default function MultiDeviceScreen({ navigation }: Props) {
   const device = useBleStore((state) => state.device);
   const connectionState = useBleStore((state) => state.connectionState);
   const activePattern = useBleStore((state) => state.activePattern);
-  const commandBusy = useBleStore((state) => state.commandBusy);
   const stop = useBleStore((state) => state.stop);
   const connected = connectionState === 'connected';
 
@@ -82,9 +81,9 @@ export default function MultiDeviceScreen({ navigation }: Props) {
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Detener todos los dispositivos"
-          disabled={!connected || commandBusy}
+          disabled={!connected}
           onPress={() => void stop()}
-          style={[s.stopButton, (!connected || commandBusy) && s.disabled]}
+          style={[s.stopButton, !connected && s.disabled]}
         >
           <Text style={s.stopLabel}>Detener todos</Text>
         </Pressable>
