@@ -9,6 +9,8 @@ import { lightTheme } from '@/theme';
 import SplashScreen from '@/screens/SplashScreen';
 import DashboardScreen from '@/screens/DashboardScreen';
 import ScanScreen from '@/screens/ScanScreen';
+import PatternsAllScreen from '@/screens/PatternsAllScreen';
+import MultiDeviceScreen from '@/screens/MultiDeviceScreen';
 import { ConnectionStatusOverlay } from '@/components/ConnectionStatusOverlay';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -29,6 +31,8 @@ export default function App() {
             <Stack.Screen name="Splash" component={SplashScreen} />
             <Stack.Screen name="Scan" component={ScanScreen} options={{ animation: 'fade' }} />
             <Stack.Screen name="Dashboard" component={DashboardScreen} />
+            <Stack.Screen name="PatternsAll" component={PatternsAllScreen} />
+            <Stack.Screen name="MultiDevice" component={MultiDeviceScreen} />
             {/* Codex: registrar aquí el resto de rutas de src/navigation/routes.ts
                 a medida que se construyen (Scan, PatternsAll, MultiDevice, GestureControl,
                 SoundControl, MusicControl, Room*, SettingsDevice). */}

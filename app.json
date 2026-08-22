@@ -5,6 +5,7 @@
     "version": "0.1.0",
     "orientation": "portrait",
     "scheme": "camtoyz",
+    "icon": "./assets/icon/app-icon.png",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
@@ -24,6 +25,10 @@
     },
     "android": {
       "package": "com.camtoyz.control",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon/adaptive-foreground.png",
+        "backgroundColor": "#E8B4CB"
+      },
       "permissions": [
         "BLUETOOTH_SCAN",
         "BLUETOOTH_CONNECT",
